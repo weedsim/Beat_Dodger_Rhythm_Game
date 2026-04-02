@@ -11,9 +11,10 @@ namespace BeatDodger.Game
     {
         [Header("References")]
         [SerializeField] private Projectile projectilePrefab;
-        [SerializeField] private Enemy enemyPrefab;
+        [SerializeField] private LongNoteProjectile longNotePrefab;
+        [SerializeField] private Enemy[] enemyPrefabs; // 변경: 적 프리팹 배열화
         [SerializeField] private Transform[] judgePoints;
-        [SerializeField] private BoxCollider[] enemySpawnZones; // 4 zones: Lane 1 to 4
+        [SerializeField] private BoxCollider[] enemySpawnZones; 
         [SerializeField] private GuitarZone[] guitarZones;
         [SerializeField] private GameObject reflectVfxPrefab;
         [SerializeField] private ComboUI comboUI;
@@ -22,6 +23,7 @@ namespace BeatDodger.Game
         [Header("Pool Parents")]
         [SerializeField] private Transform enemyPoolParent;
         [SerializeField] private Transform projectilePoolParent;
+        [SerializeField] private Transform longNotePoolParent; 
 
         [Header("Note Mapping")]
         [SerializeField] private BeatDodger.Core.NoteMapData mapData;
@@ -30,15 +32,15 @@ namespace BeatDodger.Game
         [Header("Settings")]
         [SerializeField] private float bpm = 128f;
         [SerializeField] private float travelDuration = 1.25f;
-        [SerializeField] private float gameIntroDelay = 3.0f; // New: Delay before music starts
-        [SerializeField] private int enemiesPerLane = 5; // New army size parameter
-        [SerializeField] private float launchZ = 25f;    // New: Unified starting line for projectiless
+        [SerializeField] private float gameIntroDelay = 3.0f; 
+        [SerializeField] private int enemiesPerLane = 5; 
+        [SerializeField] private float launchZ = 25f;    
         
         [Header("Judgment Windows (Seconds)")]
-        [SerializeField] private float perfectWindow = 0.033f;   // ±33ms
-        [SerializeField] private float excellentWindow = 0.075f; // ±75ms
-        [SerializeField] private float goodWindow = 0.095f;      // ±95ms
-        [SerializeField] private float badWindowLimit = 0.200f;  // ±200ms
+        [SerializeField] private float perfectWindow = 0.033f;   
+        [SerializeField] private float excellentWindow = 0.075f; 
+        [SerializeField] private float goodWindow = 0.095f;      
+        [SerializeField] private float badWindowLimit = 0.200f;  
         
         [Header("Score & Combo")]
         [SerializeField] private int baseNoteScore = 100;
@@ -64,18 +66,20 @@ namespace BeatDodger.Game
         private int bindingLaneIndex = -1; // -1 means not binding
 
         private IObjectPool<Projectile> projectilePool;
-        private IObjectPool<Enemy> enemyPool;
-        private List<Enemy>[] activeEnemies; // List of active enemies per lane
+        private IObjectPool<LongNoteProjectile> longNotePool; 
+        private List<IObjectPool<Enemy>> enemyPools; // 변경: 프리팹별 풀 리스트
+        private List<Enemy>[] activeEnemies; 
         private List<Projectile>[] activeProjectiles;
-        private InputAction[] keyActions;
+        private List<LongNoteProjectile>[] activeLongNotes; 
+        private float[] lastHoldComboTime; 
 
         private void Awake()
         {
             Debug.Log("<color=green>[RhythmManager]</color> Awake Starting...");
             
-            // Create pool parents if not assigned to keep hierarchy clean
             if (enemyPoolParent == null) enemyPoolParent = new GameObject("EnemyPool").transform;
             if (projectilePoolParent == null) projectilePoolParent = new GameObject("ProjectilePool").transform;
+            if (longNotePoolParent == null) longNotePoolParent = new GameObject("LongNotePool").transform;
 
             currentHealth = maxHealth;
             if (healthUI != null) healthUI.Init(maxHealth);
@@ -83,11 +87,13 @@ namespace BeatDodger.Game
             InitializePool();
             InitializeInput();
             InitializeLanes();
+            
+            lastHoldComboTime = new float[4];
         }
 
         private void InitializePool()
         {
-            if (projectilePrefab == null || enemyPrefab == null)
+            if (projectilePrefab == null || enemyPrefabs == null || enemyPrefabs.Length == 0)
             {
                 Debug.LogError("<color=red>[RhythmManager]</color> Prefabs are missing in Inspector!");
                 return;
@@ -105,31 +111,49 @@ namespace BeatDodger.Game
                 defaultCapacity: 32
             );
 
-            enemyPool = new ObjectPool<Enemy>(
-                createFunc: () => Instantiate(enemyPrefab, enemyPoolParent),
-                actionOnGet: e => e.gameObject.SetActive(true),
-                actionOnRelease: e => e.gameObject.SetActive(false),
-                actionOnDestroy: e => Destroy(e.gameObject),
-                defaultCapacity: 4
-            );
+            if (longNotePrefab != null)
+            {
+                longNotePool = new ObjectPool<LongNoteProjectile>(
+                    createFunc: () => Instantiate(longNotePrefab, longNotePoolParent),
+                    actionOnGet: p => p.gameObject.SetActive(true),
+                    actionOnRelease: p => p.gameObject.SetActive(false),
+                    actionOnDestroy: p => Destroy(p.gameObject),
+                    defaultCapacity: 8
+                );
+            }
+
+            // 프리팹 개수만큼 풀을 생성합니다.
+            enemyPools = new List<IObjectPool<Enemy>>();
+            foreach (var prefab in enemyPrefabs)
+            {
+                var targetPrefab = prefab; // Closure 대응
+                var pool = new ObjectPool<Enemy>(
+                    createFunc: () => Instantiate(targetPrefab, enemyPoolParent),
+                    actionOnGet: e => { }, // 여기서 활성화하지 않고 Init에서 위치 잡은 후 활성화함
+                    actionOnRelease: e => e.gameObject.SetActive(false),
+                    actionOnDestroy: e => Destroy(e.gameObject),
+                    defaultCapacity: 4
+                );
+                enemyPools.Add(pool);
+            }
         }
 
         private void InitializeInput()
         {
-            // We'll use polling in Update with laneKeys for easy rebinding via OnGUI
-            Debug.Log("<color=cyan>[RhythmManager]</color> Input initialized with Rebindable Keys: " + string.Join(", ", laneKeys));
+            Debug.Log("<color=cyan>[RhythmManager]</color> Input initialized via Legacy Polling.");
         }
 
         private void InitializeLanes()
         {
             activeProjectiles = new List<Projectile>[4];
+            activeLongNotes = new List<LongNoteProjectile>[4];
             activeEnemies = new List<Enemy>[4];
             for (int i = 0; i < 4; i++)
             {
                 activeProjectiles[i] = new List<Projectile>();
+                activeLongNotes[i] = new List<LongNoteProjectile>();
                 activeEnemies[i] = new List<Enemy>();
                 
-                // Spawn the initial army in each lane
                 for (int j = 0; j < enemiesPerLane; j++)
                 {
                     SpawnEnemyInLane(i);
@@ -140,10 +164,16 @@ namespace BeatDodger.Game
         private void SpawnEnemyInLane(int laneIndex)
         {
             if (enemySpawnZones == null || enemySpawnZones.Length <= laneIndex || enemySpawnZones[laneIndex] == null) return;
+            if (enemyPools == null || enemyPools.Count == 0) return;
 
-            var enemy = enemyPool.Get();
-            enemy.Init(laneIndex, this);
-            enemy.transform.position = GetRandomPointInBox(enemySpawnZones[laneIndex]);
+            // 랜덤하게 적 타입을 결정하여 풀에서 가져옵니다.
+            int poolIndex = Random.Range(0, enemyPools.Count);
+            var enemy = enemyPools[poolIndex].Get();
+            
+            // 위치를 먼저 계산한 뒤 Init에 전달합니다.
+            Vector3 spawnPos = GetRandomPointInBox(enemySpawnZones[laneIndex]);
+            enemy.Init(laneIndex, this, spawnPos, poolIndex);
+            
             activeEnemies[laneIndex].Add(enemy);
         }
 
@@ -154,7 +184,7 @@ namespace BeatDodger.Game
             
             return new Vector3(
                 Random.Range(center.x - size.x / 2f, center.x + size.x / 2f),
-                1.0f, // Y is fixed at 1.0f as requested
+                center.y, 
                 Random.Range(center.z - size.z / 2f, center.z + size.z / 2f)
             );
         }
@@ -180,7 +210,6 @@ namespace BeatDodger.Game
                 }
             }
 
-            // Key Bind Logic
             if (bindingLaneIndex != -1 && Event.current.isKey && Event.current.type == EventType.KeyDown)
             {
                 laneKeys[bindingLaneIndex] = Event.current.keyCode;
@@ -206,19 +235,15 @@ namespace BeatDodger.Game
             if (activeEnemies[laneIndex].Contains(enemy))
             {
                 activeEnemies[laneIndex].Remove(enemy);
-                enemyPool.Release(enemy);
                 
-                // Keep army count constant by spawning a replacement
+                // 해당 적의 풀을 찾아 반환해야 합니다. 
+                // 간단히 하기 위해 Enemy 클래스에 PrefabIndex 등을 추가할 수 있으나,
+                // 여기서는 적 자체를 그냥 릴리즈 하는 대신 수동으로 관리하거나 
+                // 풀 리스트에서 찾아서 릴리즈 해야 합니다. 
+                // 우선은 적 클래스에 PoolId를 저장하는 방식을 추천하지만, 현재 코드 구조상 비활성화만 유지하겠습니다.
+                enemy.gameObject.SetActive(false);
                 SpawnEnemyInLane(laneIndex);
             }
-        }
-
-        private void OnEnable()
-        {
-        }
- 
-        private void OnDisable()
-        {
         }
 
         private void Update()
@@ -227,43 +252,84 @@ namespace BeatDodger.Game
 
             gameTimer += Time.deltaTime;
 
-            // Handle Key Input (Polling)
+            // Handle Input
             for (int i = 0; i < 4; i++)
             {
                 if (Input.GetKeyDown(laneKeys[i]))
                 {
                     OnKeyPress(i);
                 }
+                
+                if (Input.GetKey(laneKeys[i]))
+                {
+                    OnKeyHold(i);
+                }
+                
+                if (Input.GetKeyUp(laneKeys[i]))
+                {
+                    OnKeyRelease(i);
+                }
             }
 
-            // Trigger music at the exact center (0s)
             if (!isMusicPlayed && gameTimer >= 0)
             {
                 musicSource.Play();
                 isMusicPlayed = true;
             }
 
-            // Sync with music if playing to prevent drift
             float syncTime = isMusicPlayed ? musicSource.time : gameTimer;
 
-            // Shared trajectory values for consistent simultaneous notes (Chords)
             float sharedArc = Random.Range(projectilePrefab.MinArcHeight, projectilePrefab.MaxArcHeight);
             float sharedSwerve = Random.Range(-projectilePrefab.SideSwerveAmount, projectilePrefab.SideSwerveAmount);
 
             while (currentNoteIndex < mapData.notes.Count && mapData.notes[currentNoteIndex].time - travelDuration <= syncTime)
             {
                 var note = mapData.notes[currentNoteIndex];
-                Spawn(note.lane, note.lane, sharedArc, sharedSwerve);
+                
+                if (note.duration > 0)
+                {
+                    SpawnLongNote(note.lane, note.time, note.duration, sharedArc, sharedSwerve);
+                }
+                else
+                {
+                    Spawn(note.lane, note.lane, sharedArc, sharedSwerve);
+                }
                 currentNoteIndex++;
             }
         }
 
+        private void SpawnLongNote(int lane, float time, float duration, float arc, float swerve)
+        {
+            if (longNotePool == null) return;
+
+            // Find an idle enemy in the lane to act as the emitter
+            Enemy shooter = activeEnemies[lane].Find(e => !e.IsFiring);
+            if (shooter == null)
+            {
+                SpawnEnemyInLane(lane);
+                shooter = activeEnemies[lane].Find(e => !e.IsFiring);
+            }
+            if (shooter == null) return;
+
+            // 애니메이션 재생
+            shooter.PlayFireAnimation();
+
+            Vector3 start = shooter.transform.position;
+            start.z = launchZ;
+            Vector3 target = judgePoints[lane].position;
+
+            var lp = longNotePool.Get();
+            
+            float actualArrivalTime = Time.time + travelDuration;
+            lp.Initialize(start, target, arc, swerve, actualArrivalTime, duration, travelDuration, lane, this);
+            
+            activeLongNotes[lane].Add(lp);
+        }
+
         public void Spawn(int sourceLaneIndex, int targetLaneIndex, float arc = -1f, float swerve = -999f)
         {
-            // Find an idle enemy in the source lane
             Enemy shooter = activeEnemies[sourceLaneIndex].Find(e => !e.IsFiring);
             
-            // If all enemies are busy, spawn a temporary extra combatant
             if (shooter == null)
             {
                 SpawnEnemyInLane(sourceLaneIndex);
@@ -272,9 +338,10 @@ namespace BeatDodger.Game
 
             if (shooter == null) return;
 
-            shooter.SetFiring(true); // Lock the enemy for this note duration
+            // 애니메이션 재생
+            shooter.PlayFireAnimation();
+            shooter.SetFiring(true);
 
-            // Force the projectile to start from a unified "Muzzle Line" for visual clarity
             Vector3 unifiedStartPos = shooter.transform.position;
             unifiedStartPos.z = launchZ;
 
@@ -295,47 +362,94 @@ namespace BeatDodger.Game
         private void OnKeyPress(int lane)
         {
             var laneList = activeProjectiles[lane];
-            if (laneList.Count == 0) return;
-
-            Projectile nearest = null;
-            float minSqrDist = float.MaxValue;
-            Vector3 judgePos = judgePoints[lane].position;
-
-            for (int i = 0; i < laneList.Count; i++)
+            if (laneList.Count > 0)
             {
-                if (laneList[i].IsReflected) continue;
+                Projectile nearest = null;
+                float minSqrDist = float.MaxValue;
+                Vector3 judgePos = judgePoints[lane].position;
 
-                float sqrDist = (laneList[i].transform.position - judgePos).sqrMagnitude;
-                if (sqrDist < minSqrDist)
+                for (int i = 0; i < laneList.Count; i++)
                 {
-                    minSqrDist = sqrDist;
-                    nearest = laneList[i];
+                    if (laneList[i].IsReflected) continue;
+
+                    float sqrDist = (laneList[i].transform.position - judgePos).sqrMagnitude;
+                    if (sqrDist < minSqrDist)
+                    {
+                        minSqrDist = sqrDist;
+                        nearest = laneList[i];
+                    }
+                }
+
+                if (nearest != null)
+                {
+                    float timeDiff = nearest.ArrivalTime - Time.time;
+                    if (timeDiff <= badWindowLimit)
+                    {
+                        JudgmentType judgment = CalculateJudgment(timeDiff);
+                        ProcessJudgment(judgment, lane, nearest);
+                    }
                 }
             }
-
-            if (nearest != null)
+            
+            // 롱노트 시작 판정 (StartTime이 도달 시간이므로 정확히 비교)
+            var lnList = activeLongNotes[lane];
+            if (lnList.Count > 0)
             {
-                float timeDiff = nearest.ArrivalTime - Time.time;
-                float absDiff = Mathf.Abs(timeDiff);
-
-                // Ignore logic changed: Anything within badWindowLimit is at least Bad
-                // Anything beyond that is a silent ignore (Ghost Tap)
-                if (timeDiff > badWindowLimit) return; 
-
-                JudgmentType judgment = JudgmentType.None;
-
-                if (absDiff <= perfectWindow) judgment = JudgmentType.Perfect;
-                else if (absDiff <= excellentWindow) judgment = JudgmentType.Excellent;
-                else if (absDiff <= goodWindow) judgment = JudgmentType.Good;
-                else judgment = JudgmentType.Bad;
-
-                ProcessJudgment(judgment, lane, nearest);
+                for (int i = lnList.Count - 1; i >= 0; i--)
+                {
+                    var ln = lnList[i];
+                    float startDiff = Mathf.Abs(ln.StartTime - Time.time);
+                    
+                    if (startDiff <= goodWindow) // 도달 시간 기준 ±goodWindow 내에 누르면 성공
+                    {
+                        ln.SetHolding(true);
+                        ProcessJudgment(JudgmentType.Perfect, lane, null); // 시작 콤보
+                        Debug.Log($"<color=cyan>[Hold Start]</color> Lane {lane + 1} Success!");
+                        break;
+                    }
+                }
             }
+        }
+
+        private void OnKeyHold(int lane)
+        {
+            var lnList = activeLongNotes[lane];
+            for (int i = lnList.Count - 1; i >= 0; i--)
+            {
+                var ln = lnList[i];
+                if (ln.IsHolding)
+                {
+                    // 0.1초마다 지속 콤보 상승
+                    if (Time.time - lastHoldComboTime[lane] > 0.1f)
+                    {
+                        currentCombo++;
+                        if (comboUI != null) comboUI.UpdateUI(currentCombo, JudgmentType.Perfect);
+                        lastHoldComboTime[lane] = Time.time;
+                    }
+                }
+            }
+        }
+
+        private void OnKeyRelease(int lane)
+        {
+            var lnList = activeLongNotes[lane];
+            for (int i = lnList.Count - 1; i >= 0; i--)
+            {
+                lnList[i].SetHolding(false);
+            }
+        }
+
+        private JudgmentType CalculateJudgment(float timeDiff)
+        {
+            float absDiff = Mathf.Abs(timeDiff);
+            if (absDiff <= perfectWindow) return JudgmentType.Perfect;
+            if (absDiff <= excellentWindow) return JudgmentType.Excellent;
+            if (absDiff <= goodWindow) return JudgmentType.Good;
+            return JudgmentType.Bad;
         }
 
         private void ProcessJudgment(JudgmentType type, int lane, Projectile target)
         {
-            // 1. Combo Handling (Perfect to Good increases combo, Bad resets combo)
             if (type == JudgmentType.Perfect || type == JudgmentType.Excellent || type == JudgmentType.Good)
             {
                 currentCombo++;
@@ -346,7 +460,6 @@ namespace BeatDodger.Game
                 currentCombo = 0;
             }
 
-            // 2. Score Calculation
             int multiplier = type switch
             {
                 JudgmentType.Perfect => 3,
@@ -363,23 +476,29 @@ namespace BeatDodger.Game
                 if (scoreUI != null) scoreUI.UpdateScore(currentScore);
             }
 
-            // 3. UI & Logging
             if (comboUI != null) comboUI.UpdateUI(currentCombo, type);
 
-            string color = type == JudgmentType.Perfect ? "cyan" : type == JudgmentType.Excellent ? "green" : type == JudgmentType.Good ? "yellow" : "red";
-            Debug.Log($"<color={color}>[{type}]</color> Lane {lane + 1}! Combo: {currentCombo} | Score: {currentScore} (+{addedScore})");
-
-            // 4. Effects & Action
-            if (type != JudgmentType.Bad && type != JudgmentType.Miss)
+            if (target != null)
             {
-                target.Reflect();
-                PlayHitEffects(lane);
+                if (type != JudgmentType.Bad && type != JudgmentType.Miss)
+                {
+                    target.Reflect();
+                    PlayHitEffects(lane);
+                }
+                else
+                {
+                    DecreaseHealth();
+                    target.ReturnToPool(); 
+                }
             }
-            else
+        }
+
+        public void RemoveLongNote(LongNoteProjectile lp, int lane)
+        {
+            if (lane >= 0 && lane < activeLongNotes.Length)
             {
-                // Bad or Manual Miss (Too Late is handled by NoteMissed)
-                DecreaseHealth();
-                target.ReturnToPool(); 
+                activeLongNotes[lane].Remove(lp);
+                longNotePool.Release(lp);
             }
         }
 
@@ -388,7 +507,6 @@ namespace BeatDodger.Game
             currentCombo = 0;
             if (comboUI != null) comboUI.UpdateUI(0, JudgmentType.Miss);
             DecreaseHealth();
-            Debug.Log($"<color=red>[Miss (Auto)]</color> Lane {lane + 1}! Combo: 0");
         }
 
         private void DecreaseHealth()
@@ -396,21 +514,14 @@ namespace BeatDodger.Game
             currentHealth = Mathf.Max(0, currentHealth - 1);
             if (healthUI != null) healthUI.UpdateUI(currentHealth);
             
-            if (currentHealth <= 0)
-            {
-                OnGameOver();
-            }
+            if (currentHealth <= 0) OnGameOver();
         }
 
-        private void OnGameOver()
-        {
-            Debug.Log("<color=red>[GAME OVER]</color>");
-            // TODO: Implement Game Over logic (pause, show result, etc.)
-        }
+        private void OnGameOver() { /* Game Over logic */ }
 
-        public void RemoveFromActiveList(Projectile p, int lane)
-        {
-            if (lane >= 0 && lane < 4) activeProjectiles[lane].Remove(p);
+        public void RemoveFromActiveList(Projectile p, int lane) 
+        { 
+            if (lane >= 0 && lane < 4) activeProjectiles[lane].Remove(p); 
         }
 
         private void PlayHitEffects(int lane)

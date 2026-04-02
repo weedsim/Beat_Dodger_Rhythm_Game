@@ -22,6 +22,12 @@ namespace BeatDodger.Editor
         private enum AutoPattern { Stream, Trill, Stair, Denim, Random }
         private AutoPattern currentPattern = AutoPattern.Random;
 
+        // Interaction State
+        private int selectedNoteIndex = -1;
+        private bool isDragging = false;
+        private bool isDraggingTail = false;
+        private Vector2 dragOffset; // X/Y 오프셋 통합 관리
+
         [MenuItem("BeatDodger/Note Mapper")]
         public static void ShowWindow() => GetWindow<NoteMapperWindow>("Note Mapper");
 
@@ -78,10 +84,9 @@ namespace BeatDodger.Editor
 
         private void DrawToolbar()
         {
-            // Row 1: Asset & Playback
             using (new EditorGUILayout.HorizontalScope(EditorStyles.toolbar))
             {
-                EditorGUIUtility.labelWidth = 60;
+                EditorGUIUtility.labelWidth = 40;
                 currentMap = (NoteMapData)EditorGUILayout.ObjectField("Data", currentMap, typeof(NoteMapData), false, GUILayout.Width(250));
                 
                 GUILayout.Space(10);
@@ -93,18 +98,13 @@ namespace BeatDodger.Editor
                 zoom = GUILayout.HorizontalSlider(zoom, 10f, 300f, GUILayout.Width(100));
             }
 
-            // Row 2: Auto Map Settings
             using (new EditorGUILayout.HorizontalScope(EditorStyles.toolbar))
             {
                 EditorGUIUtility.labelWidth = 40;
                 autoMapThreshold = EditorGUILayout.Slider("Sens.", autoMapThreshold, 1.0f, 4.0f, GUILayout.Width(150));
-                
-                GUILayout.Space(15);
-                EditorGUIUtility.labelWidth = 50;
                 chordChance = EditorGUILayout.Slider("Chord", chordChance, 0f, 1.0f, GUILayout.Width(150));
 
-                GUILayout.Space(20);
-                if (GUILayout.Button("Smart Auto Map", EditorStyles.toolbarButton, GUILayout.Width(130)))
+                if (GUILayout.Button("Smart Auto Map", EditorStyles.toolbarButton, GUILayout.Width(110)))
                 {
                     if (EditorUtility.DisplayDialog("Smart Auto Map", "Generate professional patterns? Existing notes will be cleared.", "Yes", "Cancel")) RunSmartAutoMapper();
                 }
@@ -116,43 +116,152 @@ namespace BeatDodger.Editor
 
         private void DrawTimeline()
         {
-            Rect timelineRect = GUILayoutUtility.GetRect(0, position.width, 180, 180);
-            GUI.Box(timelineRect, "", EditorStyles.helpBox);
             if (currentMap.music == null) return;
 
-            using (var scroll = new EditorGUILayout.ScrollViewScope(scrollPos, GUILayout.Height(200)))
+            // 스크롤 뷰 시작 (전체 높이 220 고정)
+            using (var scroll = new EditorGUILayout.ScrollViewScope(scrollPos, GUILayout.Height(220)))
             {
                 scrollPos = scroll.scrollPosition;
+                
                 float totalWidth = currentMap.music.length * zoom;
-                Rect innerRect = GUILayoutUtility.GetRect(totalWidth, 180);
+                Rect contentRect = GUILayoutUtility.GetRect(totalWidth, 200);
+                GUI.Box(contentRect, "", EditorStyles.helpBox);
 
                 Event e = Event.current;
-                if (innerRect.Contains(e.mousePosition) && (e.type == EventType.MouseDown || e.type == EventType.MouseDrag))
+                float beatInterval = 60f / currentMap.bpm;
+                float snapInterval = beatInterval / 4f;
+
+                Vector2 localMouse = e.mousePosition - contentRect.position;
+
+                // [드래그 업데이트 로직] - 드로잉 루프 전에 실행하여 프레임 지연을 없앱니다.
+                if (isDragging && selectedNoteIndex != -1)
                 {
-                    currentTime = Mathf.Clamp((e.mousePosition.x - innerRect.x) / zoom, 0, currentMap.music.length - 0.01f);
-                    if (previewSource != null) previewSource.time = currentTime;
+                    var note = currentMap.notes[selectedNoteIndex];
+                    float newTime = localMouse.x / zoom;
+                    newTime = Mathf.Round(newTime / snapInterval) * snapInterval; 
+                    int newLane = Mathf.Clamp(Mathf.FloorToInt((localMouse.y - 10) / 40f), 0, 3);
+                    
+                    note.time = Mathf.Max(0, newTime);
+                    note.lane = newLane;
+                    currentMap.notes[selectedNoteIndex] = note; 
+
+                    if (e.type == EventType.MouseUp) 
+                    {
+                        isDragging = false;
+                        currentMap.notes.Sort((a, b) => a.time.CompareTo(b.time));
+                        EditorUtility.SetDirty(currentMap);
+                    }
                     Repaint();
-                    e.Use();
                 }
 
-                float beatInterval = 60f / currentMap.bpm;
+                if (isDraggingTail && selectedNoteIndex != -1)
+                {
+                    var note = currentMap.notes[selectedNoteIndex];
+                    float newTime = localMouse.x / zoom;
+                    newTime = Mathf.Round(newTime / snapInterval) * snapInterval; 
+                    note.duration = Mathf.Max(0, newTime - note.time);
+                    currentMap.notes[selectedNoteIndex] = note;
+
+                    if (e.type == EventType.MouseUp) 
+                    {
+                        isDraggingTail = false;
+                        currentMap.notes.Sort((a, b) => a.time.CompareTo(b.time));
+                        EditorUtility.SetDirty(currentMap);
+                    }
+                    Repaint();
+                }
+
+                // [배경 그리드]
                 for (float t = 0; t < currentMap.music.length; t += beatInterval)
                 {
                     float x = t * zoom;
-                    Handles.color = new Color(1, 1, 1, 0.1f);
-                    Handles.DrawLine(new Vector3(innerRect.x + x, innerRect.y), new Vector3(innerRect.x + x, innerRect.yMax));
+                    Handles.color = new Color(1, 1, 1, 0.15f);
+                    Handles.DrawLine(new Vector3(contentRect.x + x, contentRect.y), new Vector3(contentRect.x + x, contentRect.yMax));
                 }
 
+                // [노트 그리기 및 인터랙션]
                 for (int i = 0; i < currentMap.notes.Count; i++)
                 {
                     var note = currentMap.notes[i];
-                    Rect noteRect = new Rect(innerRect.x + note.time * zoom - 6, innerRect.y + (note.lane * 35) + 15, 12, 25);
+                    float x = note.time * zoom;
+                    float y = (note.lane * 40) + 10;
+                    
+                    Rect noteRect = new Rect(contentRect.x + x - 8, contentRect.y + y, 16, 30);
+                    
+                    // 롱노트 몸통 (있을 경우만 그림)
+                    if (note.duration > 0)
+                    {
+                        Rect bodyRect = new Rect(noteRect.xMax, noteRect.y + 5, note.duration * zoom, 20);
+                        EditorGUI.DrawRect(bodyRect, GetLaneColor(note.lane) * 0.4f);
+                    }
+
+                    // 꼬리 핸들 (모든 노트에 존재하여 롱노트로 변환 가능)
+                    Rect tailHandleRect = new Rect(noteRect.xMax + (note.duration * zoom) - 5, noteRect.y, 10, noteRect.height);
+                    EditorGUIUtility.AddCursorRect(tailHandleRect, MouseCursor.ResizeHorizontal);
+
+                    if (tailHandleRect.Contains(e.mousePosition))
+                    {
+                        if (e.type == EventType.MouseDown && e.button == 0)
+                        {
+                            selectedNoteIndex = i;
+                            isDraggingTail = true;
+                            e.Use();
+                        }
+                    }
+
+                    // 선택 가이드 및 헤드
+                    if (i == selectedNoteIndex) EditorGUI.DrawRect(new Rect(noteRect.x - 2, noteRect.y - 2, noteRect.width + 4 + (note.duration * zoom), noteRect.height + 4), Color.white * 0.5f);
                     EditorGUI.DrawRect(noteRect, GetLaneColor(note.lane));
+                    
+                    // 몸통/헤드 클릭 (이동 및 삭제)
+                    if (noteRect.Contains(e.mousePosition) && e.type == EventType.MouseDown)
+                    {
+                        if (e.button == 0)
+                        {
+                            selectedNoteIndex = i;
+                            isDragging = true;
+                            e.Use();
+                        }
+                        else if (e.button == 1)
+                        {
+                            currentMap.notes.RemoveAt(i);
+                            selectedNoteIndex = -1;
+                            EditorUtility.SetDirty(currentMap);
+                            e.Use(); break;
+                        }
+                    }
+                }
+
+                // 타임라인 탐색 및 노트 추가
+                if (!isDragging && !isDraggingTail && contentRect.Contains(e.mousePosition))
+                {
+                    if (e.type == EventType.MouseDown || e.type == EventType.MouseDrag)
+                    {
+                        if (e.button == 0)
+                        {
+                            // Shift + 클릭 시 신규 노트 생성
+                            if (e.shift && e.type == EventType.MouseDown)
+                            {
+                                float newTime = Mathf.Round((localMouse.x / zoom) / snapInterval) * snapInterval;
+                                int newLane = Mathf.Clamp(Mathf.FloorToInt((localMouse.y - 10) / 40f), 0, 3);
+                                currentMap.notes.Add(new NoteInfo { time = newTime, lane = newLane });
+                                currentMap.notes.Sort((a, b) => a.time.CompareTo(b.time));
+                                selectedNoteIndex = currentMap.notes.FindIndex(n => Mathf.Approximately(n.time, newTime) && n.lane == newLane);
+                                EditorUtility.SetDirty(currentMap);
+                            }
+                            else // 일반 클릭 시 탐색(Scrubbing)
+                            {
+                                currentTime = Mathf.Clamp(localMouse.x / zoom, 0, currentMap.music.length - 0.01f);
+                                if (previewSource != null) previewSource.time = currentTime;
+                            }
+                            Repaint();
+                        }
+                    }
                 }
 
                 float px = currentTime * zoom;
                 Handles.color = Color.red;
-                Handles.DrawLine(new Vector3(innerRect.x + px, innerRect.y), new Vector3(innerRect.x + px, innerRect.yMax));
+                Handles.DrawLine(new Vector3(contentRect.x + px, contentRect.y), new Vector3(contentRect.x + px, contentRect.yMax));
             }
         }
 
