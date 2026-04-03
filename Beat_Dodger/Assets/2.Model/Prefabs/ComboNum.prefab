@@ -324,6 +324,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::NeonTextController
   _coreText: {fileID: 5038123962499299387}
   _glowText: {fileID: 2326650908126799222}
+  _corePreset: {fileID: 0}
+  _glowPreset: {fileID: 0}
   _content: 1234567890
-  _neonBaseColor: {r: 1, g: 0, b: 0, a: 1}
-  _glowAlpha: 0.6
