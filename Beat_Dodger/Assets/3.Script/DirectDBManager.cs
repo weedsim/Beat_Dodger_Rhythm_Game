@@ -9,7 +9,7 @@ using TMPro;
 public class DirectDBManager : MonoBehaviour
 {
     //private string connectionString = "Server=여기에_AWS_IP;Database=MyGameDB;Uid=game_user;Pwd=1234;Port=3306;";
-
+    // 집에 가고 싶다. 코어키퍼하고 몬헌 와일즈하고 이리도 하고 아이솔해야지 너무 재밌겠다
     // 주의: Pwd=1234 부분은 주인님이 내 컴퓨터에 MySQL 설치하실 때 설정했던 '진짜 비밀번호'를 넣으셔야 합니다!
     private string connectionString = "Server=localhost;Database=MyGameDB;Uid=root;Pwd=1234;Port=3307;";
 
