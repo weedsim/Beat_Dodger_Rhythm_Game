@@ -1381,7 +1381,6 @@ GameObject:
   - component: {fileID: 1255395291}
   - component: {fileID: 1255395293}
   - component: {fileID: 1255395292}
-  - component: {fileID: 1255395294}
   m_Layer: 0
   m_Name: NetworkManager
   m_TagString: Untagged
@@ -1478,19 +1477,6 @@ MonoBehaviour:
   evaluationMethod: 0
   evaluationInterval: 3
   timeInterpolationGui: 0
---- !u!114 &1255395294
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1255395290}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 3be64077ff16be241b03f6909a8e0ab4, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::MirrorConnectManager
-  ipInputField: {fileID: 0}
 --- !u!1 &1312293681
 GameObject:
   m_ObjectHideFlags: 0
