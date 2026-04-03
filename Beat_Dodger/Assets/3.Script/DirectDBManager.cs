@@ -1,28 +1,25 @@
 using System;
-using System.Collections;
-using System.Collections.Generic;
-using UnityEngine;
 using System.Threading.Tasks;
-using MySql.Data.MySqlClient;
+using UnityEngine;
 using TMPro;
+using MySql.Data.MySqlClient;
+using Mirror;
 
 public class DirectDBManager : MonoBehaviour
 {
-    //private string connectionString = "Server=여기에_AWS_IP;Database=MyGameDB;Uid=game_user;Pwd=1234;Port=3306;";
-    // 집에 가고 싶다. 코어키퍼하고 몬헌 와일즈하고 이리도 하고 아이솔해야지 너무 재밌겠다
-    // 주의: Pwd=1234 부분은 주인님이 내 컴퓨터에 MySQL 설치하실 때 설정했던 '진짜 비밀번호'를 넣으셔야 합니다!
     private string connectionString = "Server=localhost;Database=MyGameDB;Uid=root;Pwd=1234;Port=3307;";
 
     public TMP_InputField idInputField;
     public TMP_InputField pwInputField;
+
+    // 1. 회원가입 기능
     public void OnClickRegisterButton()
     {
         string inputId = idInputField.text;
         string inputPw = pwInputField.text;
-
         RegisterUserAsync(inputId, inputPw);
     }
-    
+
     private async void RegisterUserAsync(string id, string pw)
     {
         Debug.Log("DB connecting.....");
@@ -53,56 +50,60 @@ public class DirectDBManager : MonoBehaviour
             }
         });
     }
-    public void OnClickLoginButton()
+
+    // 2. 로그인 & 미러 서버 접속 기능
+    public async void OnClickLoginButton()
     {
         string inputId = idInputField.text;
         string inputPw = pwInputField.text;
-        LoginUserAsync(inputId, inputPw);
+
+        Debug.Log("DB에서 유저 정보 찾는 중...");
+
+        // 1. DB에서 비밀번호 맞는지 백그라운드에서 확인
+        bool isLoginSuccess = await Task.Run(() => CheckLoginDB(inputId, inputPw));
+
+        // 2. 로그인 성공 시, 유니티 메인 스레드에서 미러 서버로 접속!
+        if (isLoginSuccess)
+        {
+            Debug.Log($"[로그인 성공]  {inputId}님! 게임 서버로 이동합니다!");
+
+            // 미러 매니저에게 목적지를 알려주고 클라이언트 실행!
+            NetworkManager.singleton.networkAddress = "localhost";
+            NetworkManager.singleton.StartHost();
+        }
+        else
+        {
+            Debug.LogWarning("[로그인 실패]  아이디 또는 비밀번호가 틀렸습니다.");
+        }
     }
 
-    private async void LoginUserAsync(string id, string pw)
+    // 실제 DB와 통신하여 비밀번호를 검증하는 로직
+    private bool CheckLoginDB(string id, string pw)
     {
-        Debug.Log("DB에서 유저 정보 찾는 중...");
-        await Task.Run(() =>
+        using (MySqlConnection conn = new MySqlConnection(connectionString))
         {
-            using (MySqlConnection conn = new MySqlConnection(connectionString))
+            try
             {
-                try
+                conn.Open();
+                string query = "SELECT PasswordHash FROM Users WHERE Username = @user";
+                using (MySqlCommand cmd = new MySqlCommand(query, conn))
                 {
-                    conn.Open();
-                    string query = "SELECT PasswordHash FROM Users WHERE Username = @user";
-                    using (MySqlCommand cmd = new MySqlCommand(query, conn))
+                    cmd.Parameters.AddWithValue("@user", id);
+                    using (MySqlDataReader reader = cmd.ExecuteReader())
                     {
-                        cmd.Parameters.AddWithValue("@user", id);
-
-                        using (MySqlDataReader reader = cmd.ExecuteReader())
+                        if (reader.Read())
                         {
-                            if (reader.Read()) 
-                            {
-                                string dbPassword = reader.GetString(0); 
-
-                                if (dbPassword == pw) // DB 비번 == 내가 방금 친 비번
-                                {
-                                    Debug.Log($"[로그인 성공] 🎮 {id}님, 게임 서버에 접속했습니다!");
-                                    // add move main scene
-                                }
-                                else
-                                {
-                                    Debug.LogWarning("[로그인 실패] 비밀번호가 틀렸습니다.");
-                                }
-                            }
-                            else
-                            {
-                                Debug.LogWarning("[로그인 실패] 존재하지 않는 아이디입니다.");
-                            }
+                            string dbPassword = reader.GetString(0);
+                            if (dbPassword == pw) return true; // 비번 일치!
                         }
                     }
                 }
-                catch (Exception ex)
-                {
-                    Debug.LogError("[에러 발생] DB 연결 실패: " + ex.Message);
-                }
             }
-        });
+            catch (Exception ex)
+            {
+                Debug.LogError("[에러] DB 연결 실패: " + ex.Message);
+            }
+        }
+        return false; // 뭔가 틀렸거나 에러남
     }
 }

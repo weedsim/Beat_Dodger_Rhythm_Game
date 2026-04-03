@@ -8,6 +8,9 @@ EditorBuildSettings:
   - enabled: 1
     path: Assets/1.Scene/TitleTestJaeho.unity
     guid: d6b48134dc897994ba39b4d1b0a93785
+  - enabled: 1
+    path: Assets/1.Scene/TestGameScene.unity
+    guid: c58eb7e88d201864b9153b0df32a6f36
   m_configObjects:
     com.unity.input.settings.actions: {fileID: -944628639613478452, guid: 289c1b55c9541489481df5cc06664110, type: 3}
   m_UseUCBPForAssetBundles: 0
