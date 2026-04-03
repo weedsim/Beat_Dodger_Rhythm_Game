@@ -7,9 +7,8 @@ namespace BeatDodger.Core
     [Serializable]
     public struct NoteInfo
     {
-        public float time;     // 발사 시간 (초)
-        public int lane;       // 0 ~ 3 번 레인
-        public float duration; // 롱노트 지속 시간 (0이면 단발 노트)
+        public float time; // 발사 시간 (초)
+        public int lane;   // 0 ~ 3 번 레인
     }
 
     [CreateAssetMenu(fileName = "NewNoteMap", menuName = "BeatDodger/NoteMapData")]
