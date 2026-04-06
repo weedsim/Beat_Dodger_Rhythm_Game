@@ -12,6 +12,7 @@ namespace BeatDodger.Editor
         private float currentTime = 0f;
         private bool isPlaying = false;
         private float zoom = 50f;
+        private float playbackSpeed = 1f; // 추가: 재생 속도 제어
         private Vector2 scrollPos;
 
         [Header("Auto Map Settings")]
@@ -94,6 +95,17 @@ namespace BeatDodger.Editor
                 if (GUILayout.Button("Stop", EditorStyles.toolbarButton, GUILayout.Width(50))) StopPlay();
 
                 GUILayout.FlexibleSpace();
+                
+                // 재생 속도 슬라이더 추가
+                GUILayout.Label($"Speed: {playbackSpeed:F2}x", EditorStyles.miniLabel);
+                float newSpeed = GUILayout.HorizontalSlider(playbackSpeed, 0.25f, 1.5f, GUILayout.Width(80));
+                if (newSpeed != playbackSpeed)
+                {
+                    playbackSpeed = newSpeed;
+                    if (previewSource != null) previewSource.pitch = playbackSpeed;
+                }
+
+                GUILayout.Space(10);
                 GUILayout.Label($"Zoom:", EditorStyles.miniLabel);
                 zoom = GUILayout.HorizontalSlider(zoom, 10f, 300f, GUILayout.Width(100));
             }
@@ -357,7 +369,7 @@ namespace BeatDodger.Editor
         }
 
         private void AddNote(float time, int lane) { currentMap.notes.Add(new NoteInfo { time = time, lane = lane }); currentMap.notes.Sort((a, b) => a.time.CompareTo(b.time)); EditorUtility.SetDirty(currentMap); }
-        private void TogglePlay() { if (isPlaying) { previewSource.Pause(); isPlaying = false; } else { previewSource.clip = currentMap.music; previewSource.time = Mathf.Clamp(currentTime, 0, currentMap.music.length - 0.01f); previewSource.Play(); isPlaying = true; } }
+        private void TogglePlay() { if (isPlaying) { previewSource.Pause(); isPlaying = false; } else { previewSource.clip = currentMap.music; previewSource.time = Mathf.Clamp(currentTime, 0, currentMap.music.length - 0.01f); previewSource.pitch = playbackSpeed; previewSource.Play(); isPlaying = true; } }
         private void StopPlay() { if (previewSource != null) previewSource.Stop(); isPlaying = false; currentTime = 0; }
         private Color GetLaneColor(int lane) => lane switch { 0 => Color.cyan, 1 => Color.green, 2 => Color.yellow, 3 => Color.red, _ => Color.white };
     }

@@ -26,7 +26,7 @@ MonoBehaviour:
     duration: 0
   - time: 1.25
     lane: 3
-    duration: 0
+    duration: 2.5
   - time: 2
     lane: 2
     duration: 0
@@ -35,7 +35,7 @@ MonoBehaviour:
     duration: 0
   - time: 2.375
     lane: 0
-    duration: 0
+    duration: 1.375
   - time: 4.625
     lane: 0
     duration: 0
@@ -53,7 +53,7 @@ MonoBehaviour:
     duration: 0
   - time: 5.375
     lane: 0
-    duration: 0
+    duration: 1.5
   - time: 5.375
     lane: 2
     duration: 0
@@ -62,7 +62,7 @@ MonoBehaviour:
     duration: 0
   - time: 5.875
     lane: 3
-    duration: 0
+    duration: 1.5
   - time: 8.125
     lane: 0
     duration: 0
@@ -92,7 +92,7 @@ MonoBehaviour:
     duration: 0
   - time: 10.375
     lane: 3
-    duration: 0
+    duration: 2.5
   - time: 10.75
     lane: 2
     duration: 0
@@ -101,7 +101,7 @@ MonoBehaviour:
     duration: 0
   - time: 11.375
     lane: 0
-    duration: 0
+    duration: 2.5
   - time: 11.375
     lane: 1
     duration: 0
@@ -114,9 +114,9 @@ MonoBehaviour:
   - time: 12.625
     lane: 1
     duration: 0
-  - time: 13.5
+  - time: 13.25
     lane: 2
-    duration: 0
+    duration: 7.5
   - time: 13.875
     lane: 1
     duration: 0
