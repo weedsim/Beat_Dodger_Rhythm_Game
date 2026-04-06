@@ -28,7 +28,10 @@ namespace BeatDodger.Game
         private Vector3 _controlPoint;
 
         private bool _isHolding = false;
+        private bool _isSatisfied = false; 
         private bool _isActive = false;
+        private float _totalHeldTime = 0f; // 추가: 실제 누적 홀딩 시간
+        private JudgmentType _startJudgment; // 추가: 시작 판정 기억
 
         public float StartTime => _noteStartTime;
         public float EndTime => _noteStartTime + _duration;
@@ -46,7 +49,10 @@ namespace BeatDodger.Game
             _manager = manager;
             
             _spawnTime = Time.time;
+            _totalHeldTime = 0f; 
+            _isSatisfied = false; 
             _isActive = true;
+            _startJudgment = JudgmentType.None; // 초기화
 
             // Projectile과 동일한 곡선 제어점 계산
             Vector3 midPoint = (_startPos + _targetPos) / 2f;
@@ -58,10 +64,18 @@ namespace BeatDodger.Game
             Update(); // Initial position/mesh
         }
 
+        public void OnHit(JudgmentType judgment)
+        {
+            _startJudgment = judgment;
+            _isHolding = true;
+        }
+
         public void SetHolding(bool holding)
         {
             _isHolding = holding;
         }
+
+        public JudgmentType StartJudgment => _startJudgment;
 
         private void Update()
         {
@@ -79,10 +93,18 @@ namespace BeatDodger.Game
             // 오브젝트의 위치는 머리에 맞춤 (파티클 등 연출용)
             transform.position = CalculateBezierPoint(Mathf.Clamp01(headT), _startPos, _controlPoint, _targetPos);
 
+            // [추가] 75% 이상 눌렀는지 체크 및 홀딩 시간 누적
+            if (_isHolding)
+            {
+                _totalHeldTime += Time.deltaTime;
+                float progress = (Time.time - _noteStartTime) / _duration;
+                if (progress >= 0.75f) _isSatisfied = true;
+            }
+
             // 꼬리까지 판정선을 지나가면 소멸
             if (tailT > 1.05f)
             {
-                OnMiss();
+                OnFinish(); // OnMiss 대신 OnFinish 호출
             }
         }
 
@@ -111,13 +133,20 @@ namespace BeatDodger.Game
             return p;
         }
 
-        private void OnMiss()
+        private void OnFinish() // OnMiss에서 OnFinish로 변경 및 로직 강화
         {
-            // 끝까지 성공적으로 누르고 있지 않았다면 미스로 처리
-            if (!_isHolding) _manager.NoteMissed(_laneIndex);
+            // 최종 홀딩 비율 계산 (0.0 ~ 1.0)
+            float ratio = Mathf.Clamp01(_totalHeldTime / _duration);
             
-            // 시각적 소멸 및 리스트에서 제거
-            _manager.RemoveLongNote(this, _laneIndex);
+            JudgmentType finalJudgment = JudgmentType.Miss;
+
+            // 100% Perfect, 85% Excellent, 75% Good 판정
+            if (ratio >= 0.99f) finalJudgment = JudgmentType.Perfect;
+            else if (ratio >= 0.85f) finalJudgment = JudgmentType.Excellent;
+            else if (ratio >= 0.75f) finalJudgment = JudgmentType.Good;
+
+            // 매니저를 통해 정산
+            _manager.ResolveLongNoteEnd(finalJudgment, _laneIndex, this);
         }
 
         public void ReturnToPool()

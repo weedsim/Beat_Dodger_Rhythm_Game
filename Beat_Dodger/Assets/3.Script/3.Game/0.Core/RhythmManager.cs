@@ -398,14 +398,19 @@ namespace BeatDodger.Game
                 for (int i = lnList.Count - 1; i >= 0; i--)
                 {
                     var ln = lnList[i];
-                    float startDiff = Mathf.Abs(ln.StartTime - Time.time);
+                    float timeDiff = ln.StartTime - Time.time;
+                    float absDiff = Mathf.Abs(timeDiff);
                     
-                    if (startDiff <= goodWindow) // 도달 시간 기준 ±goodWindow 내에 누르면 성공
+                    if (absDiff <= badWindowLimit) // 범위 내에 들어오면 판정 계산
                     {
-                        ln.SetHolding(true);
-                        ProcessJudgment(JudgmentType.Perfect, lane, null); // 시작 콤보
-                        Debug.Log($"<color=cyan>[Hold Start]</color> Lane {lane + 1} Success!");
-                        break;
+                        JudgmentType judgment = CalculateJudgment(timeDiff);
+                        if (judgment != JudgmentType.Bad && judgment != JudgmentType.Miss)
+                        {
+                            ln.OnHit(judgment);
+                            ProcessJudgment(judgment, lane, null); // 시작 판정 처리
+                            Debug.Log($"<color=cyan>[Hold Start]</color> Lane {lane + 1} Success with {judgment}!");
+                            break;
+                        }
                     }
                 }
             }
@@ -419,11 +424,11 @@ namespace BeatDodger.Game
                 var ln = lnList[i];
                 if (ln.IsHolding)
                 {
-                    // 0.1초마다 지속 콤보 상승
+                    // 0.1초마다 지속 콤보 및 점수 상승
                     if (Time.time - lastHoldComboTime[lane] > 0.1f)
                     {
-                        currentCombo++;
-                        if (comboUI != null) comboUI.UpdateUI(currentCombo, JudgmentType.Perfect);
+                        // [추가] 시작할 때 받았던 판정 점수를 계속 가산함
+                        ProcessJudgment(ln.StartJudgment, lane, null);
                         lastHoldComboTime[lane] = Time.time;
                     }
                 }
@@ -491,6 +496,21 @@ namespace BeatDodger.Game
                     target.ReturnToPool(); 
                 }
             }
+        }
+
+        public void ResolveLongNoteEnd(JudgmentType finalJudgment, int lane, LongNoteProjectile lp)
+        {
+            if (finalJudgment == JudgmentType.Miss)
+            {
+                NoteMissed(lane);
+            }
+            else
+            {
+                // [추가] 최종 유지 비율에 따른 추가 정산
+                ProcessJudgment(finalJudgment, lane, null);
+            }
+            
+            RemoveLongNote(lp, lane);
         }
 
         public void RemoveLongNote(LongNoteProjectile lp, int lane)
