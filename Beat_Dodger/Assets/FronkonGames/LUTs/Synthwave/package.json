@@ -1,0 +1,17 @@
+{
+  "name": "com.fronkongames.luts.synthwave",
+  "version": "3.0.1",
+  "displayName": "LUTs: Synthwave",
+  "description": "Neon-drenched cyberpunk worlds.",
+  "unity": "6000.0",
+  "unityRelease": "58f2",
+  "dependencies":  {  },
+  "documentationUrl": "https://fronkongames.github.io/store/luts/",
+  "keywords": [ "unity", "fps", "vr", "lut", "luts", "color", "grading", "arcade", "synthwave", "cyberpunk", "cyber" ],
+  "author":
+  {
+    "name": "Fronkon Games",
+    "email": "fronkongames@gmail.com",
+    "url": "https://fronkongames.github.io/store/luts/"
+  }
+}
