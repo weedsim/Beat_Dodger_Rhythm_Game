@@ -12,8 +12,16 @@ namespace BeatDodger.Editor
         private float currentTime = 0f;
         private bool isPlaying = false;
         private float zoom = 50f;
-        private float playbackSpeed = 1f; // 추가: 재생 속도 제어
+        private float playbackSpeed = 1f; 
         private Vector2 scrollPos;
+
+        // Waveform Visuals
+        private Texture2D waveformTexture;
+        private AudioClip lastWaveformClip;
+        private const int WAVEFORM_RESOLUTION = 2048;
+
+        // Scrubbing Feedback
+        private float stopScrubTime = -1f;
 
         [Header("Auto Map Settings")]
         private float autoMapThreshold = 1.6f; 
@@ -62,6 +70,14 @@ namespace BeatDodger.Editor
         private void UpdatePlayback()
         {
             if (previewSource == null) SetupAudioSource();
+            
+            // Handle Scrubbing Stop
+            if (!isPlaying && stopScrubTime > 0 && Time.realtimeSinceStartup >= stopScrubTime)
+            {
+                previewSource.Pause();
+                stopScrubTime = -1f;
+            }
+
             if (isPlaying)
             {
                 if (previewSource.isPlaying) currentTime = previewSource.time;
@@ -138,6 +154,9 @@ namespace BeatDodger.Editor
                 float totalWidth = currentMap.music.length * zoom;
                 Rect contentRect = GUILayoutUtility.GetRect(totalWidth, 200);
                 GUI.Box(contentRect, "", EditorStyles.helpBox);
+
+                // [파형 그리기]
+                DrawWaveform(contentRect);
 
                 Event e = Event.current;
                 float beatInterval = 60f / currentMap.bpm;
@@ -263,8 +282,16 @@ namespace BeatDodger.Editor
                             }
                             else // 일반 클릭 시 탐색(Scrubbing)
                             {
+                                float lastTime = currentTime;
                                 currentTime = Mathf.Clamp(localMouse.x / zoom, 0, currentMap.music.length - 0.01f);
-                                if (previewSource != null) previewSource.time = currentTime;
+                                if (previewSource != null) 
+                                {
+                                    previewSource.time = currentTime;
+                                    if (!isPlaying && !Mathf.Approximately(lastTime, currentTime))
+                                    {
+                                        ScrubSound();
+                                    }
+                                }
                             }
                             Repaint();
                         }
@@ -372,5 +399,68 @@ namespace BeatDodger.Editor
         private void TogglePlay() { if (isPlaying) { previewSource.Pause(); isPlaying = false; } else { previewSource.clip = currentMap.music; previewSource.time = Mathf.Clamp(currentTime, 0, currentMap.music.length - 0.01f); previewSource.pitch = playbackSpeed; previewSource.Play(); isPlaying = true; } }
         private void StopPlay() { if (previewSource != null) previewSource.Stop(); isPlaying = false; currentTime = 0; }
         private Color GetLaneColor(int lane) => lane switch { 0 => Color.cyan, 1 => Color.green, 2 => Color.yellow, 3 => Color.red, _ => Color.white };
+
+        private void ScrubSound()
+        {
+            if (previewSource == null || currentMap.music == null) return;
+            previewSource.pitch = playbackSpeed;
+            previewSource.Play();
+            stopScrubTime = Time.realtimeSinceStartup + 0.1f; // Play for exactly 100ms
+        }
+
+        private void DrawWaveform(Rect rect)
+        {
+            if (currentMap.music == null) return;
+            if (waveformTexture == null || lastWaveformClip != currentMap.music)
+            {
+                GenerateWaveform();
+            }
+
+            if (waveformTexture != null)
+            {
+                GUI.color = new Color(1, 0.5f, 0, 0.4f); // Orange with transparency
+                GUI.DrawTexture(rect, waveformTexture);
+                GUI.color = Color.white;
+            }
+        }
+
+        private void GenerateWaveform()
+        {
+            AudioClip clip = currentMap.music;
+            lastWaveformClip = clip;
+            
+            int width = WAVEFORM_RESOLUTION;
+            int height = 128;
+            waveformTexture = new Texture2D(width, height, TextureFormat.RGBA32, false);
+            
+            float[] samples = new float[clip.samples * clip.channels];
+            clip.GetData(samples, 0);
+
+            Color[] colors = new Color[width * height];
+            for (int i = 0; i < colors.Length; i++) colors[i] = Color.clear;
+
+            int packSize = (clip.samples * clip.channels) / width;
+            for (int x = 0; x < width; x++)
+            {
+                float max = 0;
+                for (int i = 0; i < packSize; i++)
+                {
+                    float val = Mathf.Abs(samples[x * packSize + i]);
+                    if (val > max) max = val;
+                }
+
+                int barHeight = Mathf.CeilToInt(max * height);
+                for (int y = 0; y < barHeight; y++)
+                {
+                    int topY = (height / 2) + (y / 2);
+                    int bottomY = (height / 2) - (y / 2);
+                    if (topY < height) colors[topY * width + x] = Color.white;
+                    if (bottomY >= 0) colors[bottomY * width + x] = Color.white;
+                }
+            }
+
+            waveformTexture.SetPixels(colors);
+            waveformTexture.Apply();
+        }
     }
 }

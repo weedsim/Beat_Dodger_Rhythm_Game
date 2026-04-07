@@ -22,13 +22,23 @@ namespace BeatDodger.Game
         public float MaxArcHeight => maxArcHeight;
         public float SideSwerveAmount => sideSwerveAmount;
 
-        private Vector3 controlPoint; // For Bezier calculation
+        private Vector3 controlPoint; 
         private Vector3 startPos;
         private Vector3 targetPos;
         private float arrivalTime;
         private float travelDuration;
         private float spawnTime;
 
+        [Header("Approach Circle")]
+        [SerializeField] private GameObject approachCircle;
+        [SerializeField] private float startScale = 1.5f;
+        [SerializeField] private float endScale = 1.0f;
+        [SerializeField] private Vector3 approachCircleRotationOffset = new Vector3(90f, 0f, 0f);
+        [Range(0.01f, 1.0f)]
+        [SerializeField] private float showThreshold = 0.3f; // Show only in the last 30% of travel
+        [SerializeField] private bool useFadeIn = true;
+
+        private SpriteRenderer _circleRenderer;
         private bool isReflected;
         private bool isActive;
 
@@ -56,9 +66,26 @@ namespace BeatDodger.Game
             isReflected = false;
             isActive = true;
             
-            // Generate a unique random control point for this flight path
             CalculateControlPoint(customArc, customSwerve);
             
+            if (approachCircle != null)
+            {
+                if (_circleRenderer == null) _circleRenderer = approachCircle.GetComponent<SpriteRenderer>();
+                
+                approachCircle.transform.position = targetPos;
+                approachCircle.transform.rotation = Quaternion.Euler(approachCircleRotationOffset);
+                approachCircle.transform.localScale = Vector3.one * startScale;
+                
+                // Initially hide or set alpha to 0
+                if (useFadeIn && _circleRenderer != null)
+                {
+                    Color c = _circleRenderer.color;
+                    c.a = 0;
+                    _circleRenderer.color = c;
+                }
+                approachCircle.SetActive(false);
+            }
+
             transform.position = startPos;
             gameObject.SetActive(true);
         }
@@ -66,11 +93,9 @@ namespace BeatDodger.Game
         private void CalculateControlPoint(float customArc, float customSwerve)
         {
             Vector3 midPoint = (startPos + targetPos) / 2f;
-            
             float height = (customArc >= 0) ? customArc : Random.Range(minArcHeight, maxArcHeight);
             float swerve = (customSwerve != -999f) ? customSwerve : Random.Range(-sideSwerveAmount, sideSwerveAmount);
             
-            // Create a randomized curve point
             Vector3 direction = (targetPos - startPos).normalized;
             Vector3 right = Vector3.Cross(Vector3.up, direction);
             
@@ -83,28 +108,62 @@ namespace BeatDodger.Game
 
             float currentTime = Time.time;
             float normalizedTime = (currentTime - spawnTime) / travelDuration;
-            
-            // 1. Apply Slingshot/Ease Curve for speed juice
             float easedT = speedCurve.Evaluate(normalizedTime);
 
             if (!isReflected)
             {
-                // 2. Quadratic Bezier: (1-t)^2*P0 + 2(1-t)t*P1 + t^2*P2
                 transform.position = CalculateBezierPoint(easedT, startPos, controlPoint, targetPos);
-                
                 transform.Rotate(rotationSpeed * Time.deltaTime);
+
+                HandleApproachCircle(normalizedTime);
 
                 if (normalizedTime > 1.1f) OnMiss();
             }
             else
             {
-                // Reflection: Returns simpler/faster for better feedback (or can be customized)
-                float reflectionT = (currentTime - arrivalTime) / (travelDuration * 0.7f); // Returns slightly faster
-                transform.position = Vector3.Lerp(targetPos, startPos, reflectionT);
+                if (approachCircle != null && approachCircle.activeSelf) approachCircle.SetActive(false);
+
+                float returnTime = travelDuration / manager.ReflectionSpeedMultiplier;
+                float reflectionT = (currentTime - arrivalTime) / returnTime; 
                 
-                transform.Rotate(rotationSpeed * 2f * Time.deltaTime); // Spins faster when reflected
+                Vector3 currentEnemyPos = startPos;
+                if (sourceEnemy != null) currentEnemyPos = sourceEnemy.transform.position;
+
+                transform.position = Vector3.Lerp(targetPos, currentEnemyPos, reflectionT);
+                transform.Rotate(rotationSpeed * 2f * Time.deltaTime);
 
                 if (reflectionT >= 1.0f) OnHitEnemy();
+            }
+        }
+
+        private void HandleApproachCircle(float normalizedTime)
+        {
+            if (approachCircle == null) return;
+
+            float showStartTime = 1.0f - showThreshold;
+
+            if (normalizedTime >= showStartTime && normalizedTime <= 1.05f)
+            {
+                if (!approachCircle.activeSelf) approachCircle.SetActive(true);
+                
+                approachCircle.transform.position = targetPos;
+                approachCircle.transform.rotation = Quaternion.Euler(approachCircleRotationOffset);
+                
+                float currentScale = Mathf.Lerp(startScale, endScale, normalizedTime);
+                approachCircle.transform.localScale = Vector3.one * currentScale;
+
+                if (useFadeIn && _circleRenderer != null)
+                {
+                    // Map [showStartTime, 1.0] to alpha [0, 1]
+                    float alphaT = (normalizedTime - showStartTime) / showThreshold;
+                    Color c = _circleRenderer.color;
+                    c.a = Mathf.Clamp01(alphaT);
+                    _circleRenderer.color = c;
+                }
+            }
+            else
+            {
+                if (approachCircle.activeSelf) approachCircle.SetActive(false);
             }
         }
 
@@ -113,17 +172,13 @@ namespace BeatDodger.Game
             float u = 1 - t;
             float tt = t * t;
             float uu = u * u;
-            
-            Vector3 p = uu * p0;
-            p += 2 * u * t * p1;
-            p += tt * p2;
+            Vector3 p = uu * p0 + 2 * u * t * p1 + tt * p2;
             return p;
         }
 
         public void Reflect()
         {
             if (isReflected || !isActive) return;
-            
             isReflected = true;
             arrivalTime = Time.time; 
         }
@@ -133,7 +188,8 @@ namespace BeatDodger.Game
             if (!isActive) return;
             isActive = false;
 
-            // Unlock the enemy so they can fire again if they didn't die
+            if (approachCircle != null) approachCircle.SetActive(false);
+
             if (sourceEnemy != null && !sourceEnemy.IsDead)
             {
                 sourceEnemy.SetFiring(false);
@@ -151,10 +207,7 @@ namespace BeatDodger.Game
 
         private void OnHitEnemy()
         {
-            if (sourceEnemy != null)
-            {
-                sourceEnemy.TakeDamage();
-            }
+            if (sourceEnemy != null) sourceEnemy.TakeDamage();
             ReturnToPool();
         }
     }

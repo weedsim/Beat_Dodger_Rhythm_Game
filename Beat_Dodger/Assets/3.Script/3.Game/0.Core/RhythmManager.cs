@@ -35,12 +35,18 @@ namespace BeatDodger.Game
         [SerializeField] private float gameIntroDelay = 3.0f; 
         [SerializeField] private int enemiesPerLane = 5; 
         [SerializeField] private float launchZ = 25f;    
+        [SerializeField] private float _reflectionSpeedMultiplier = 2.0f;
+
+        public float ReflectionSpeedMultiplier => _reflectionSpeedMultiplier;
         
         [Header("Judgment Windows (Seconds)")]
         [SerializeField] private float perfectWindow = 0.033f;   
         [SerializeField] private float excellentWindow = 0.075f; 
         [SerializeField] private float goodWindow = 0.095f;      
         [SerializeField] private float badWindowLimit = 0.200f;  
+        [SerializeField] private LayerMask groundLayer;
+        [SerializeField] private bool showDebugGUI = false;
+        [SerializeField] private bool autoStart = true; // Enabled by default as per request
         
         [Header("Score & Combo")]
         [SerializeField] private int baseNoteScore = 100;
@@ -128,8 +134,12 @@ namespace BeatDodger.Game
             {
                 var targetPrefab = prefab; // Closure 대응
                 var pool = new ObjectPool<Enemy>(
-                    createFunc: () => Instantiate(targetPrefab, enemyPoolParent),
-                    actionOnGet: e => { }, // 여기서 활성화하지 않고 Init에서 위치 잡은 후 활성화함
+                    createFunc: () => {
+                        var e = Instantiate(targetPrefab, enemyPoolParent);
+                        e.gameObject.SetActive(false); // 생성 즉시 비활성화하여 순간 노출 방지
+                        return e;
+                    },
+                    actionOnGet: e => { }, 
                     actionOnRelease: e => e.gameObject.SetActive(false),
                     actionOnDestroy: e => Destroy(e.gameObject),
                     defaultCapacity: 4
@@ -161,6 +171,11 @@ namespace BeatDodger.Game
             }
         }
 
+        private void Start()
+        {
+            if (autoStart) StartGame();
+        }
+
         private void SpawnEnemyInLane(int laneIndex)
         {
             if (enemySpawnZones == null || enemySpawnZones.Length <= laneIndex || enemySpawnZones[laneIndex] == null) return;
@@ -182,11 +197,19 @@ namespace BeatDodger.Game
             Vector3 center = box.center + box.transform.position;
             Vector3 size = box.size;
             
-            return new Vector3(
-                Random.Range(center.x - size.x / 2f, center.x + size.x / 2f),
-                center.y, 
-                Random.Range(center.z - size.z / 2f, center.z + size.z / 2f)
-            );
+            float x = Random.Range(center.x - size.x / 2f, center.x + size.x / 2f);
+            float z = Random.Range(center.z - size.z / 2f, center.z + size.z / 2f);
+            float y = center.y;
+
+            // Ground Snapping Logic: Start ray slightly above the box's bottom to only hit what's below
+            Vector3 rayStart = new Vector3(x, center.y + (size.y * 0.4f), z);
+            LayerMask mask = groundLayer.value == 0 ? (LayerMask)~0 : groundLayer;
+            if (Physics.Raycast(rayStart, Vector3.down, out RaycastHit hit, size.y + 5f, mask, QueryTriggerInteraction.Ignore))
+            {
+                y = hit.point.y;
+            }
+            
+            return new Vector3(x, y, z);
         }
 
         private void OnGUI()
@@ -225,6 +248,16 @@ namespace BeatDodger.Game
                 musicSource.playOnAwake = false;
                 musicSource.Stop();
                 
+                currentNoteIndex = 0;
+                isMusicPlayed = false;
+
+                // Clear any existing active notes
+                for (int i = 0; i < 4; i++)
+                {
+                    activeProjectiles[i].Clear();
+                    activeLongNotes[i].Clear();
+                }
+
                 gameTimer = -gameIntroDelay;
                 isGameStarted = true;
             }
@@ -321,7 +354,7 @@ namespace BeatDodger.Game
             var lp = longNotePool.Get();
             
             float actualArrivalTime = Time.time + travelDuration;
-            lp.Initialize(start, target, arc, swerve, actualArrivalTime, duration, travelDuration, lane, this);
+            lp.Initialize(shooter, start, target, arc, swerve, actualArrivalTime, duration, travelDuration, lane, this, longNotePool);
             
             activeLongNotes[lane].Add(lp);
         }
@@ -518,7 +551,7 @@ namespace BeatDodger.Game
             if (lane >= 0 && lane < activeLongNotes.Length)
             {
                 activeLongNotes[lane].Remove(lp);
-                longNotePool.Release(lp);
+                // longNotePool.Release(lp); // DELETED: Should be released by the object itself
             }
         }
 

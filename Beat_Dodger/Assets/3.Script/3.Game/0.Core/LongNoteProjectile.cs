@@ -1,27 +1,41 @@
 using UnityEngine;
+using UnityEngine.Pool;
 
 namespace BeatDodger.Game
 {
-    /// <summary>
-    /// Handles procedural tube mesh and holding logic for long notes.
-    /// Manages the visual length and holding state within the rhythm game.
-    /// </summary>
-    /// <summary>
-    /// Handles procedural tube mesh and curved movement for long notes.
-    /// Follows a Quadratic Bezier path and updates its mesh to flow along the curve.
-    /// </summary>
     public class LongNoteProjectile : MonoBehaviour
     {
         private TubeMeshGenerator _tubeGenerator;
-        [SerializeField] private float _radius = 0.4f;
-        [SerializeField] private int _pathResolution = 20; // Number of segments in the curve
+        private MeshRenderer _renderer;
         
+        [Header("Settings")]
+        [SerializeField] private float _radius = 0.4f;
+        [SerializeField] private int _pathResolution = 20;
+        [SerializeField] private AnimationCurve _taperingCurve = AnimationCurve.Linear(0, 1, 1, 1); 
+
+        [Header("Visuals")]
+        [SerializeField] private GameObject _headObject;
+        [SerializeField] private GameObject _tailObject;
+        [SerializeField] private Color _normalColor = Color.white;
+        [SerializeField] private Color _activeColor = Color.cyan;
+
+        [Header("Approach Circle (Osu Style)")]
+        [SerializeField] private GameObject approachCircle;
+        [SerializeField] private float startScale = 1.5f;
+        [SerializeField] private float endScale = 1.0f;
+        [SerializeField] private Vector3 approachCircleRotationOffset = new Vector3(90f, 0f, 0f);
+        [Range(0.01f, 1.0f)]
+        [SerializeField] private float showThreshold = 0.3f;
+        [SerializeField] private bool useFadeIn = true;
+        
+        private SpriteRenderer _circleRenderer;
         private float _noteStartTime;
         private float _duration;
         private float _travelDuration;
         private float _spawnTime;
         private int _laneIndex;
         private RhythmManager _manager;
+        private IObjectPool<LongNoteProjectile> _pool;
 
         private Vector3 _startPos;
         private Vector3 _targetPos;
@@ -30,16 +44,24 @@ namespace BeatDodger.Game
         private bool _isHolding = false;
         private bool _isSatisfied = false; 
         private bool _isActive = false;
-        private float _totalHeldTime = 0f; // 추가: 실제 누적 홀딩 시간
-        private JudgmentType _startJudgment; // 추가: 시작 판정 기억
+        private float _totalHeldTime = 0f;
+        private JudgmentType _startJudgment;
+        
+        // Reflection fields
+        private Enemy _sourceEnemy;
+        private bool _isReflected = false;
+        private float _reflectionStartTime;
 
         public float StartTime => _noteStartTime;
         public float EndTime => _noteStartTime + _duration;
         public int LaneIndex => _laneIndex;
         public bool IsHolding => _isHolding;
+        public JudgmentType StartJudgment => _startJudgment;
 
-        public void Initialize(Vector3 start, Vector3 target, float arc, float swerve, float startTime, float duration, float travelDur, int lane, RhythmManager manager)
+        public void Initialize(Enemy source, Vector3 start, Vector3 target, float arc, float swerve, float startTime, float duration, float travelDur, int lane, RhythmManager manager, IObjectPool<LongNoteProjectile> pool)
         {
+            _sourceEnemy = source;
+            _pool = pool;
             _startPos = start;
             _targetPos = target;
             _noteStartTime = startTime;
@@ -52,48 +74,121 @@ namespace BeatDodger.Game
             _totalHeldTime = 0f; 
             _isSatisfied = false; 
             _isActive = true;
-            _startJudgment = JudgmentType.None; // 초기화
+            _isHolding = false;
+            _isReflected = false;
+            _startJudgment = JudgmentType.None;
 
-            // Projectile과 동일한 곡선 제어점 계산
+            transform.rotation = Quaternion.identity;
+            transform.localScale = Vector3.one;
+
             Vector3 midPoint = (_startPos + _targetPos) / 2f;
             Vector3 direction = (_targetPos - _startPos).normalized;
             Vector3 right = Vector3.Cross(Vector3.up, direction);
             _controlPoint = midPoint + (Vector3.up * arc) + (right * swerve);
 
             if (_tubeGenerator == null) _tubeGenerator = GetComponent<TubeMeshGenerator>();
-            Update(); // Initial position/mesh
+            if (_renderer == null) _renderer = GetComponent<MeshRenderer>();
+            
+            if (_tubeGenerator != null) _tubeGenerator.enabled = true;
+            if (_renderer != null) _renderer.enabled = true;
+            if (gameObject.activeSelf == false) gameObject.SetActive(true);
+
+            if (approachCircle != null)
+            {
+                if (_circleRenderer == null) _circleRenderer = approachCircle.GetComponent<SpriteRenderer>();
+
+                approachCircle.transform.position = _targetPos;
+                approachCircle.transform.rotation = Quaternion.Euler(approachCircleRotationOffset);
+                approachCircle.transform.localScale = Vector3.one * startScale;
+
+                if (useFadeIn && _circleRenderer != null)
+                {
+                    Color c = _circleRenderer.color;
+                    c.a = 0;
+                    _circleRenderer.color = c;
+                }
+                approachCircle.SetActive(false);
+            }
+
+            UpdateVisualState(false);
+            if (_headObject != null) _headObject.SetActive(false);
+            if (_tailObject != null) _tailObject.SetActive(true); 
+            
+            Update(); 
         }
 
         public void OnHit(JudgmentType judgment)
         {
             _startJudgment = judgment;
             _isHolding = true;
+            UpdateVisualState(true);
+            
+            if (approachCircle != null) approachCircle.SetActive(false);
         }
 
         public void SetHolding(bool holding)
         {
-            _isHolding = holding;
+            if (_isHolding != holding)
+            {
+                _isHolding = holding;
+                UpdateVisualState(_isHolding);
+            }
         }
 
-        public JudgmentType StartJudgment => _startJudgment;
+        private void UpdateVisualState(bool active)
+        {
+            if (_renderer != null)
+            {
+                if (_renderer.material.HasProperty("_Color"))
+                    _renderer.material.SetColor("_Color", active ? _activeColor : _normalColor);
+                
+                if (_renderer.material.HasProperty("_EmissionColor"))
+                    _renderer.material.SetColor("_EmissionColor", active ? _activeColor * 2f : Color.black);
+            }
+        }
 
         private void Update()
         {
             if (!_isActive) return;
 
+            if (!_isReflected)
+            {
+                HandleFlowState();
+            }
+            else
+            {
+                HandleReflectionState();
+            }
+        }
+
+        private void HandleFlowState()
+        {
             float elapsed = Time.time - _spawnTime;
-            
-            // 롱노트의 머리(Head)와 꼬리(Tail)의 진행도(0~1) 계산
             float headT = elapsed / _travelDuration;
             float tailT = (elapsed - _duration) / _travelDuration;
 
-            // 화면에 보이는 구간의 포인트를 추출하여 메시 생성
-            GenerateCurvedMesh(Mathf.Clamp01(tailT), Mathf.Clamp01(headT));
+            float clampedHeadT = Mathf.Clamp01(headT);
+            float clampedTailT = Mathf.Clamp01(tailT);
 
-            // 오브젝트의 위치는 머리에 맞춤 (파티클 등 연출용)
-            transform.position = CalculateBezierPoint(Mathf.Clamp01(headT), _startPos, _controlPoint, _targetPos);
+            Vector3 worldHeadPos = CalculateBezierPoint(clampedHeadT, _startPos, _controlPoint, _targetPos);
+            transform.position = worldHeadPos;
 
-            // [추가] 75% 이상 눌렀는지 체크 및 홀딩 시간 누적
+            GenerateCurvedMesh(clampedTailT, clampedHeadT);
+
+            HandleApproachCircle(clampedHeadT);
+
+            if (_headObject != null)
+            {
+                _headObject.SetActive(headT > 0 && headT < 1.05f);
+                _headObject.transform.position = worldHeadPos;
+            }
+            if (_tailObject != null)
+            {
+                Vector3 worldTailPos = CalculateBezierPoint(clampedTailT, _startPos, _controlPoint, _targetPos);
+                _tailObject.SetActive(tailT > -0.1f && tailT < 1.05f);
+                _tailObject.transform.position = worldTailPos;
+            }
+
             if (_isHolding)
             {
                 _totalHeldTime += Time.deltaTime;
@@ -101,10 +196,90 @@ namespace BeatDodger.Game
                 if (progress >= 0.75f) _isSatisfied = true;
             }
 
-            // 꼬리까지 판정선을 지나가면 소멸
-            if (tailT > 1.05f)
+            if (tailT > 1.05f) OnFinish();
+        }
+
+        private void HandleApproachCircle(float normalizedTime)
+        {
+            if (approachCircle == null || _isHolding) return;
+
+            float showStartTime = 1.0f - showThreshold;
+
+            if (normalizedTime >= showStartTime && normalizedTime <= 1.05f)
             {
-                OnFinish(); // OnMiss 대신 OnFinish 호출
+                if (!approachCircle.activeSelf) approachCircle.SetActive(true);
+                
+                approachCircle.transform.position = _targetPos;
+                approachCircle.transform.rotation = Quaternion.Euler(approachCircleRotationOffset);
+                
+                float currentScale = Mathf.Lerp(startScale, endScale, normalizedTime);
+                approachCircle.transform.localScale = Vector3.one * currentScale;
+
+                if (useFadeIn && _circleRenderer != null)
+                {
+                    float alphaT = (normalizedTime - showStartTime) / showThreshold;
+                    Color c = _circleRenderer.color;
+                    c.a = Mathf.Clamp01(alphaT);
+                    _circleRenderer.color = c;
+                }
+            }
+            else
+            {
+                if (approachCircle.activeSelf) approachCircle.SetActive(false);
+            }
+        }
+
+        private void HandleReflectionState()
+        {
+            if (approachCircle != null) approachCircle.SetActive(false);
+
+            float returnTime = _travelDuration / _manager.ReflectionSpeedMultiplier;
+            float reflectionT = (Time.time - _reflectionStartTime) / returnTime;
+            
+            Vector3 currentEnemyPos = _startPos;
+            if (_sourceEnemy != null) currentEnemyPos = _sourceEnemy.transform.position;
+
+            if (_tailObject != null)
+            {
+                _tailObject.transform.position = Vector3.Lerp(_targetPos, currentEnemyPos, reflectionT);
+                _tailObject.transform.Rotate(Vector3.up * 720f * Time.deltaTime);
+            }
+
+            if (reflectionT >= 1.0f)
+            {
+                if (_sourceEnemy != null) _sourceEnemy.TakeDamage();
+                ReturnToPool();
+            }
+        }
+
+        private void OnFinish()
+        {
+            if (approachCircle != null) approachCircle.SetActive(false);
+
+            float ratio = Mathf.Clamp01(_totalHeldTime / _duration);
+            JudgmentType finalJudgment = JudgmentType.Miss;
+
+            if (ratio >= 0.99f) finalJudgment = JudgmentType.Perfect;
+            else if (ratio >= 0.85f) finalJudgment = JudgmentType.Excellent;
+            else if (ratio >= 0.75f) finalJudgment = JudgmentType.Good;
+
+            _manager.ResolveLongNoteEnd(finalJudgment, _laneIndex, this);
+
+            if (finalJudgment != JudgmentType.Miss && finalJudgment != JudgmentType.None)
+            {
+                _isReflected = true;
+                _reflectionStartTime = Time.time;
+                _isHolding = false;
+                
+                if (_renderer != null) _renderer.enabled = false;
+                if (_tubeGenerator != null) _tubeGenerator.enabled = false;
+                
+                if (_headObject != null) _headObject.SetActive(false);
+                if (_tailObject != null) _tailObject.SetActive(true); 
+            }
+            else
+            {
+                ReturnToPool();
             }
         }
 
@@ -119,7 +294,7 @@ namespace BeatDodger.Game
                 pathSteps[i] = CalculateBezierPoint(t, _startPos, _controlPoint, _targetPos);
             }
 
-            _tubeGenerator.Generate(pathSteps, _radius);
+            _tubeGenerator.Generate(pathSteps, _radius, _taperingCurve);
         }
 
         private Vector3 CalculateBezierPoint(float t, Vector3 p0, Vector3 p1, Vector3 p2)
@@ -127,32 +302,16 @@ namespace BeatDodger.Game
             float u = 1 - t;
             float tt = t * t;
             float uu = u * u;
-            Vector3 p = uu * p0;
-            p += 2 * u * t * p1;
-            p += tt * p2;
+            Vector3 p = uu * p0 + 2 * u * t * p1 + tt * p2;
             return p;
-        }
-
-        private void OnFinish() // OnMiss에서 OnFinish로 변경 및 로직 강화
-        {
-            // 최종 홀딩 비율 계산 (0.0 ~ 1.0)
-            float ratio = Mathf.Clamp01(_totalHeldTime / _duration);
-            
-            JudgmentType finalJudgment = JudgmentType.Miss;
-
-            // 100% Perfect, 85% Excellent, 75% Good 판정
-            if (ratio >= 0.99f) finalJudgment = JudgmentType.Perfect;
-            else if (ratio >= 0.85f) finalJudgment = JudgmentType.Excellent;
-            else if (ratio >= 0.75f) finalJudgment = JudgmentType.Good;
-
-            // 매니저를 통해 정산
-            _manager.ResolveLongNoteEnd(finalJudgment, _laneIndex, this);
         }
 
         public void ReturnToPool()
         {
             _isActive = false;
-            gameObject.SetActive(false);
+            if (approachCircle != null) approachCircle.SetActive(false);
+            if (_pool != null) _pool.Release(this);
+            else gameObject.SetActive(false);
         }
     }
 }

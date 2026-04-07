@@ -1,0 +1,179 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e322a670e6545da498bccfd25abe41b3, type: 3}
+  m_Name: 120bpm_v1_total
+  m_EditorClassIdentifier: Assembly-CSharp::BeatDodger.Core.NoteMapData
+  music: {fileID: 8300000, guid: f56ddce3c17ece64ab5dde92d266bccd, type: 3}
+  bpm: 120
+  notes:
+  - time: 0.15
+    lane: 0
+    duration: 0
+  - time: 0.25
+    lane: 1
+    duration: 0
+  - time: 1.15
+    lane: 3
+    duration: 0
+  - time: 1.25
+    lane: 2
+    duration: 0
+  - time: 2.15
+    lane: 0
+    duration: 0
+  - time: 2.25
+    lane: 1
+    duration: 0
+  - time: 3.15
+    lane: 3
+    duration: 0
+  - time: 3.25
+    lane: 2
+    duration: 0
+  - time: 4
+    lane: 0
+    duration: 0
+  - time: 4.001168
+    lane: 1
+    duration: 0
+  - time: 4.001168
+    lane: 3
+    duration: 0
+  - time: 4.001168
+    lane: 2
+    duration: 0
+  - time: 5.111439
+    lane: 2
+    duration: 0
+  - time: 5.111439
+    lane: 1
+    duration: 0
+  - time: 5.111439
+    lane: 3
+    duration: 0
+  - time: 5.125
+    lane: 0
+    duration: 0
+  - time: 6
+    lane: 0
+    duration: 0
+  - time: 6.012226
+    lane: 1
+    duration: 0
+  - time: 6.012226
+    lane: 3
+    duration: 0
+  - time: 6.012226
+    lane: 2
+    duration: 0
+  - time: 6.368351
+    lane: 1
+    duration: 0
+  - time: 6.368351
+    lane: 2
+    duration: 0
+  - time: 6.368351
+    lane: 3
+    duration: 0
+  - time: 6.375
+    lane: 0
+    duration: 0
+  - time: 7
+    lane: 0
+    duration: 0
+  - time: 7.125
+    lane: 1
+    duration: 0
+  - time: 7.25
+    lane: 2
+    duration: 0
+  - time: 7.375
+    lane: 3
+    duration: 0
+  - time: 7.5
+    lane: 2
+    duration: 0
+  - time: 7.625
+    lane: 1
+    duration: 0
+  - time: 7.75
+    lane: 0
+    duration: 0
+  - time: 8.125
+    lane: 0
+    duration: 0
+  - time: 8.5
+    lane: 0
+    duration: 0
+  - time: 8.625
+    lane: 1
+    duration: 0
+  - time: 8.75
+    lane: 2
+    duration: 0
+  - time: 8.875
+    lane: 3
+    duration: 0
+  - time: 9.125
+    lane: 0
+    duration: 0
+  - time: 9.5
+    lane: 0
+    duration: 0
+  - time: 9.625
+    lane: 1
+    duration: 0
+  - time: 9.75
+    lane: 2
+    duration: 0
+  - time: 9.875
+    lane: 3
+    duration: 0
+  - time: 10.125
+    lane: 0
+    duration: 0
+  - time: 10.5
+    lane: 0
+    duration: 0
+  - time: 10.625
+    lane: 1
+    duration: 0
+  - time: 10.75
+    lane: 2
+    duration: 0
+  - time: 10.875
+    lane: 3
+    duration: 0
+  - time: 11.125
+    lane: 0
+    duration: 0
+  - time: 11.25
+    lane: 1
+    duration: 0
+  - time: 11.375
+    lane: 2
+    duration: 0
+  - time: 11.5
+    lane: 3
+    duration: 0
+  - time: 11.625
+    lane: 0
+    duration: 0
+  - time: 11.75
+    lane: 1
+    duration: 0
+  - time: 11.875
+    lane: 2
+    duration: 0
+  - time: 12
+    lane: 3
+    duration: 0

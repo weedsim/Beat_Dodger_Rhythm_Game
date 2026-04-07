@@ -2089,7 +2089,7 @@ BoxCollider:
   m_Enabled: 1
   serializedVersion: 3
   m_Size: {x: 5, y: 1, z: 5}
-  m_Center: {x: 0, y: 0, z: 0}
+  m_Center: {x: 0, y: -0.5, z: 0}
 --- !u!4 &557970007
 Transform:
   m_ObjectHideFlags: 0
@@ -3659,17 +3659,23 @@ MonoBehaviour:
   enemyPoolParent: {fileID: 0}
   projectilePoolParent: {fileID: 0}
   longNotePoolParent: {fileID: 0}
-  mapData: {fileID: 11400000, guid: c0b2b50fc8826964fbbecf850b8e825e, type: 2}
+  mapData: {fileID: 11400000, guid: b17ef0d787af51d4693d841cd45a7d51, type: 2}
   musicSource: {fileID: 874173068}
-  bpm: 60
+  bpm: 120
   travelDuration: 2
   gameIntroDelay: 2
   enemiesPerLane: 10
   launchZ: 15.8
+  _reflectionSpeedMultiplier: 4
   perfectWindow: 0.033
   excellentWindow: 0.075
   goodWindow: 0.095
   badWindowLimit: 0.35
+  groundLayer:
+    serializedVersion: 2
+    m_Bits: 64
+  showDebugGUI: 0
+  autoStart: 1
   baseNoteScore: 100
   currentScore: 0
   scoreUI: {fileID: 1020268993}
@@ -3705,7 +3711,7 @@ AudioSource:
   serializedVersion: 4
   OutputAudioMixerGroup: {fileID: 0}
   m_audioClip: {fileID: 0}
-  m_Resource: {fileID: 8300000, guid: 4713804b8445c6949a55bc64cba310c4, type: 3}
+  m_Resource: {fileID: 8300000, guid: f56ddce3c17ece64ab5dde92d266bccd, type: 3}
   m_PlayOnAwake: 0
   m_Volume: 1
   m_Pitch: 1
@@ -3843,7 +3849,7 @@ BoxCollider:
   m_Enabled: 1
   serializedVersion: 3
   m_Size: {x: 5, y: 1, z: 5}
-  m_Center: {x: 0, y: 0, z: 0}
+  m_Center: {x: 0, y: -0.5, z: 0}
 --- !u!1 &919772470
 GameObject:
   m_ObjectHideFlags: 0
@@ -6010,7 +6016,7 @@ Transform:
   m_GameObject: {fileID: 1424451508}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: -1.106, y: 0.85, z: -1.6590004}
+  m_LocalPosition: {x: -1.109, y: 0.85, z: -1.6590004}
   m_LocalScale: {x: 1, y: 0.1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
@@ -6573,7 +6579,7 @@ BoxCollider:
   m_Enabled: 1
   serializedVersion: 3
   m_Size: {x: 5, y: 1, z: 5}
-  m_Center: {x: 0, y: 0, z: 0}
+  m_Center: {x: 0, y: -0.5, z: 0}
 --- !u!1 &1598380088
 GameObject:
   m_ObjectHideFlags: 0
@@ -35499,7 +35505,7 @@ GameObject:
   - component: {fileID: 1981548199}
   - component: {fileID: 1982351003}
   - component: {fileID: 1983448283}
-  m_Layer: 0
+  m_Layer: 6
   m_Name: PQ_Road
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -259160,7 +259166,7 @@ BoxCollider:
   m_Enabled: 1
   serializedVersion: 3
   m_Size: {x: 5, y: 1, z: 5}
-  m_Center: {x: 0, y: 0, z: 0}
+  m_Center: {x: 0, y: -0.5, z: 0}
 --- !u!1 &2055825946
 GameObject:
   m_ObjectHideFlags: 0
