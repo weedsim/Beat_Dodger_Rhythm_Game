@@ -3,6 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using TMPro;
+using Mirror;
 
 public class LoginUIManager : MonoBehaviour
 {
@@ -47,6 +48,7 @@ public class LoginUIManager : MonoBehaviour
     public void StartGame()
     {
         lobbyPanel.SetActive(false);
+        Debug.Log("UI 매니저: 게임 화면으로 전환 완료!");
     }
     public void UpdatePlayerStatus(int playerIndex, bool isReady)
     {
@@ -57,6 +59,22 @@ public class LoginUIManager : MonoBehaviour
                 playerStatusTexts[playerIndex].text = $"Player {playerIndex + 1}: <color=green>Ready!</color>";
             else
                 playerStatusTexts[playerIndex].text = $"Player {playerIndex + 1}: <color=red>Not Ready</color>";
+        }
+    }
+    public void OnClickReadyButton()
+    {
+        // NetworkClient.localPlayer는 미러 서버에 접속된 '나의 캐릭터'를 찾는 마법이옵니다!
+        if (NetworkClient.localPlayer != null)
+        {
+            LobbyPlayer myPlayer = NetworkClient.localPlayer.GetComponent<LobbyPlayer>();
+            if (myPlayer != null)
+            {
+                myPlayer.CmdToggleReady(); // 내 캐릭터에게 레디 신호를 보냅니다요!
+            }
+        }
+        else
+        {
+            Debug.LogError("주인님! 아직 서버에 접속(Start Host/Client)을 안 하셔서 캐릭터가 없사옵니다!");
         }
     }
 }

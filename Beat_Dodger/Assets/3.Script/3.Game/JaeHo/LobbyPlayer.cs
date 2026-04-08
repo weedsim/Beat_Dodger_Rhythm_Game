@@ -66,8 +66,18 @@ public class LobbyPlayer : NetworkBehaviour
 
         if (allReady)
         {
+            RpcTransitionToGameUI();
             Debug.Log(" [서버] 전원 레디 완료! 카운트다운 시작!");
-            RhythmNetworkManager.Instance.ServerStartCountdown();
+            if (RhythmNetworkManager.Instance != null)
+                RhythmNetworkManager.Instance.ServerStartCountdown();
+        }
+    }
+    [ClientRpc]
+    private void RpcTransitionToGameUI()
+    {
+        if (LoginUIManager.Instance != null)
+        {
+            LoginUIManager.Instance.StartGame(); // 각자의 컴퓨터에서 로비창 끄고 게임창 켜기!
         }
     }
 }
