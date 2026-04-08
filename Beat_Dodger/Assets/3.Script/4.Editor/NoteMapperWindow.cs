@@ -36,6 +36,7 @@ namespace BeatDodger.Editor
         private bool isDragging = false;
         private bool isDraggingTail = false;
         private Vector2 dragOffset; // X/Y 오프셋 통합 관리
+        private HashSet<int> overlappingIndices = new HashSet<int>();
 
         [MenuItem("BeatDodger/Note Mapper")]
         public static void ShowWindow() => GetWindow<NoteMapperWindow>("Note Mapper");
@@ -138,6 +139,10 @@ namespace BeatDodger.Editor
                 }
                 
                 GUILayout.FlexibleSpace();
+                if (overlappingIndices.Count > 0)
+                {
+                    EditorGUILayout.LabelField($"Overlap: {overlappingIndices.Count}", EditorStyles.boldLabel, GUILayout.Width(80));
+                }
                 EditorGUILayout.LabelField($"Time: {currentTime:F2}s", EditorStyles.miniLabel, GUILayout.Width(80));
             }
         }
@@ -180,6 +185,7 @@ namespace BeatDodger.Editor
                     {
                         isDragging = false;
                         currentMap.notes.Sort((a, b) => a.time.CompareTo(b.time));
+                        CheckOverlaps();
                         EditorUtility.SetDirty(currentMap);
                     }
                     Repaint();
@@ -197,12 +203,15 @@ namespace BeatDodger.Editor
                     {
                         isDraggingTail = false;
                         currentMap.notes.Sort((a, b) => a.time.CompareTo(b.time));
+                        CheckOverlaps();
                         EditorUtility.SetDirty(currentMap);
                     }
                     Repaint();
                 }
 
                 // [배경 그리드]
+                CheckOverlaps(); // Repaint 시 실시간 체크 (드래그 중에도 확인 가능)
+
                 for (float t = 0; t < currentMap.music.length; t += beatInterval)
                 {
                     float x = t * zoom;
@@ -241,6 +250,12 @@ namespace BeatDodger.Editor
                     }
 
                     // 선택 가이드 및 헤드
+                    if (overlappingIndices.Contains(i))
+                    {
+                        // 겹침 경고 (빨간색 테두리)
+                        EditorGUI.DrawRect(new Rect(noteRect.x - 3, noteRect.y - 3, noteRect.width + 6 + (note.duration * zoom), noteRect.height + 6), new Color(1, 0, 0, 0.8f));
+                    }
+
                     if (i == selectedNoteIndex) EditorGUI.DrawRect(new Rect(noteRect.x - 2, noteRect.y - 2, noteRect.width + 4 + (note.duration * zoom), noteRect.height + 4), Color.white * 0.5f);
                     EditorGUI.DrawRect(noteRect, GetLaneColor(note.lane));
                     
@@ -257,6 +272,7 @@ namespace BeatDodger.Editor
                         {
                             currentMap.notes.RemoveAt(i);
                             selectedNoteIndex = -1;
+                            CheckOverlaps();
                             EditorUtility.SetDirty(currentMap);
                             e.Use(); break;
                         }
@@ -278,6 +294,7 @@ namespace BeatDodger.Editor
                                 currentMap.notes.Add(new NoteInfo { time = newTime, lane = newLane });
                                 currentMap.notes.Sort((a, b) => a.time.CompareTo(b.time));
                                 selectedNoteIndex = currentMap.notes.FindIndex(n => Mathf.Approximately(n.time, newTime) && n.lane == newLane);
+                                CheckOverlaps();
                                 EditorUtility.SetDirty(currentMap);
                             }
                             else // 일반 클릭 시 탐색(Scrubbing)
@@ -380,9 +397,72 @@ namespace BeatDodger.Editor
                 lastEnergy = currentEnergy;
             }
 
+            CheckOverlaps();
             EditorUtility.SetDirty(currentMap);
             AssetDatabase.SaveAssets();
             Debug.Log($"<color=cyan>[SmartAutoMap]</color> Success! Generated {currentMap.notes.Count} notes with custom patterns.");
+        }
+
+        private void CheckOverlaps()
+        {
+            overlappingIndices.Clear();
+            if (currentMap == null || currentMap.notes.Count < 2) return;
+
+            // 레인별로 노트를 분류하여 인덱스와 함께 저장
+            List<NoteInfo>[] laneNotes = new List<NoteInfo>[4];
+            List<int>[] laneIndices = new List<int>[4];
+            for (int i = 0; i < 4; i++)
+            {
+                laneNotes[i] = new List<NoteInfo>();
+                laneIndices[i] = new List<int>();
+            }
+
+            for (int i = 0; i < currentMap.notes.Count; i++)
+            {
+                int lane = currentMap.notes[i].lane;
+                laneNotes[lane].Add(currentMap.notes[i]);
+                laneIndices[lane].Add(i);
+            }
+
+            for (int l = 0; l < 4; l++)
+            {
+                var notes = laneNotes[l];
+                var indices = laneIndices[l];
+
+                for (int i = 0; i < notes.Count; i++)
+                {
+                    for (int j = i + 1; j < notes.Count; j++)
+                    {
+                        float s1 = notes[i].time;
+                        float e1 = s1 + notes[i].duration;
+                        float s2 = notes[j].time;
+                        float e2 = s2 + notes[j].duration;
+
+                        bool overlap = false;
+
+                        // Max(Start) < Min(End)는 두 구간이 겹침을 의미함
+                        // 단, 완전히 붙어있는 경우(e1 == s2)는 허용하기 위해 아주 작은 여유값(0.001s)을 둠
+                        float overlapStart = Mathf.Max(s1, s2);
+                        float overlapEnd = Mathf.Min(e1, e2);
+
+                        if (overlapStart < overlapEnd - 0.001f)
+                        {
+                            overlap = true;
+                        }
+                        else
+                        {
+                            // 구간이 겹치지 않더라도 시작 시간이 아예 똑같으면 겹침으로 간주
+                            if (Mathf.Approximately(s1, s2)) overlap = true;
+                        }
+
+                        if (overlap)
+                        {
+                            overlappingIndices.Add(indices[i]);
+                            overlappingIndices.Add(indices[j]);
+                        }
+                    }
+                }
+            }
         }
 
         private void HandleInput()
@@ -395,7 +475,13 @@ namespace BeatDodger.Editor
             }
         }
 
-        private void AddNote(float time, int lane) { currentMap.notes.Add(new NoteInfo { time = time, lane = lane }); currentMap.notes.Sort((a, b) => a.time.CompareTo(b.time)); EditorUtility.SetDirty(currentMap); }
+        private void AddNote(float time, int lane) 
+        { 
+            currentMap.notes.Add(new NoteInfo { time = time, lane = lane }); 
+            currentMap.notes.Sort((a, b) => a.time.CompareTo(b.time)); 
+            CheckOverlaps();
+            EditorUtility.SetDirty(currentMap); 
+        }
         private void TogglePlay() { if (isPlaying) { previewSource.Pause(); isPlaying = false; } else { previewSource.clip = currentMap.music; previewSource.time = Mathf.Clamp(currentTime, 0, currentMap.music.length - 0.01f); previewSource.pitch = playbackSpeed; previewSource.Play(); isPlaying = true; } }
         private void StopPlay() { if (previewSource != null) previewSource.Stop(); isPlaying = false; currentTime = 0; }
         private Color GetLaneColor(int lane) => lane switch { 0 => Color.cyan, 1 => Color.green, 2 => Color.yellow, 3 => Color.red, _ => Color.white };

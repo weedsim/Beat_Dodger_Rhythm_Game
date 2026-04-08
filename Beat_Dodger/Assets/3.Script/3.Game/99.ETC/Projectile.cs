@@ -59,6 +59,7 @@ namespace BeatDodger.Game
             targetPos = target;
             travelDuration = duration;
             laneIndex = lane;
+            ApplyLaneColor(lane);
             
             spawnTime = Time.time;
             arrivalTime = spawnTime + duration;
@@ -156,7 +157,7 @@ namespace BeatDodger.Game
                 {
                     // Map [showStartTime, 1.0] to alpha [0, 1]
                     float alphaT = (normalizedTime - showStartTime) / showThreshold;
-                    Color c = _circleRenderer.color;
+                    Color c = GetLaneColor(laneIndex);
                     c.a = Mathf.Clamp01(alphaT);
                     _circleRenderer.color = c;
                 }
@@ -210,5 +211,35 @@ namespace BeatDodger.Game
             if (sourceEnemy != null) sourceEnemy.TakeDamage();
             ReturnToPool();
         }
+
+        private void ApplyLaneColor(int lane)
+        {
+            Color laneColor = GetLaneColor(lane);
+            
+            // 모든 자식 MeshRenderer 색상 적용
+            var renderers = GetComponentsInChildren<MeshRenderer>();
+            foreach (var mr in renderers)
+            {
+                SetMaterialColor(mr.material, laneColor);
+            }
+        }
+
+        private void SetMaterialColor(Material mat, Color targetColor)
+        {
+            // URP (_BaseColor) 및 Standard (_Color) 모두 대응
+            if (mat.HasProperty("_BaseColor")) mat.SetColor("_BaseColor", targetColor);
+            else if (mat.HasProperty("_Color")) mat.SetColor("_Color", targetColor);
+            
+            if (mat.HasProperty("_EmissionColor"))
+                mat.SetColor("_EmissionColor", targetColor * 2f);
+        }
+
+        private Color GetLaneColor(int lane) => lane switch { 
+            0 => Color.cyan, 
+            1 => Color.green, 
+            2 => Color.yellow, 
+            3 => Color.red, 
+            _ => Color.white 
+        };
     }
 }

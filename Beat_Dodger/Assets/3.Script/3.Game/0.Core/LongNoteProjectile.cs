@@ -69,6 +69,10 @@ namespace BeatDodger.Game
             _travelDuration = travelDur;
             _laneIndex = lane;
             _manager = manager;
+
+            // 레인에 따른 색상 설정
+            _normalColor = GetLaneColor(lane);
+            _activeColor = _normalColor; // 일단 동일하게 설정 (필요 시 더 밝게 조정 가능)
             
             _spawnTime = Time.time;
             _totalHeldTime = 0f; 
@@ -111,6 +115,8 @@ namespace BeatDodger.Game
             }
 
             UpdateVisualState(false);
+            ApplyColorToObjects();
+
             if (_headObject != null) _headObject.SetActive(false);
             if (_tailObject != null) _tailObject.SetActive(true); 
             
@@ -139,12 +145,19 @@ namespace BeatDodger.Game
         {
             if (_renderer != null)
             {
-                if (_renderer.material.HasProperty("_Color"))
-                    _renderer.material.SetColor("_Color", active ? _activeColor : _normalColor);
-                
-                if (_renderer.material.HasProperty("_EmissionColor"))
-                    _renderer.material.SetColor("_EmissionColor", active ? _activeColor * 2f : Color.black);
+                Color targetColor = active ? _activeColor : _normalColor;
+                SetMaterialColor(_renderer.material, targetColor, active);
             }
+        }
+
+        private void SetMaterialColor(Material mat, Color targetColor, bool active)
+        {
+            // URP (_BaseColor) 및 Standard (_Color) 모두 대응
+            if (mat.HasProperty("_BaseColor")) mat.SetColor("_BaseColor", targetColor);
+            else if (mat.HasProperty("_Color")) mat.SetColor("_Color", targetColor);
+            
+            if (mat.HasProperty("_EmissionColor"))
+                mat.SetColor("_EmissionColor", active ? targetColor * 2f : Color.black);
         }
 
         private void Update()
@@ -218,7 +231,7 @@ namespace BeatDodger.Game
                 if (useFadeIn && _circleRenderer != null)
                 {
                     float alphaT = (normalizedTime - showStartTime) / showThreshold;
-                    Color c = _circleRenderer.color;
+                    Color c = _normalColor;
                     c.a = Mathf.Clamp01(alphaT);
                     _circleRenderer.color = c;
                 }
@@ -313,5 +326,27 @@ namespace BeatDodger.Game
             if (_pool != null) _pool.Release(this);
             else gameObject.SetActive(false);
         }
+
+        private void ApplyColorToObjects()
+        {
+            // Head/Tail 오브젝트 및 모든 자식 MeshRenderer 색상 적용
+            foreach (var obj in new GameObject[] { _headObject, _tailObject })
+            {
+                if (obj == null) continue;
+                var renderers = obj.GetComponentsInChildren<MeshRenderer>();
+                foreach (var mr in renderers)
+                {
+                    SetMaterialColor(mr.material, _normalColor, false);
+                }
+            }
+        }
+
+        private Color GetLaneColor(int lane) => lane switch { 
+            0 => Color.cyan, 
+            1 => Color.green, 
+            2 => Color.yellow, 
+            3 => Color.red, 
+            _ => Color.white 
+        };
     }
 }

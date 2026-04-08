@@ -38,6 +38,7 @@ namespace BeatDodger.Game
         [SerializeField] private float _reflectionSpeedMultiplier = 2.0f;
 
         public float ReflectionSpeedMultiplier => _reflectionSpeedMultiplier;
+        public Vector3 GetJudgePosition(int lane) => (lane >= 0 && lane < judgePoints.Length) ? judgePoints[lane].position : Vector3.zero;
         
         [Header("Judgment Windows (Seconds)")]
         [SerializeField] private float perfectWindow = 0.033f;   
@@ -269,12 +270,16 @@ namespace BeatDodger.Game
             {
                 activeEnemies[laneIndex].Remove(enemy);
                 
-                // 해당 적의 풀을 찾아 반환해야 합니다. 
-                // 간단히 하기 위해 Enemy 클래스에 PrefabIndex 등을 추가할 수 있으나,
-                // 여기서는 적 자체를 그냥 릴리즈 하는 대신 수동으로 관리하거나 
-                // 풀 리스트에서 찾아서 릴리즈 해야 합니다. 
-                // 우선은 적 클래스에 PoolId를 저장하는 방식을 추천하지만, 현재 코드 구조상 비활성화만 유지하겠습니다.
-                enemy.gameObject.SetActive(false);
+                // Release to the original pool for reuse
+                if (enemy.OriginPoolId >= 0 && enemy.OriginPoolId < enemyPools.Count)
+                {
+                    enemyPools[enemy.OriginPoolId].Release(enemy);
+                }
+                else
+                {
+                    enemy.gameObject.SetActive(false);
+                }
+
                 SpawnEnemyInLane(laneIndex);
             }
         }

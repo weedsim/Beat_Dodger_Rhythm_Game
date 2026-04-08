@@ -12,6 +12,8 @@ namespace BeatDodger.Game
         
         [Header("Snapping")]
         [SerializeField] private float groundOffset = 0.02f; // Helps prevent being half-buried
+        
+        private static readonly int IdleHash = Animator.StringToHash("Idle");
 
         private RhythmManager manager;
         private bool isFiring;
@@ -20,13 +22,13 @@ namespace BeatDodger.Game
 
         public int LaneIndex => laneIndex;
         public int SessionID { get; private set; } 
-        public bool IsFiring => isFiring || !_canFireExternally; // Critical: If true, Manager won't assign a note to this enemy
+        public bool IsFiring => isFiring; // Simplified to allow immediate firing after spawn
         public bool IsDead => isDead;
         public int OriginPoolId { get; private set; } 
 
         public void PlayFireAnimation()
         {
-            if (animator != null && _canFireExternally) animator.SetTrigger("Fire");
+            if (animator != null) animator.SetTrigger("Fire");
         }
 
         public void TakeDamage()
@@ -54,36 +56,53 @@ namespace BeatDodger.Game
             this.OriginPoolId = poolId;
             this.isDead = false;
             this.isFiring = false; 
-            this._canFireExternally = false; // Prevents selection as shooter during spawn
+            this._canFireExternally = false;
 
-            if (animator == null) TryGetComponent(out animator);
-            if (animator == null) animator = GetComponentInChildren<Animator>();
+            // Position and Rotate BEFORE animator setup
+            transform.position = spawnPos + Vector3.up * groundOffset;
+            
+            // 판정 지점을 바라보도록 회전 (Y축만 고려하여 기울어짐 방지)
+            if (manager != null)
+            {
+                Vector3 targetPos = manager.GetJudgePosition(laneIndex);
+                targetPos.y = transform.position.y;
+                transform.LookAt(targetPos);
+            }
+            else
+            {
+                transform.rotation = Quaternion.identity;
+            }
+
+            gameObject.SetActive(true);
+            
+            StopAllCoroutines(); 
+
+            if (animator == null) animator = GetComponentInChildren<Animator>(true);
             
             if (animator != null)
             {
-                animator.applyRootMotion = false; // Disable during positioning
+                animator.enabled = true;
+                animator.cullingMode = AnimatorCullingMode.AlwaysAnimate; // Ensure it starts immediately
+                animator.applyRootMotion = false;
+                
                 animator.Rebind();
+                animator.Update(0f); // Force state machine to reset to entry
+                
+                animator.Play(IdleHash, 0, 0f); // Use Hash for performance
+                animator.Update(0f); // Apply first frame of Idle
+                
                 animator.ResetTrigger("Fire");
                 animator.ResetTrigger("Die");
-                animator.Play("Idle", 0, 0f);
-                animator.Update(0f);
             }
 
             SessionID++; 
-            // Position with a small vertical offset to prevent burying
-            transform.position = spawnPos + Vector3.up * groundOffset;
-            
-            StopAllCoroutines(); 
-            gameObject.SetActive(true);
-
-            // Longer Grace Period for stability
             StartCoroutine(GracePeriod());
         }
 
         private IEnumerator GracePeriod()
         {
             yield return new WaitForSeconds(0.1f);
-            if (animator != null) animator.applyRootMotion = true; // Re-enable if needed
+            // Re-enabling root motion removed to prevent rotation drift in rhythm game
             _canFireExternally = true;
         }
 
