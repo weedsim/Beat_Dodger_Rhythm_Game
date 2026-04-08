@@ -3659,7 +3659,7 @@ MonoBehaviour:
   enemyPoolParent: {fileID: 0}
   projectilePoolParent: {fileID: 0}
   longNotePoolParent: {fileID: 0}
-  mapData: {fileID: 11400000, guid: 9e3f4e34774660d4fb5509d230aa214b, type: 2}
+  mapData: {fileID: 11400000, guid: b17ef0d787af51d4693d841cd45a7d51, type: 2}
   musicSource: {fileID: 874173068}
   bpm: 120
   travelDuration: 2
@@ -3667,15 +3667,15 @@ MonoBehaviour:
   enemiesPerLane: 10
   launchZ: 15.8
   _reflectionSpeedMultiplier: 4
-  perfectWindow: 0.033
+  perfectWindow: 0.05
   excellentWindow: 0.075
-  goodWindow: 0.095
-  badWindowLimit: 0.35
+  goodWindow: 0.1
+  badWindowLimit: 0.5
   groundLayer:
     serializedVersion: 2
     m_Bits: 64
-  showDebugGUI: 0
-  autoStart: 1
+  showDebugGUI: 1
+  autoStart: 0
   baseNoteScore: 100
   currentScore: 0
   scoreUI: {fileID: 1020268993}
@@ -3711,7 +3711,7 @@ AudioSource:
   serializedVersion: 4
   OutputAudioMixerGroup: {fileID: 0}
   m_audioClip: {fileID: 0}
-  m_Resource: {fileID: 8300000, guid: d3c22fd7637faa84d9df9c180ba60c0e, type: 3}
+  m_Resource: {fileID: 8300000, guid: f56ddce3c17ece64ab5dde92d266bccd, type: 3}
   m_PlayOnAwake: 0
   m_Volume: 1
   m_Pitch: 1
