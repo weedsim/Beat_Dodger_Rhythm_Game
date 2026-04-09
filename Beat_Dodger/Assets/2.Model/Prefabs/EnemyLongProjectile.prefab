@@ -278,6 +278,8 @@ MonoBehaviour:
     m_PreInfinity: 2
     m_PostInfinity: 2
     m_RotationOrder: 4
+  _minArcHeight: 8
+  _maxArcHeight: 8
   _headObject: {fileID: 287687825368692870}
   _tailObject: {fileID: 6104801004577777776}
   _normalColor: {r: 1, g: 1, b: 1, a: 1}
@@ -286,6 +288,8 @@ MonoBehaviour:
   startScale: 1.5
   endScale: 0.4
   approachCircleRotationOffset: {x: 0, y: 0, z: 0}
+  showThreshold: 0.3
+  useFadeIn: 1
 --- !u!114 &-8346056304507301544
 MonoBehaviour:
   m_ObjectHideFlags: 0

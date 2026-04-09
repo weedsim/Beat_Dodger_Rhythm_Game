@@ -139,10 +139,12 @@ namespace BeatDodger.Editor
                 }
                 
                 GUILayout.FlexibleSpace();
-                if (overlappingIndices.Count > 0)
-                {
-                    EditorGUILayout.LabelField($"Overlap: {overlappingIndices.Count}", EditorStyles.boldLabel, GUILayout.Width(80));
-                }
+
+                // 상시 동일한 개수의 레이블을 그려서 Layout/Repaint 불일치 방지
+                string overlapMsg = overlappingIndices.Count > 0 ? $"Overlap: {overlappingIndices.Count}" : "";
+                var overlapStyle = new GUIStyle(EditorStyles.boldLabel) { normal = { textColor = Color.red } };
+                EditorGUILayout.LabelField(overlapMsg, overlapStyle, GUILayout.Width(100));
+
                 EditorGUILayout.LabelField($"Time: {currentTime:F2}s", EditorStyles.miniLabel, GUILayout.Width(80));
             }
         }

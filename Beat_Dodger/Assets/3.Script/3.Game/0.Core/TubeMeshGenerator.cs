@@ -90,16 +90,16 @@ namespace BeatDodger.Game
             int triOffset = bodyTriCount;
             for (int s = 0; s < segments; s++)
             {
-                // Start Cap (Looking from back: reverse)
+                // Start Cap (Tail / 잘리는 단면): 플레이어를 향하도록 인덱스 순서 반전하여 밖을 보게 함
                 triangles[triOffset + s * 3] = startCapIdx;
-                triangles[triOffset + s * 3 + 1] = s;
-                triangles[triOffset + s * 3 + 2] = s + 1;
+                triangles[triOffset + s * 3 + 1] = s + 1; // s -> s+1 에서 s+1 -> s로 변경
+                triangles[triOffset + s * 3 + 2] = s;
 
-                // End Cap (Looking from front: normal)
+                // End Cap (Head / 앞부분): 이동 방향을 보게 함
                 int endRingStart = (ringCount - 1) * (segments + 1);
                 triangles[triOffset + capTriCount / 2 + s * 3] = endCapIdx;
-                triangles[triOffset + capTriCount / 2 + s * 3 + 1] = endRingStart + s + 1;
-                triangles[triOffset + capTriCount / 2 + s * 3 + 2] = endRingStart + s;
+                triangles[triOffset + capTriCount / 2 + s * 3 + 1] = endRingStart + s;
+                triangles[triOffset + capTriCount / 2 + s * 3 + 2] = endRingStart + s + 1;
             }
 
             _mesh.Clear();

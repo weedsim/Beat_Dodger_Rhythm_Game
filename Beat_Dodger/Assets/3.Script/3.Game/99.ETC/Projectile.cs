@@ -15,19 +15,19 @@ namespace BeatDodger.Game
         [SerializeField] private AnimationCurve speedCurve = AnimationCurve.Linear(0, 0, 1, 1);
         [SerializeField] private float minArcHeight = 1.5f;
         [SerializeField] private float maxArcHeight = 4.0f;
-        [SerializeField] private float sideSwerveAmount = 2.0f;
         [SerializeField] private Vector3 rotationSpeed = new Vector3(360f, 360f, 0);
 
         public float MinArcHeight => minArcHeight;
         public float MaxArcHeight => maxArcHeight;
-        public float SideSwerveAmount => sideSwerveAmount;
 
         private Vector3 controlPoint; 
         private Vector3 startPos;
         private Vector3 targetPos;
-        private float arrivalTime;
+        private float arrivalTime; // Used as reflection start time
         private float travelDuration;
-        private float spawnTime;
+        private float targetNoteTime; // Music time when it should hit
+
+        public float TargetNoteTime => targetNoteTime;
 
         [Header("Approach Circle")]
         [SerializeField] private GameObject approachCircle;
@@ -43,7 +43,6 @@ namespace BeatDodger.Game
         private bool isActive;
 
         public bool IsReflected => isReflected;
-        public float ArrivalTime => arrivalTime;
         public int LaneIndex => laneIndex;
 
         public void Setup(IObjectPool<Projectile> pool, RhythmManager manager)
@@ -52,22 +51,22 @@ namespace BeatDodger.Game
             this.manager = manager;
         }
 
-        public void Initialize(Enemy source, Vector3 start, Vector3 target, float duration, int lane, float customArc = -1f, float customSwerve = -999f)
+        public void Initialize(Enemy source, Vector3 start, Vector3 target, float duration, int lane, float customArc = -1f, float targetNoteTimeValue = 0f)
         {
             sourceEnemy = source;
             startPos = start;
             targetPos = target;
+            targetNoteTime = targetNoteTimeValue;
             travelDuration = duration;
             laneIndex = lane;
             ApplyLaneColor(lane);
             
-            spawnTime = Time.time;
-            arrivalTime = spawnTime + duration;
+            arrivalTime = targetNoteTime;
             
             isReflected = false;
             isActive = true;
             
-            CalculateControlPoint(customArc, customSwerve);
+            CalculateControlPoint(customArc);
             
             if (approachCircle != null)
             {
@@ -91,24 +90,20 @@ namespace BeatDodger.Game
             gameObject.SetActive(true);
         }
 
-        private void CalculateControlPoint(float customArc, float customSwerve)
+        private void CalculateControlPoint(float customArc)
         {
             Vector3 midPoint = (startPos + targetPos) / 2f;
             float height = (customArc >= 0) ? customArc : Random.Range(minArcHeight, maxArcHeight);
-            float swerve = (customSwerve != -999f) ? customSwerve : Random.Range(-sideSwerveAmount, sideSwerveAmount);
             
-            Vector3 direction = (targetPos - startPos).normalized;
-            Vector3 right = Vector3.Cross(Vector3.up, direction);
-            
-            controlPoint = midPoint + (Vector3.up * height) + (right * swerve);
+            controlPoint = midPoint + (Vector3.up * height);
         }
 
         private void Update()
         {
             if (!isActive) return;
 
-            float currentTime = Time.time;
-            float normalizedTime = (currentTime - spawnTime) / travelDuration;
+            float syncTime = manager.SyncTime;
+            float normalizedTime = (syncTime - (targetNoteTime - travelDuration)) / travelDuration;
             float easedT = speedCurve.Evaluate(normalizedTime);
 
             if (!isReflected)
@@ -125,7 +120,8 @@ namespace BeatDodger.Game
                 if (approachCircle != null && approachCircle.activeSelf) approachCircle.SetActive(false);
 
                 float returnTime = travelDuration / manager.ReflectionSpeedMultiplier;
-                float reflectionT = (currentTime - arrivalTime) / returnTime; 
+                // Reflection movement can keep using real-time for smoothness
+                float reflectionT = (Time.time - arrivalTime) / returnTime; 
                 
                 Vector3 currentEnemyPos = startPos;
                 if (sourceEnemy != null) currentEnemyPos = sourceEnemy.transform.position;
@@ -181,7 +177,7 @@ namespace BeatDodger.Game
         {
             if (isReflected || !isActive) return;
             isReflected = true;
-            arrivalTime = Time.time; 
+            arrivalTime = Time.time; // Record real-time for reflection animation
         }
 
         public void ReturnToPool()

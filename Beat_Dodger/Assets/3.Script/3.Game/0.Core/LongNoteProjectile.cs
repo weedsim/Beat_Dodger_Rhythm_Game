@@ -12,6 +12,13 @@ namespace BeatDodger.Game
         [SerializeField] private float _radius = 0.4f;
         [SerializeField] private int _pathResolution = 20;
         [SerializeField] private AnimationCurve _taperingCurve = AnimationCurve.Linear(0, 1, 1, 1); 
+        
+        [Header("Trajectory Settings")]
+        [SerializeField] private float _minArcHeight = 5f;
+        [SerializeField] private float _maxArcHeight = 10f;
+        
+        public float MinArcHeight => _minArcHeight;
+        public float MaxArcHeight => _maxArcHeight;
 
         [Header("Visuals")]
         [SerializeField] private GameObject _headObject;
@@ -32,7 +39,6 @@ namespace BeatDodger.Game
         private float _noteStartTime;
         private float _duration;
         private float _travelDuration;
-        private float _spawnTime;
         private int _laneIndex;
         private RhythmManager _manager;
         private IObjectPool<LongNoteProjectile> _pool;
@@ -58,7 +64,7 @@ namespace BeatDodger.Game
         public bool IsHolding => _isHolding;
         public JudgmentType StartJudgment => _startJudgment;
 
-        public void Initialize(Enemy source, Vector3 start, Vector3 target, float arc, float swerve, float startTime, float duration, float travelDur, int lane, RhythmManager manager, IObjectPool<LongNoteProjectile> pool)
+        public void Initialize(Enemy source, Vector3 start, Vector3 target, float arc, float startTime, float duration, float travelDur, int lane, RhythmManager manager, IObjectPool<LongNoteProjectile> pool)
         {
             _sourceEnemy = source;
             _pool = pool;
@@ -74,7 +80,6 @@ namespace BeatDodger.Game
             _normalColor = GetLaneColor(lane);
             _activeColor = _normalColor; // 일단 동일하게 설정 (필요 시 더 밝게 조정 가능)
             
-            _spawnTime = Time.time;
             _totalHeldTime = 0f; 
             _isSatisfied = false; 
             _isActive = true;
@@ -86,9 +91,7 @@ namespace BeatDodger.Game
             transform.localScale = Vector3.one;
 
             Vector3 midPoint = (_startPos + _targetPos) / 2f;
-            Vector3 direction = (_targetPos - _startPos).normalized;
-            Vector3 right = Vector3.Cross(Vector3.up, direction);
-            _controlPoint = midPoint + (Vector3.up * arc) + (right * swerve);
+            _controlPoint = midPoint + (Vector3.up * arc);
 
             if (_tubeGenerator == null) _tubeGenerator = GetComponent<TubeMeshGenerator>();
             if (_renderer == null) _renderer = GetComponent<MeshRenderer>();
@@ -176,9 +179,9 @@ namespace BeatDodger.Game
 
         private void HandleFlowState()
         {
-            float elapsed = Time.time - _spawnTime;
-            float headT = elapsed / _travelDuration;
-            float tailT = (elapsed - _duration) / _travelDuration;
+            float syncTime = _manager.SyncTime;
+            float headT = (syncTime - (_noteStartTime - _travelDuration)) / _travelDuration;
+            float tailT = (syncTime - _duration - (_noteStartTime - _travelDuration)) / _travelDuration;
 
             float clampedHeadT = Mathf.Clamp01(headT);
             float clampedTailT = Mathf.Clamp01(tailT);
@@ -204,9 +207,25 @@ namespace BeatDodger.Game
 
             if (_isHolding)
             {
+                // 실시간(Time.deltaTime)을 사용해도 무방하나, 음악 싱크를 위해 SyncTime 차이를 사용할 수도 있습니다.
                 _totalHeldTime += Time.deltaTime;
-                float progress = (Time.time - _noteStartTime) / _duration;
+                float progress = (_manager.SyncTime - _noteStartTime) / _duration;
                 if (progress >= 0.75f) _isSatisfied = true;
+            }
+
+            // [추가] 실패 상황에 대한 즉시 소멸 처리
+            // 1. 머리가 판정선을 지나쳤는데 입력이 없는 경우 (Miss)
+            if (_startJudgment == JudgmentType.None && syncTime > _noteStartTime + 0.15f)
+            {
+                OnFinish();
+                return;
+            }
+
+            // 2. 중간에 손을 뗐고, 아직 끝이 오지 않았을 때 (Early Release -> Miss)
+            if (_startJudgment != JudgmentType.None && !_isHolding && syncTime < _noteStartTime + _duration)
+            {
+                OnFinish();
+                return;
             }
 
             if (tailT > 1.05f) OnFinish();

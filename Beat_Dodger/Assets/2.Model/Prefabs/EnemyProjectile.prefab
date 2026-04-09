@@ -239,11 +239,12 @@ MonoBehaviour:
     m_PreInfinity: 2
     m_PostInfinity: 2
     m_RotationOrder: 4
-  minArcHeight: 8
+  minArcHeight: 13
   maxArcHeight: 13
-  sideSwerveAmount: 0
   rotationSpeed: {x: 360, y: 360, z: 0}
   approachCircle: {fileID: 1577038862017526523}
   startScale: 1.5
   endScale: 0.4
   approachCircleRotationOffset: {x: 0, y: 0, z: 0}
+  showThreshold: 0.3
+  useFadeIn: 1
