@@ -20,6 +20,7 @@ public class LoginUIManager : MonoBehaviour
     private void Awake()
     {
         Instance = this;
+        ShowLogin();
     }
 
     public void ShowLogin()
@@ -39,6 +40,7 @@ public class LoginUIManager : MonoBehaviour
     // 3. 로그인 성공 시 로비 화면 켜기
     public void ShowLobby()
     {
+        Debug.Log("ShowLobby 호출됨! " + System.Environment.StackTrace);
         loginPanel.SetActive(false);
         registerPanel.SetActive(false);
         lobbyPanel.SetActive(true);
@@ -63,18 +65,25 @@ public class LoginUIManager : MonoBehaviour
     }
     public void OnClickReadyButton()
     {
-        // NetworkClient.localPlayer는 미러 서버에 접속된 '나의 캐릭터'를 찾는 마법이옵니다!
-        if (NetworkClient.localPlayer != null)
+        // localPlayer 대신 씬에서 직접 내 LobbyPlayer 찾기
+        LobbyPlayer myPlayer = null;
+
+        foreach (var p in FindObjectsOfType<LobbyPlayer>())
         {
-            LobbyPlayer myPlayer = NetworkClient.localPlayer.GetComponent<LobbyPlayer>();
-            if (myPlayer != null)
+            if (p.isLocalPlayer)
             {
-                myPlayer.CmdToggleReady(); // 내 캐릭터에게 레디 신호를 보냅니다요!
+                myPlayer = p;
+                break;
             }
+        }
+
+        if (myPlayer != null)
+        {
+            myPlayer.CmdToggleReady();
         }
         else
         {
-            Debug.LogError("주인님! 아직 서버에 접속(Start Host/Client)을 안 하셔서 캐릭터가 없사옵니다!");
+            Debug.LogError("LobbyPlayer를 찾을 수 없어요! 서버에 연결됐는지 확인하세요.");
         }
     }
 }

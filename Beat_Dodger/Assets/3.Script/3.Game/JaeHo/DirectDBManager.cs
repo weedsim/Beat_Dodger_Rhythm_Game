@@ -80,8 +80,7 @@ public class DirectDBManager : MonoBehaviour
         if (isLoginSuccess)
         {
             Debug.Log($"[로그인 성공] {inputId}님! 접속합니다!");
-            LoginUIManager.Instance.ShowLobby();
-
+            RhythmNetworkManager.Instance.isLoggedIn = true;
             NetworkManager.singleton.networkAddress = "localhost";
             NetworkManager.singleton.StartClient();
         }

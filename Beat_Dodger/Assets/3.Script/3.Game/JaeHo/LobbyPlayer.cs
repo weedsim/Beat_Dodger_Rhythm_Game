@@ -17,9 +17,9 @@ public class LobbyPlayer : NetworkBehaviour
         playerIndex = FindObjectsOfType<LobbyPlayer>().Length - 1;
     }
 
-    // 클라이언트가 켜지면 무조건 화면 갱신 한 번 때려주기
     public override void OnStartClient()
     {
+        Debug.Log("연결 완료!");
         UpdateLobbyUI();
     }
 
@@ -39,6 +39,7 @@ public class LobbyPlayer : NetworkBehaviour
     [Command]
     public void CmdToggleReady()
     {
+        Debug.Log("CmdToggleReady 호출됨!");
         isReady = !isReady;
         CheckAllReady();
     }
@@ -58,12 +59,15 @@ public class LobbyPlayer : NetworkBehaviour
     private void CheckAllReady()
     {
         LobbyPlayer[] players = FindObjectsOfType<LobbyPlayer>();
+        Debug.Log($"[체크] 총 플레이어 수: {players.Length}");
         bool allReady = true;
         foreach (var p in players)
         {
+            Debug.Log($"[체크] 플레이어 isReady: {p.isReady}");
             if (!p.isReady) { allReady = false; break; }
         }
-
+        Debug.Log($"[체크] allReady 결과: {allReady}");
+        Debug.Log($"[체크] RhythmNetworkManager.Instance: {RhythmNetworkManager.Instance}");
         if (allReady)
         {
             RpcTransitionToGameUI();
