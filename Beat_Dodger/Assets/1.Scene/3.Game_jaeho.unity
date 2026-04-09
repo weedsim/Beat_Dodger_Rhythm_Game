@@ -3775,7 +3775,6 @@ GameObject:
   m_Component:
   - component: {fileID: 801167472}
   - component: {fileID: 801167470}
-  - component: {fileID: 801167473}
   - component: {fileID: 801167475}
   - component: {fileID: 801167476}
   m_Layer: 0
@@ -3816,23 +3815,6 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &801167473
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 801167469}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 9b91ecbcc199f4492b9a91e820070131, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Mirror::Mirror.NetworkIdentity
-  sceneId: 1943460737
-  _assetId: 0
-  serverOnly: 0
-  visibility: 0
-  hasSpawned: 0
 --- !u!114 &801167475
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -3877,12 +3859,12 @@ MonoBehaviour:
   dontDestroyOnLoad: 1
   runInBackground: 1
   headlessStartMode: 0
-  editorAutoStart: 0
+  editorAutoStart: 1
   sendRate: 60
   offlineScene: 
   onlineScene: 
   offlineSceneLoadDelay: 0
-  transport: {fileID: 0}
+  transport: {fileID: 801167475}
   networkAddress: localhost
   maxConnections: 100
   disconnectInactiveConnections: 0
@@ -3907,6 +3889,7 @@ MonoBehaviour:
   evaluationMethod: 0
   evaluationInterval: 3
   timeInterpolationGui: 0
+  isLoggedIn: 0
 --- !u!1 &817626733
 GameObject:
   m_ObjectHideFlags: 0
@@ -264097,7 +264080,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!114 &7146694912823072920
 MonoBehaviour:
   m_ObjectHideFlags: 0
