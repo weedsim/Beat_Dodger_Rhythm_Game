@@ -10,7 +10,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: e322a670e6545da498bccfd25abe41b3, type: 3}
-  m_Name: 120bpm_v3_total
+  m_Name: 120bpm_v3
   m_EditorClassIdentifier: Assembly-CSharp::BeatDodger.Core.NoteMapData
   music: {fileID: 8300000, guid: 4713804b8445c6949a55bc64cba310c4, type: 3}
   bpm: 120

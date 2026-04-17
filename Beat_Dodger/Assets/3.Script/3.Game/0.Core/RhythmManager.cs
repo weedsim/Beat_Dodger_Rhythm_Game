@@ -9,6 +9,8 @@ namespace BeatDodger.Game
 
     public class RhythmManager : MonoBehaviour
     {
+        public static RhythmManager Instance { get; private set; }
+
         [Header("References")]
         [SerializeField] private Projectile projectilePrefab;
         [SerializeField] private LongNoteProjectile longNotePrefab;
@@ -19,6 +21,7 @@ namespace BeatDodger.Game
         [SerializeField] private GameObject reflectVfxPrefab;
         [SerializeField] private ComboUI comboUI;
         [SerializeField] private InputActionAsset inputActions;
+        private double musicStartDspTime = 0;
 
         [Header("Pool Parents")]
         [SerializeField] private Transform enemyPoolParent;
@@ -35,12 +38,19 @@ namespace BeatDodger.Game
         [SerializeField] private float gameIntroDelay = 3.0f; 
         [SerializeField] private int enemiesPerLane = 5; 
         [SerializeField] private float launchZ = 25f;    
+        [SerializeField] private float _reflectionSpeedMultiplier = 2.0f;
+
+        public float ReflectionSpeedMultiplier => _reflectionSpeedMultiplier;
+        public Vector3 GetJudgePosition(int lane) => (lane >= 0 && lane < judgePoints.Length) ? judgePoints[lane].position : Vector3.zero;
         
         [Header("Judgment Windows (Seconds)")]
         [SerializeField] private float perfectWindow = 0.033f;   
         [SerializeField] private float excellentWindow = 0.075f; 
         [SerializeField] private float goodWindow = 0.095f;      
         [SerializeField] private float badWindowLimit = 0.200f;  
+        [SerializeField] private LayerMask groundLayer;
+        [SerializeField] private bool showDebugGUI = false;
+        [SerializeField] private bool autoStart = true; // Enabled by default as per request
         
         [Header("Score & Combo")]
         [SerializeField] private int baseNoteScore = 100;
@@ -55,6 +65,25 @@ namespace BeatDodger.Game
         [Header("Status")]
         [SerializeField] private int currentCombo = 0;
         [SerializeField] private int maxCombo = 0;
+        [SerializeField] private float globalOffset = 0f; // Seconds
+
+        public float GlobalOffset 
+        { 
+            get => globalOffset; 
+            set 
+            {
+                globalOffset = value;
+                Debug.Log($"<color=orange>[Offset-Tracker]</color> Value changed to: {value * 1000:F1}ms\nStack: {System.Environment.StackTrace}");
+            } 
+        }
+        public float SyncTime {
+            get {
+                if (!isGameStarted) return 0f;
+                if (!isMusicPlayed) return gameTimer + globalOffset;
+                // DSP 기반 동기화: 오디오 하드웨어 시계와 물리적으로 완벽 히 일치
+                return (float)(AudioSettings.dspTime - musicStartDspTime) + globalOffset;
+            }
+        }
 
         private int currentNoteIndex = 0;
         private bool isGameStarted = false;
@@ -75,7 +104,19 @@ namespace BeatDodger.Game
 
         private void Awake()
         {
-            Debug.Log("<color=green>[RhythmManager]</color> Awake Starting...");
+            if (Instance == null)
+            {
+                Instance = this;
+                // DontDestroyOnLoad(gameObject); // 필요 시 활성화
+            }
+            else
+            {
+                Debug.LogWarning($"<color=red>[RhythmManager]</color> Second instance detected on {gameObject.name}. Destroying duplicate.");
+                Destroy(gameObject); 
+                return; 
+            }
+
+            Debug.Log($"<color=green>[RhythmManager]</color> Awake Starting on {gameObject.name}...");
             
             if (enemyPoolParent == null) enemyPoolParent = new GameObject("EnemyPool").transform;
             if (projectilePoolParent == null) projectilePoolParent = new GameObject("ProjectilePool").transform;
@@ -87,6 +128,8 @@ namespace BeatDodger.Game
             InitializePool();
             InitializeInput();
             InitializeLanes();
+            
+            LoadOffset(); // 오프셋 설정 불러오기
             
             lastHoldComboTime = new float[4];
         }
@@ -128,8 +171,12 @@ namespace BeatDodger.Game
             {
                 var targetPrefab = prefab; // Closure 대응
                 var pool = new ObjectPool<Enemy>(
-                    createFunc: () => Instantiate(targetPrefab, enemyPoolParent),
-                    actionOnGet: e => { }, // 여기서 활성화하지 않고 Init에서 위치 잡은 후 활성화함
+                    createFunc: () => {
+                        var e = Instantiate(targetPrefab, enemyPoolParent);
+                        e.gameObject.SetActive(false); // 생성 즉시 비활성화하여 순간 노출 방지
+                        return e;
+                    },
+                    actionOnGet: e => { }, 
                     actionOnRelease: e => e.gameObject.SetActive(false),
                     actionOnDestroy: e => Destroy(e.gameObject),
                     defaultCapacity: 4
@@ -161,6 +208,12 @@ namespace BeatDodger.Game
             }
         }
 
+        private void Start()
+        {
+            // LoadOffset() 삭제: Awake에서 이미 로드됨
+            if (autoStart) StartGame();
+        }
+
         private void SpawnEnemyInLane(int laneIndex)
         {
             if (enemySpawnZones == null || enemySpawnZones.Length <= laneIndex || enemySpawnZones[laneIndex] == null) return;
@@ -182,11 +235,19 @@ namespace BeatDodger.Game
             Vector3 center = box.center + box.transform.position;
             Vector3 size = box.size;
             
-            return new Vector3(
-                Random.Range(center.x - size.x / 2f, center.x + size.x / 2f),
-                center.y, 
-                Random.Range(center.z - size.z / 2f, center.z + size.z / 2f)
-            );
+            float x = Random.Range(center.x - size.x / 2f, center.x + size.x / 2f);
+            float z = Random.Range(center.z - size.z / 2f, center.z + size.z / 2f);
+            float y = center.y;
+
+            // Ground Snapping Logic: Start ray slightly above the box's bottom to only hit what's below
+            Vector3 rayStart = new Vector3(x, center.y + (size.y * 0.4f), z);
+            LayerMask mask = groundLayer.value == 0 ? (LayerMask)~0 : groundLayer;
+            if (Physics.Raycast(rayStart, Vector3.down, out RaycastHit hit, size.y + 5f, mask, QueryTriggerInteraction.Ignore))
+            {
+                y = hit.point.y;
+            }
+            
+            return new Vector3(x, y, z);
         }
 
         private void OnGUI()
@@ -225,6 +286,17 @@ namespace BeatDodger.Game
                 musicSource.playOnAwake = false;
                 musicSource.Stop();
                 
+                currentNoteIndex = 0;
+                isMusicPlayed = false;
+                musicStartDspTime = 0;
+
+                // Clear any existing active notes
+                for (int i = 0; i < 4; i++)
+                {
+                    activeProjectiles[i].Clear();
+                    activeLongNotes[i].Clear();
+                }
+
                 gameTimer = -gameIntroDelay;
                 isGameStarted = true;
             }
@@ -236,12 +308,16 @@ namespace BeatDodger.Game
             {
                 activeEnemies[laneIndex].Remove(enemy);
                 
-                // 해당 적의 풀을 찾아 반환해야 합니다. 
-                // 간단히 하기 위해 Enemy 클래스에 PrefabIndex 등을 추가할 수 있으나,
-                // 여기서는 적 자체를 그냥 릴리즈 하는 대신 수동으로 관리하거나 
-                // 풀 리스트에서 찾아서 릴리즈 해야 합니다. 
-                // 우선은 적 클래스에 PoolId를 저장하는 방식을 추천하지만, 현재 코드 구조상 비활성화만 유지하겠습니다.
-                enemy.gameObject.SetActive(false);
+                // Release to the original pool for reuse
+                if (enemy.OriginPoolId >= 0 && enemy.OriginPoolId < enemyPools.Count)
+                {
+                    enemyPools[enemy.OriginPoolId].Release(enemy);
+                }
+                else
+                {
+                    enemy.gameObject.SetActive(false);
+                }
+
                 SpawnEnemyInLane(laneIndex);
             }
         }
@@ -273,32 +349,47 @@ namespace BeatDodger.Game
 
             if (!isMusicPlayed && gameTimer >= 0)
             {
-                musicSource.Play();
+                // 즉시 Play하지 않고 0.05초 뒤에 정확히 재생되도록 예약 (지터 방지)
+                double scheduledPlayTime = AudioSettings.dspTime + 0.05;
+                musicSource.PlayScheduled(scheduledPlayTime);
+                musicStartDspTime = scheduledPlayTime;
                 isMusicPlayed = true;
+                Debug.Log($"<color=white>[RhythmManager]</color> Music Scheduled at DSP: {scheduledPlayTime:F3}");
             }
 
-            float syncTime = isMusicPlayed ? musicSource.time : gameTimer;
+            float masterSyncTime = SyncTime;
 
-            float sharedArc = Random.Range(projectilePrefab.MinArcHeight, projectilePrefab.MaxArcHeight);
-            float sharedSwerve = Random.Range(-projectilePrefab.SideSwerveAmount, projectilePrefab.SideSwerveAmount);
-
-            while (currentNoteIndex < mapData.notes.Count && mapData.notes[currentNoteIndex].time - travelDuration <= syncTime)
+            while (currentNoteIndex < mapData.notes.Count)
             {
                 var note = mapData.notes[currentNoteIndex];
                 
-                if (note.duration > 0)
+                // 오프셋이 적용된 masterSyncTime 기준으로 소환 시점 결정
+                if (note.time - travelDuration <= masterSyncTime)
                 {
-                    SpawnLongNote(note.lane, note.time, note.duration, sharedArc, sharedSwerve);
+                    // [궤적 동기화] 동일한 박자의 노트는 항상 같은 높이를 가지도록 시드 고정
+                    Random.InitState((int)(note.time * 1000f));
+
+                    if (note.duration > 0)
+                    {
+                        float lnArc = Random.Range(longNotePrefab.MinArcHeight, longNotePrefab.MaxArcHeight);
+                        SpawnLongNote(note.lane, note.time, note.duration, lnArc);
+                    }
+                    else
+                    {
+                        float pArc = Random.Range(projectilePrefab.MinArcHeight, projectilePrefab.MaxArcHeight);
+                        Spawn(note.lane, note.lane, pArc, note.time);
+                    }
+                    
+                    currentNoteIndex++;
                 }
-                else
-                {
-                    Spawn(note.lane, note.lane, sharedArc, sharedSwerve);
-                }
-                currentNoteIndex++;
+                else break;
             }
+
+            // 시드 복구 (다른 시스템의 랜덤에 영향을 주지 않기 위함)
+            Random.InitState((int)System.DateTime.Now.Ticks);
         }
 
-        private void SpawnLongNote(int lane, float time, float duration, float arc, float swerve)
+        private void SpawnLongNote(int lane, float time, float duration, float arc)
         {
             if (longNotePool == null) return;
 
@@ -320,13 +411,13 @@ namespace BeatDodger.Game
 
             var lp = longNotePool.Get();
             
-            float actualArrivalTime = Time.time + travelDuration;
-            lp.Initialize(start, target, arc, swerve, actualArrivalTime, duration, travelDuration, lane, this);
+            // actualArrivalTime은 이제 맵 데이터의 목표 시간(time)을 의미합니다.
+            lp.Initialize(shooter, start, target, arc, time, duration, travelDuration, lane, this, longNotePool);
             
             activeLongNotes[lane].Add(lp);
         }
 
-        public void Spawn(int sourceLaneIndex, int targetLaneIndex, float arc = -1f, float swerve = -999f)
+        public void Spawn(int sourceLaneIndex, int targetLaneIndex, float arc = -1f, float targetNoteTime = 0f)
         {
             Enemy shooter = activeEnemies[sourceLaneIndex].Find(e => !e.IsFiring);
             
@@ -353,7 +444,7 @@ namespace BeatDodger.Game
                 travelDuration, 
                 targetLaneIndex,
                 arc,
-                swerve
+                targetNoteTime
             );
             
             activeProjectiles[targetLaneIndex].Add(p);
@@ -362,43 +453,41 @@ namespace BeatDodger.Game
         private void OnKeyPress(int lane)
         {
             var laneList = activeProjectiles[lane];
-            if (laneList.Count > 0)
-            {
-                Projectile nearest = null;
-                float minSqrDist = float.MaxValue;
-                Vector3 judgePos = judgePoints[lane].position;
-
-                for (int i = 0; i < laneList.Count; i++)
+                if (laneList.Count > 0)
                 {
-                    if (laneList[i].IsReflected) continue;
+                    Projectile nearest = null;
+                    float minDiff = float.MaxValue;
+                    float currentSync = SyncTime;
 
-                    float sqrDist = (laneList[i].transform.position - judgePos).sqrMagnitude;
-                    if (sqrDist < minSqrDist)
+                    for (int i = 0; i < laneList.Count; i++)
                     {
-                        minSqrDist = sqrDist;
-                        nearest = laneList[i];
+                        if (laneList[i].IsReflected) continue;
+
+                        // 거리 기반이 아닌 시간 기반으로 가장 가까운 노트 탐색 (더 정확함)
+                        float diff = Mathf.Abs(laneList[i].TargetNoteTime - currentSync);
+                        if (diff < minDiff)
+                        {
+                            minDiff = diff;
+                            nearest = laneList[i];
+                        }
                     }
-                }
 
-                if (nearest != null)
-                {
-                    float timeDiff = nearest.ArrivalTime - Time.time;
-                    if (timeDiff <= badWindowLimit)
+                    if (nearest != null && minDiff <= badWindowLimit)
                     {
-                        JudgmentType judgment = CalculateJudgment(timeDiff);
+                        // 오차값 계산 후 판정 처리
+                        JudgmentType judgment = CalculateJudgment(nearest.TargetNoteTime - currentSync);
                         ProcessJudgment(judgment, lane, nearest);
                     }
                 }
-            }
             
-            // 롱노트 시작 판정 (StartTime이 도달 시간이므로 정확히 비교)
+            // 롱노트 시작 판정
             var lnList = activeLongNotes[lane];
             if (lnList.Count > 0)
             {
                 for (int i = lnList.Count - 1; i >= 0; i--)
                 {
                     var ln = lnList[i];
-                    float timeDiff = ln.StartTime - Time.time;
+                    float timeDiff = ln.StartTime - SyncTime;
                     float absDiff = Mathf.Abs(timeDiff);
                     
                     if (absDiff <= badWindowLimit) // 범위 내에 들어오면 판정 계산
@@ -427,7 +516,7 @@ namespace BeatDodger.Game
                     // 0.1초마다 지속 콤보 및 점수 상승
                     if (Time.time - lastHoldComboTime[lane] > 0.1f)
                     {
-                        // [추가] 시작할 때 받았던 판정 점수를 계속 가산함
+                        // SyncTime을 사용할 수도 있지만, 콤보 가산 주기는 실시간(Time.time)이 더 자연스럽습니다.
                         ProcessJudgment(ln.StartJudgment, lane, null);
                         lastHoldComboTime[lane] = Time.time;
                     }
@@ -518,7 +607,7 @@ namespace BeatDodger.Game
             if (lane >= 0 && lane < activeLongNotes.Length)
             {
                 activeLongNotes[lane].Remove(lp);
-                longNotePool.Release(lp);
+                // longNotePool.Release(lp); // DELETED: Should be released by the object itself
             }
         }
 
@@ -528,7 +617,7 @@ namespace BeatDodger.Game
             if (comboUI != null) comboUI.UpdateUI(0, JudgmentType.Miss);
             DecreaseHealth();
         }
-
+        
         private void DecreaseHealth()
         {
             currentHealth = Mathf.Max(0, currentHealth - 1);
@@ -555,6 +644,18 @@ namespace BeatDodger.Game
             {
                 guitarZones[lane].VibrateAll();
             }
+        }
+        public void SaveOffset()
+        {
+            PlayerPrefs.SetFloat("RhythmOffset", globalOffset);
+            PlayerPrefs.Save();
+            Debug.Log($"<color=cyan>[RhythmManager]</color> Offset Saved: {globalOffset * 1000:F1}ms");
+        }
+
+        private void LoadOffset()
+        {
+            GlobalOffset = PlayerPrefs.GetFloat("RhythmOffset", 0f);
+            Debug.Log($"<color=cyan>[RhythmManager]</color> Offset Loaded: {globalOffset * 1000:F1}ms on [ {gameObject.name} ]");
         }
     }
 }
