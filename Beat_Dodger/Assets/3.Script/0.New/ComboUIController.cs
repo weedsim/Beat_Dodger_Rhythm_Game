@@ -9,8 +9,8 @@ public class ComboUIController : MonoBehaviour
     [SerializeField] private TextMeshProUGUI glowText;
 
     [Header("Animation Settings")]
-    [SerializeField] private float animationDuration = 0.1f;
-    [SerializeField] private float punchScaleAmount = 0.2f;
+    [SerializeField] private float animationDuration = 0.2f;
+    [SerializeField] private float punchScaleAmount = 0.3f;
 
     private Sequence comboSequence;
 
@@ -22,7 +22,6 @@ public class ComboUIController : MonoBehaviour
             NewRhythmManager.Instance.OnNoteHit += UpdateComboUI;
         }
 
-        // 초기 상태: 숨김
         ClearUI();
     }
 

@@ -19,8 +19,12 @@ public class NoteEnemy : MonoBehaviour
     private float noteDurationSeconds;
     private int beatsToArrive;
     private NoteType type;
+    public NoteType Type => type;
     private int hitsRemaining;
+    public int HitsRemaining => hitsRemaining;
     
+    private bool[] hitLanesMask;
+
     private Transform cachedTransform;
     private MeshRenderer meshRenderer;
     private MaterialPropertyBlock propBlock;
@@ -46,11 +50,31 @@ public class NoteEnemy : MonoBehaviour
         beatsToArrive = beats;
         type = noteType;
         
-        // 동시치기 거대 노트는 차지하는 칸 수만큼 타격 필요, 2연타는 2회 고정
+        // 동시치기 거대 노트는 차지하는 칸 수만큼 타격 필요
         hitsRemaining = (type == NoteType.Double) ? 2 : laneSpan;
+        hitLanesMask = new bool[laneSpan];
 
         ApplyTypeColor();
         UpdatePosition(0f);
+    }
+
+    public void MarkLaneHit(int lane)
+    {
+        int localIndex = lane - startLane;
+        if (localIndex >= 0 && localIndex < hitLanesMask.Length)
+        {
+            hitLanesMask[localIndex] = true;
+        }
+    }
+
+    public bool IsLaneAlreadyHit(int lane)
+    {
+        int localIndex = lane - startLane;
+        if (localIndex >= 0 && localIndex < hitLanesMask.Length)
+        {
+            return hitLanesMask[localIndex];
+        }
+        return false;
     }
 
     public bool IsOccupyingLane(int lane)
@@ -96,18 +120,12 @@ public class NoteEnemy : MonoBehaviour
             finalProgress = CalculateSteppedProgress(progress);
         }
         
-        // 가로 위치 계산: 레인들의 중앙값
         float centerLane = startLane + (laneSpan - 1) / 2f;
         float xPosition = (centerLane - (RhythmConfig.Instance.LaneCount / 2f - 0.5f)) * RhythmConfig.Instance.LaneSpacing;
         
-        // 가로 스케일 설정: 레인 간격을 기준으로 확장
         Vector3 finalScale = originalScale;
         if (laneSpan > 1)
         {
-            // 스케일은 레인 간격을 곱해서 확장
-            finalScale.x = originalScale.x * laneSpan * (RhythmConfig.Instance.LaneSpacing / originalScale.x);
-            // 위 계산은 프리팹이 1x1 메쉬이고 originalScale.x 가 1이면 정확히 LaneSpacing * laneSpan이 됨.
-            // 프리팹 스케일을 존중한다면 단순히 곱하기만 함:
             finalScale.x = originalScale.x + (laneSpan - 1) * RhythmConfig.Instance.LaneSpacing;
         }
         cachedTransform.localScale = finalScale;
