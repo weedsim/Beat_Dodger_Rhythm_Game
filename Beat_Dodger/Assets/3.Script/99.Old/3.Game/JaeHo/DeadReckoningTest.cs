@@ -5,7 +5,7 @@ public class DeadReckoningTest : NetworkBehaviour
 {
     [Header("R&D 설정")]
     [Tooltip("일부러 렉을 유발하는 시간 (0.2초마다 서버로 전송)")]
-    public float syncInterval = 0.2f;
+    public float customSyncInterval = 0.2f;
     private float _syncTimer;
 
     // 서버가 기억하고, 남들에게 뿌려주는 '마지막 정보'
@@ -28,7 +28,7 @@ public class DeadReckoningTest : NetworkBehaviour
 
             // 일부러 데이터를 띄엄띄엄(0.2초마다) 보냅니다!
             _syncTimer += Time.deltaTime;
-            if (_syncTimer >= syncInterval)
+            if (_syncTimer >= customSyncInterval)
             {
                 CmdSyncData(transform.position, _currentVelocity);
                 _syncTimer = 0f;
