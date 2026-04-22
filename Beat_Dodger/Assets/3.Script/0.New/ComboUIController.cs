@@ -12,14 +12,22 @@ public class ComboUIController : MonoBehaviour
     [SerializeField] private float animationDuration = 0.2f;
     [SerializeField] private float punchScaleAmount = 0.3f;
 
+    [Header("Fever Effects")]
+    [SerializeField] private Color normalColor = Color.white;
+    [SerializeField] private Color feverColor = new Color(1f, 0.5f, 0f); // Orange for Fever
+    [SerializeField] private float feverScaleMultiplier = 1.3f;
+
+    private bool isFeverMode;
+
     private Sequence comboSequence;
 
     private void Start()
     {
-        // Manager 이벤트 구독
+        // Subscribe to Manager events
         if (NewRhythmManager.Instance != null)
         {
             NewRhythmManager.Instance.OnNoteHit += UpdateComboUI;
+            NewRhythmManager.OnFeverStateChanged += HandleFeverStateChanged;
         }
 
         ClearUI();
@@ -30,6 +38,7 @@ public class ComboUIController : MonoBehaviour
         if (NewRhythmManager.Instance != null)
         {
             NewRhythmManager.Instance.OnNoteHit -= UpdateComboUI;
+            NewRhythmManager.OnFeverStateChanged -= HandleFeverStateChanged;
         }
         
         comboSequence?.Kill();
@@ -55,12 +64,30 @@ public class ComboUIController : MonoBehaviour
         coreText.text = comboString;
         glowText.text = comboString;
 
-        // 콤보 텍스트 애니메이션
+        Color targetColor = isFeverMode ? feverColor : normalColor;
+        coreText.color = targetColor;
+        glowText.color = targetColor;
+
+        // Combo text animation
         comboSequence?.Kill(true);
         comboSequence = DOTween.Sequence();
 
-        transform.localScale = Vector3.one;
-        comboSequence.Append(transform.DOPunchScale(Vector3.one * punchScaleAmount, animationDuration, 10, 1));
+        transform.localScale = isFeverMode ? Vector3.one * feverScaleMultiplier : Vector3.one;
+        float punchAmount = isFeverMode ? punchScaleAmount * 1.5f : punchScaleAmount;
+        comboSequence.Append(transform.DOPunchScale(Vector3.one * punchAmount, animationDuration, 10, 1));
+    }
+
+    private void HandleFeverStateChanged(bool active)
+    {
+        isFeverMode = active;
+        
+        // Update color and scale immediately upon Fever entry/exit
+        Color targetColor = active ? feverColor : normalColor;
+        coreText.DOColor(targetColor, 0.3f);
+        glowText.DOColor(targetColor, 0.3f);
+        
+        float targetScale = active ? feverScaleMultiplier : 1.0f;
+        transform.DOScale(targetScale, 0.3f).SetEase(Ease.OutBack);
     }
 
     private void ClearUI()

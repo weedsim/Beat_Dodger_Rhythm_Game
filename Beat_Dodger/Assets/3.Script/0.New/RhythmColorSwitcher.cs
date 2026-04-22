@@ -6,6 +6,10 @@ public class RhythmColorSwitcher : MonoBehaviour
     [Header("Colors")]
     [SerializeField] private Color colorA = Color.white;
     [SerializeField] private Color colorB = Color.black;
+    
+    [Header("Fever Colors")]
+    [SerializeField] private Color feverColorA = new Color(0.3f, 0.05f, 0f); // Dark Red
+    [SerializeField] private Color feverColorB = new Color(0.1f, 0.02f, 0f); // Deep Red
 
     [Header("Configuration")]
     [SerializeField] private int switchIntervalBeats = 1; // 몇 박자마다 색을 바꿀지 설정
@@ -54,11 +58,13 @@ public class RhythmColorSwitcher : MonoBehaviour
     private void OnEnable()
     {
         NewRhythmManager.OnBeat += HandleBeat;
+        NewRhythmManager.OnFeverStateChanged += HandleFeverStateChanged;
     }
 
     private void OnDisable()
     {
         NewRhythmManager.OnBeat -= HandleBeat;
+        NewRhythmManager.OnFeverStateChanged -= HandleFeverStateChanged;
     }
 
     private void Start()
@@ -77,6 +83,11 @@ public class RhythmColorSwitcher : MonoBehaviour
             SwitchColors();
             beatCounter = 0;
         }
+    }
+
+    private void HandleFeverStateChanged(bool active)
+    {
+        ApplyColors();
     }
 
     private void SwitchColors()
@@ -102,7 +113,11 @@ public class RhythmColorSwitcher : MonoBehaviour
                 if (renderer == null) continue;
 
                 bool useColorA = ((r + c) % 2 == 0) ^ isAlternate;
-                Color targetColor = useColorA ? colorA : colorB;
+                
+                Color currentA = NewRhythmManager.Instance != null && NewRhythmManager.Instance.IsFeverTime ? feverColorA : colorA;
+                Color currentB = NewRhythmManager.Instance != null && NewRhythmManager.Instance.IsFeverTime ? feverColorB : colorB;
+                
+                Color targetColor = useColorA ? currentA : currentB;
 
                 renderer.GetPropertyBlock(propertyBlock);
                 

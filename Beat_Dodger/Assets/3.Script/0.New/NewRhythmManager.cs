@@ -13,27 +13,44 @@ public class NewRhythmManager : MonoBehaviour
     [SerializeField] private int beatsToArrive = 4;
     public int BeatsToArrive => beatsToArrive;
 
+    [Header("Fever Settings")]
+    [SerializeField] private float feverDuration = 5.0f;
+    [SerializeField] private float gaugePerHit = 10f; // Fever after 10 hits (Gauge 100)
+    [SerializeField] private float gaugeLossOnMiss = 5f; // Gauge loss on Miss
+    [SerializeField] private UnityEngine.UI.Slider feverSlider; // Temporary UI reference
+
+    private bool isFeverTime;
+    private float feverTimer;
+    private float feverSpawnTimer;
+    private float currentFeverGauge;
+    private const float MaxFeverGauge = 100f;
+    private const float FeverSpawnInterval = 0.15f;
+
+    public bool IsFeverTime => isFeverTime;
+    public float FeverProgress => isFeverTime ? (feverTimer / feverDuration) : Mathf.Clamp01(currentFeverGauge / MaxFeverGauge);
+
     [Header("References")]
     [SerializeField] private GameObject enemyPrefab;
     [SerializeField] private LaneInputEffect[] inputEffects;
-    [SerializeField] private GameObject hitEffectPerfect; // Perfect & Great용
-    [SerializeField] private GameObject hitEffectGood;    // Good용
+    [SerializeField] private GameObject hitEffectPerfect; // For Perfect & Great
+    [SerializeField] private GameObject hitEffectGood;    // For Good
 
     private IObjectPool<NoteEnemy> enemyPool;
     private IObjectPool<GameObject> poolPerfect;
     private IObjectPool<GameObject> poolGood;
     private readonly List<NoteEnemy> activeNotes = new List<NoteEnemy>();
 
-    // 상태 관리
+    // State Management
     private int currentCombo;
     private int maxCombo;
     private float secondsPerBeat;
     private float noteDuration;
     private double nextBeatTime;
 
-    // 이벤트 (UI 및 시스템 연동용)
+    // Events (UI and System integration)
     public static event Action OnBeat;
     public event Action<Judgment, int> OnNoteHit; 
+    public static event Action<bool> OnFeverStateChanged;
 
     private void Awake()
     {
@@ -62,7 +79,7 @@ public class NewRhythmManager : MonoBehaviour
             maxSize: 30
         );
 
-        // Perfect & Great 이펙트 풀
+        // Perfect & Great Effect Pool
         poolPerfect = new ObjectPool<GameObject>(
             createFunc: () => Instantiate(hitEffectPerfect),
             actionOnGet: (go) => go.SetActive(true),
@@ -71,7 +88,7 @@ public class NewRhythmManager : MonoBehaviour
             collectionCheck: false, defaultCapacity: 5, maxSize: 10
         );
 
-        // Good 이펙트 풀
+        // Good Effect Pool
         poolGood = new ObjectPool<GameObject>(
             createFunc: () => Instantiate(hitEffectGood),
             actionOnGet: (go) => go.SetActive(true),
@@ -108,9 +125,15 @@ public class NewRhythmManager : MonoBehaviour
 
     private void Update()
     {
+        if (Time.timeScale == 0) return;
+
         double currentTime = AudioSettings.dspTime;
 
-        if (currentTime >= nextBeatTime)
+        if (isFeverTime)
+        {
+            HandleFeverUpdate(Time.deltaTime);
+        }
+        else if (currentTime >= nextBeatTime)
         {
             GeneratePattern();
             nextBeatTime += secondsPerBeat;
@@ -118,53 +141,82 @@ public class NewRhythmManager : MonoBehaviour
         }
     }
 
+    private void HandleFeverUpdate(float dt)
+    {
+        feverTimer -= dt;
+        if (feverTimer <= 0)
+        {
+            SetFeverState(false);
+            return;
+        }
+
+        feverSpawnTimer -= dt;
+        if (feverSpawnTimer <= 0)
+        {
+            int lane = UnityEngine.Random.Range(0, RhythmConfig.Instance.LaneCount);
+            // Spawn Fever special notes during Fever time
+            SpawnIndividualNote(lane, 1, AudioSettings.dspTime + (secondsPerBeat * 2.0f), NoteType.Fever);
+            feverSpawnTimer = FeverSpawnInterval;
+        }
+
+        UpdateFeverUI();
+    }
+
+    private void UpdateFeverUI()
+    {
+        if (feverSlider != null)
+        {
+            feverSlider.value = FeverProgress;
+        }
+    }
+
     private void GeneratePattern()
     {
         float rand = UnityEngine.Random.value;
 
-        if (rand < 0.15f) SpawnChordPattern();       // 동시치기 (15%)
-        else if (rand < 0.25f) SpawnDoubleTapPattern(); // 2연타 (10%)
-        else if (rand < 0.35f) SpawnDashPattern();    // 돌진 (10%)
-        else if (rand < 0.45f) SpawnOffBeatPattern(); // 엇박 (10%)
-        else SpawnIndividualNote(UnityEngine.Random.Range(0, RhythmConfig.Instance.LaneCount), 1, nextBeatTime + noteDuration, NoteType.Normal); // 일반 (55%)
+        if (rand < 0.15f) SpawnChordPattern();       // Chord (15%)
+        else if (rand < 0.25f) SpawnDoubleTapPattern(); // Double Tap (10%)
+        else if (rand < 0.35f) SpawnDashPattern();    // Dash (10%)
+        else if (rand < 0.45f) SpawnOffBeatPattern(); // Off-beat (10%)
+        else SpawnIndividualNote(UnityEngine.Random.Range(0, RhythmConfig.Instance.LaneCount), 1, nextBeatTime + noteDuration, NoteType.Normal); // Normal (55%)
     }
 
-    // 단일 및 거대 노트 생성 공통 로직
+    // Common logic for spawning individual or giant notes
     private void SpawnIndividualNote(int startLane, int span, double hitTime, NoteType type)
     {
         NoteEnemy enemy = enemyPool.Get();
         enemy.Initialize(enemyPool, startLane, span, hitTime, noteDuration, beatsToArrive, type);
     }
 
-    // 1. 인접 동시치기 (길게 연결된 하나의 거대 노트 생성)
+    // 1. Chord Pattern (One giant note spanning multiple lanes)
     private void SpawnChordPattern()
     {
         int totalLanes = RhythmConfig.Instance.LaneCount;
-        int span = UnityEngine.Random.Range(2, totalLanes + 1); // 2~4개 레인 차지
+        int span = UnityEngine.Random.Range(2, totalLanes + 1); // Spans 2-4 lanes
         int startLane = UnityEngine.Random.Range(0, totalLanes - span + 1);
 
         SpawnIndividualNote(startLane, span, nextBeatTime + noteDuration, NoteType.Normal);
     }
 
-    // 2. 2연타 (하나의 노트에 내구도 2 설정)
+    // 2. Double Tap Pattern (One note with health 2)
     private void SpawnDoubleTapPattern()
     {
         int lane = UnityEngine.Random.Range(0, RhythmConfig.Instance.LaneCount);
         SpawnIndividualNote(lane, 1, nextBeatTime + noteDuration, NoteType.Double);
     }
 
-    // 3. 돌진형 (멈췄다 돌진)
+    // 3. Dash Pattern (Pause then dash)
     private void SpawnDashPattern()
     {
         int lane = UnityEngine.Random.Range(0, RhythmConfig.Instance.LaneCount);
         SpawnIndividualNote(lane, 1, nextBeatTime + noteDuration, NoteType.Dash);
     }
 
-    // 4. 엇박 (0.5박자 뒤에 생성)
+    // 4. Off-beat Pattern (Spawn 0.5 beat late)
     private void SpawnOffBeatPattern()
     {
         int lane = UnityEngine.Random.Range(0, RhythmConfig.Instance.LaneCount);
-        SpawnIndividualNote(lane, 1, nextBeatTime + noteDuration + (secondsPerBeat * 0.5f), NoteType.Normal);
+        SpawnIndividualNote(lane, 1, nextBeatTime + noteDuration + (secondsPerBeat * 0.5f), NoteType.OffBeat);
     }
 
     public void OnInputLane0(InputAction.CallbackContext context) { if (context.performed) ExecuteInput(0); }
@@ -185,15 +237,16 @@ public class NewRhythmManager : MonoBehaviour
         NoteEnemy closestNote = null;
         double minTimeOffset = double.MaxValue;
 
-        // 가장 가까운(정확한 타격 시점) 노트를 찾음
+        // Find the closest note (exact hit timing)
         foreach (var note in activeNotes)
         {
-            // 해당 레인을 포함하는지 + 해당 레인을 아직 안 쳤는지 확인
+            // Check if note occupies the lane and hasn't been hit in this lane yet
             if (!note.IsOccupyingLane(laneIndex) || note.IsLaneAlreadyHit(laneIndex)) continue;
 
-            double timeOffset = Math.Abs(AudioSettings.dspTime - note.TargetHitTime);
+            // Apply Global Sync Offset (dspTime - targetTime - offset)
+            double timeOffset = Math.Abs(AudioSettings.dspTime - note.TargetHitTime - RhythmConfig.Instance.GlobalSyncOffset);
             
-            // 연타(Double) 노트이면서 이미 한 번 타격된 경우 판정 범위를 2배로 확장 (보정)
+            // Expand judgment window for Double Tap notes if hit once
             float thresholdMultiplier = (note.Type == NoteType.Double && note.HitsRemaining < 2) ? 2.0f : 1.0f;
             float maxThreshold = RhythmConfig.Instance.GoodThreshold * thresholdMultiplier;
 
@@ -206,14 +259,14 @@ public class NewRhythmManager : MonoBehaviour
 
         if (closestNote != null)
         {
-            // 해당 레인 타격 성공 기록
+            // Record hit for this lane
             closestNote.MarkLaneHit(laneIndex);
 
-            // 보정된 배율을 사용하여 판정 등급 결정
+            // Determine judgment rank with multiplier
             float thresholdMultiplier = (closestNote.Type == NoteType.Double && closestNote.HitsRemaining < 2) ? 2.0f : 1.0f;
             Judgment result = EvaluateJudgment(minTimeOffset, thresholdMultiplier);
             
-            ApplyHitResult(result, laneIndex);
+            ApplyHitResult(result, laneIndex, closestNote);
             closestNote.OnHit();
         }
     }
@@ -226,21 +279,42 @@ public class NewRhythmManager : MonoBehaviour
         return Judgment.Miss;
     }
 
-    private void ApplyHitResult(Judgment result, int laneIndex)
+    private void ApplyHitResult(Judgment result, int laneIndex, NoteEnemy note)
     {
+        bool isFeverNote = note != null && note.Type == NoteType.Fever;
+        
         if (result == Judgment.Miss)
         {
-            ResetCombo();
+            // Reset combo only for normal notes or fever notes after fever ended
+            if (!isFeverTime && !isFeverNote)
+            {
+                ResetCombo();
+                DecreaseFeverGauge();
+            }
         }
         else
         {
             currentCombo++;
             maxCombo = Math.Max(maxCombo, currentCombo);
-            SpawnHitEffect(result, laneIndex); // 이펙트 생성
+
+            // Increase gauge only when not in Fever and not hitting Fever-only notes
+            if (!isFeverTime && !isFeverNote)
+            {
+                currentFeverGauge += gaugePerHit;
+                if (currentFeverGauge >= MaxFeverGauge)
+                {
+                    currentFeverGauge = MaxFeverGauge;
+                    SetFeverState(true);
+                    currentFeverGauge = 0f; // Reset after activation
+                }
+                UpdateFeverUI();
+            }
+
+            SpawnHitEffect(result, laneIndex); // Spawn effect
         }
 
-        // 레인별 판정 텍스트 출력
-        JudgmentUIController.Instance?.DisplayJudgment(laneIndex, result);
+        // Output judgment text per lane (FEVER if in Fever mode or hitting Fever note)
+        JudgmentUIController.Instance?.DisplayJudgment(laneIndex, result, isFeverTime || isFeverNote);
 
         OnNoteHit?.Invoke(result, currentCombo);
         Debug.Log($"Hit! [{result}] Combo: {currentCombo}");
@@ -251,11 +325,11 @@ public class NewRhythmManager : MonoBehaviour
         IObjectPool<GameObject> targetPool = (result == Judgment.Perfect || result == Judgment.Great) ? poolPerfect : poolGood;
         GameObject effect = targetPool.Get();
 
-        // 위치 설정: 해당 레인의 X 좌표, 판정선 Z 좌표
+        // Set position: Lane X, Judge Line Z
         float xPos = (laneIndex - (RhythmConfig.Instance.LaneCount / 2f - 0.5f)) * RhythmConfig.Instance.LaneSpacing;
         effect.transform.position = new Vector3(xPos, 0.1f, RhythmConfig.Instance.JudgeLineZ);
 
-        // 일정 시간 후 반환 (이펙트 재생 시간 고려, 기본 1초)
+        // Return to pool after delay (Default 1s)
         StartCoroutine(ReturnToPoolAfterDelay(effect, targetPool, 1.0f));
     }
 
@@ -267,14 +341,18 @@ public class NewRhythmManager : MonoBehaviour
 
     public void ReportMiss(NoteEnemy note)
     {
+        bool isFeverNote = note != null && note.Type == NoteType.Fever;
+        if (isFeverTime || isFeverNote) return; // Maintain combo during Fever or for Fever notes
+
         ResetCombo();
+        DecreaseFeverGauge();
         
-        // 거대 노트의 경우, 차지하는 모든 레인 중 '안 친' 레인들에만 MISS 출력
+        // For giant notes, show MISS only for lanes not hit
         for (int i = note.StartLane; i < note.StartLane + note.LaneSpan; i++)
         {
             if (!note.IsLaneAlreadyHit(i))
             {
-                JudgmentUIController.Instance?.DisplayJudgment(i, Judgment.Miss);
+                JudgmentUIController.Instance?.DisplayJudgment(i, Judgment.Miss, isFeverTime || isFeverNote);
             }
         }
 
@@ -285,5 +363,38 @@ public class NewRhythmManager : MonoBehaviour
     private void ResetCombo()
     {
         currentCombo = 0;
+    }
+
+    private void DecreaseFeverGauge()
+    {
+        if (isFeverTime) return;
+
+        currentFeverGauge = Mathf.Max(0f, currentFeverGauge - gaugeLossOnMiss);
+        UpdateFeverUI();
+    }
+
+    private void SetFeverState(bool active)
+    {
+        isFeverTime = active;
+        if (active)
+        {
+            // Clear all existing normal notes to avoid overlap with Fever notes
+            List<NoteEnemy> notesToClear = new List<NoteEnemy>(activeNotes);
+            foreach (var note in notesToClear)
+            {
+                note.ReleaseToPool();
+            }
+
+            feverTimer = feverDuration;
+            feverSpawnTimer = 0f;
+        }
+        else
+        {
+            // Re-align next beat timeline after Fever ends
+            nextBeatTime = AudioSettings.dspTime + secondsPerBeat;
+        }
+
+        OnFeverStateChanged?.Invoke(active);
+        Debug.Log($"Fever Time Changed: {active}");
     }
 }

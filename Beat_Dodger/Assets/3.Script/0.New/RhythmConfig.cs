@@ -19,10 +19,22 @@ public class RhythmConfig : MonoBehaviour
     public float GoodThreshold = 0.15f;
     public float MissThreshold = 0.2f;
 
+    [Header("Sync Settings")]
+    public float GlobalSyncOffset = 0f; // Seconds (Positive = Audio delay, Negative = Visual delay)
+
     private void Awake()
     {
-        if (Instance == null) Instance = this;
+        if (Instance == null)
+        {
+            Instance = this;
+            LoadSettings();
+        }
         else if (Instance != this) Destroy(gameObject);
+    }
+
+    private void LoadSettings()
+    {
+        GlobalSyncOffset = PlayerPrefs.GetFloat("GlobalSyncOffset", 0f);
     }
 }
 
