@@ -11,6 +11,7 @@ public class NewRhythmManager : MonoBehaviour
     [Header("Rhythm Settings")]
     [SerializeField] private float bpm = 120f;
     [SerializeField] private int beatsToArrive = 4;
+    [SerializeField] private float startDelay = 2.0f; // Seconds to wait before music starts
     public int BeatsToArrive => beatsToArrive;
 
     [Header("Fever Settings")]
@@ -18,6 +19,12 @@ public class NewRhythmManager : MonoBehaviour
     [SerializeField] private float gaugePerHit = 10f; // Fever after 10 hits (Gauge 100)
     [SerializeField] private float gaugeLossOnMiss = 5f; // Gauge loss on Miss
     [SerializeField] private UnityEngine.UI.Slider feverSlider; // Temporary UI reference
+    
+    public enum SpawnMode { Random, Chart }
+    [Header("Spawn Mode")]
+    [SerializeField] private SpawnMode spawnMode = SpawnMode.Random;
+    [SerializeField] private RhythmChart chartAsset;
+    [SerializeField] private AudioSource mainAudioSource;
 
     private bool isFeverTime;
     private float feverTimer;
@@ -46,6 +53,10 @@ public class NewRhythmManager : MonoBehaviour
     private float secondsPerBeat;
     private float noteDuration;
     private double nextBeatTime;
+    private double songStartTime;
+    private RhythmChart loadedChart;
+    private int nextNoteIndex;
+    private bool isSongPlaying;
 
     // Events (UI and System integration)
     public static event Action OnBeat;
@@ -59,6 +70,39 @@ public class NewRhythmManager : MonoBehaviour
 
         InitializeRhythmSettings();
         SetupObjectPool();
+        LoadChartIfNecessary();
+    }
+
+    private void LoadChartIfNecessary()
+    {
+        if (spawnMode == SpawnMode.Chart && chartAsset != null)
+        {
+            loadedChart = chartAsset;
+            loadedChart.SortNotes(); // 강제로 시간순 정렬
+            bpm = loadedChart.bpm;
+            
+            // Auto-assign clip if AudioSource exists but has no clip
+            if (mainAudioSource != null && mainAudioSource.clip == null)
+            {
+                mainAudioSource.clip = loadedChart.musicClip;
+            }
+            
+            InitializeRhythmSettings();
+        }
+    }
+
+    public void StartSong()
+    {
+        songStartTime = AudioSettings.dspTime + startDelay;
+        nextNoteIndex = 0;
+        isSongPlaying = true;
+        
+        if (mainAudioSource != null)
+        {
+            mainAudioSource.PlayScheduled(songStartTime);
+        }
+        
+        nextBeatTime = songStartTime + secondsPerBeat;
     }
 
     private void InitializeRhythmSettings()
@@ -120,7 +164,14 @@ public class NewRhythmManager : MonoBehaviour
 
     private void Start()
     {
-        nextBeatTime = AudioSettings.dspTime + secondsPerBeat;
+        if (spawnMode == SpawnMode.Random)
+        {
+            StartSong();
+        }
+        else if (spawnMode == SpawnMode.Chart && loadedChart != null)
+        {
+            StartSong();
+        }
     }
 
     private void Update()
@@ -133,11 +184,62 @@ public class NewRhythmManager : MonoBehaviour
         {
             HandleFeverUpdate(Time.deltaTime);
         }
-        else if (currentTime >= nextBeatTime)
+        else if (spawnMode == SpawnMode.Random)
         {
-            GeneratePattern();
+            if (currentTime >= nextBeatTime)
+            {
+                GeneratePattern();
+                nextBeatTime += secondsPerBeat;
+                OnBeat?.Invoke();
+            }
+        }
+        else if (spawnMode == SpawnMode.Chart && isSongPlaying)
+        {
+            // Use mainAudioSource.time for perfect sync with audio
+            double relativeTime = mainAudioSource != null ? mainAudioSource.time : AudioSettings.dspTime - songStartTime;
+            HandleChartUpdate(relativeTime);
+        }
+
+        HandleSyncAdjustment();
+    }
+
+    private void HandleSyncAdjustment()
+    {
+        // Debug/Testing: Adjust sync offset in real-time
+        if (Keyboard.current.leftArrowKey.wasPressedThisFrame)
+        {
+            RhythmConfig.Instance.GlobalSyncOffset -= 0.005f;
+            Debug.Log($"Sync Offset: {RhythmConfig.Instance.GlobalSyncOffset:F3}s");
+        }
+        if (Keyboard.current.rightArrowKey.wasPressedThisFrame)
+        {
+            RhythmConfig.Instance.GlobalSyncOffset += 0.005f;
+            Debug.Log($"Sync Offset: {RhythmConfig.Instance.GlobalSyncOffset:F3}s");
+        }
+    }
+
+    private void HandleChartUpdate(double relativeTime)
+    {
+        // 1. Beat Event Logic (Visual/UI feedback)
+        // For beat events, we still use dspTime for smooth UI animations
+        double currentTime = AudioSettings.dspTime;
+        if (currentTime >= nextBeatTime)
+        {
             nextBeatTime += secondsPerBeat;
             OnBeat?.Invoke();
+        }
+
+        // 2. Note Spawning Logic
+        if (nextNoteIndex < loadedChart.notes.Count)
+        {
+            // Spawn notes ahead of time (noteDuration) so they arrive on beat
+            NoteData nextNote = loadedChart.notes[nextNoteIndex];
+            
+            if (relativeTime >= nextNote.time - noteDuration)
+            {
+                SpawnIndividualNote(nextNote.lane, nextNote.span, songStartTime + nextNote.time, nextNote.type);
+                nextNoteIndex++;
+            }
         }
     }
 

@@ -1384,6 +1384,54 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 364762252}
   m_Mesh: {fileID: 10210, guid: 0000000000000000e000000000000000, type: 0}
+--- !u!1 &421135136
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 421135138}
+  - component: {fileID: 421135137}
+  m_Layer: 0
+  m_Name: NoteRecoreder
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &421135137
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 421135136}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4af9d7d198bda994fa271da77354e0af, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::NoteRecorder
+  isRecording: 0
+  fileName: NewChart.json
+  targetAsset: {fileID: 0}
+  audioSource: {fileID: 0}
+--- !u!4 &421135138
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 421135136}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 1567.1794, y: 0, z: 2287.584}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &439370010
 GameObject:
   m_ObjectHideFlags: 0
@@ -1962,10 +2010,14 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::NewRhythmManager
   bpm: 120
   beatsToArrive: 8
+  startDelay: 2
   feverDuration: 5
   gaugePerHit: 0.1
   gaugeLossOnMiss: 5
   feverSlider: {fileID: 1763810703}
+  spawnMode: 1
+  chartAsset: {fileID: 11400000, guid: 01895c86a0c3fc84ab4d70bd17945c76, type: 2}
+  mainAudioSource: {fileID: 619845343}
   enemyPrefab: {fileID: 6044701099862173187, guid: 502cd54e52013fd4cb37a44b61afc75c, type: 3}
   inputEffects:
   - {fileID: 1976905468}
@@ -4195,7 +4247,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!224 &1173858006
 RectTransform:
   m_ObjectHideFlags: 0
@@ -9161,3 +9213,4 @@ SceneRoots:
   - {fileID: 1217577629}
   - {fileID: 242059773}
   - {fileID: 825603920}
+  - {fileID: 421135138}
