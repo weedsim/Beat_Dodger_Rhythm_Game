@@ -1531,8 +1531,8 @@ GameObject:
   - component: {fileID: 619845340}
   - component: {fileID: 619845342}
   - component: {fileID: 619845341}
-  - component: {fileID: 619845344}
   - component: {fileID: 619845343}
+  - component: {fileID: 619845344}
   m_Layer: 0
   m_Name: RhythmManager
   m_TagString: Untagged
@@ -1696,14 +1696,23 @@ MonoBehaviour:
   m_GameObject: {fileID: 619845338}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: f348cd1bb8d03c749b1d54af2b8a346e, type: 3}
+  m_Script: {fileID: 11500000, guid: 8b3f665e30275594f9b392887b4d201c, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::MultiRhythmManager
+  m_EditorClassIdentifier: Assembly-CSharp::NewRhythmManager
   syncDirection: 0
   syncMode: 0
   syncInterval: 0
+  exactStartTime: 0
   bpm: 120
-  activeNotes: []
+  beatsToArrive: 4
+  enemyPrefab: {fileID: 6044701099862173187, guid: 502cd54e52013fd4cb37a44b61afc75c, type: 3}
+  inputEffects:
+  - {fileID: 1976905468}
+  - {fileID: 2035947523}
+  - {fileID: 1777451767}
+  - {fileID: 1108060695}
+  hitEffectPerfect: {fileID: 4529715978451822210, guid: 1a2e438dbe61ce5409dac7de711ea257, type: 3}
+  hitEffectGood: {fileID: 8691277734526123147, guid: 4d5e6bdc64286234ca20c9c5e1f4b995, type: 3}
 --- !u!1 &641629381
 GameObject:
   m_ObjectHideFlags: 0
@@ -5863,6 +5872,7 @@ GameObject:
   - component: {fileID: 1882965261}
   - component: {fileID: 1882965260}
   - component: {fileID: 1882965262}
+  - component: {fileID: 1882965263}
   m_Layer: 0
   m_Name: NetworkManager
   m_TagString: Untagged
@@ -5959,6 +5969,20 @@ MonoBehaviour:
   debugLog: 0
   statisticsGUI: 0
   statisticsLog: 0
+--- !u!114 &1882965263
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1882965259}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6442dc8070ceb41f094e44de0bf87274, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Mirror::Mirror.NetworkManagerHUD
+  offsetX: 0
+  offsetY: 0
 --- !u!1 &1903648313
 GameObject:
   m_ObjectHideFlags: 0

@@ -5,9 +5,9 @@ using UnityEngine.Pool;
 using UnityEngine.InputSystem;
 using Mirror;
 
-public class NewRhythmManagerhojae : NetworkBehaviour
+public class NewRhythmManager : NetworkBehaviour
 {
-    public static NewRhythmManagerhojae Instance { get; private set; }
+    public static NewRhythmManager Instance { get; private set; }
 
 
     [Header("Sync Settings")]
@@ -40,8 +40,9 @@ public class NewRhythmManagerhojae : NetworkBehaviour
 
     // 이벤트 (UI 및 시스템 연동용)
     public static event Action OnBeat;
-    public event Action<Judgment, int> OnNoteHit; 
+    public event Action<Judgment, int> OnNoteHit;
 
+    private bool isGameStart = false;
     private void Awake()
     {
         if (Instance == null) Instance = this;
@@ -115,6 +116,17 @@ public class NewRhythmManagerhojae : NetworkBehaviour
 
     private void Update()
     {
+        if (Input.GetKeyDown(KeyCode.Return))
+        {
+            Debug.Log($"[띠또 보고] 엔터키 눌림! 방장 맞음?: {isServer} / 이미 시작함?: {isGameStart}");
+
+            if (isServer && !isGameStart)
+            {
+                RpcStartMultiGame();
+            }
+        }
+
+        if (!isGameStart) return;
         double currentTime = AudioSettings.dspTime;
 
         if (currentTime >= nextBeatTime)
@@ -316,5 +328,28 @@ public class NewRhythmManagerhojae : NetworkBehaviour
             // 2. 이펙트 빵! (주인님 기존 이펙트 함수 호출)
             // SpawnHitEffect(Judgment.Perfect, targetNote.StartLane);
         }
+    }
+    [ClientRpc]
+    private void RpcStartMultiGame()
+    {
+       isGameStart = true; // 자물쇠 해제!
+
+        secondsPerBeat = 60f / bpm;
+        noteDuration = beatsToArrive * secondsPerBeat;
+
+        double startDelay = 3.0;
+        nextBeatTime = AudioSettings.dspTime + startDelay;
+
+        AudioSource audio = GetComponent<AudioSource>();
+        if (audio != null && audio.clip != null)
+        {
+            audio.PlayScheduled(nextBeatTime);
+        }
+        else
+        {
+            Debug.LogWarning("주인님! 오디오 소스에 음악(Clip)이 안 들어있사옵니다!");
+        }
+
+        Debug.Log("멀티 리듬 게임 진짜 시작!! 노트야 쏟아져라!!");
     }
 }
