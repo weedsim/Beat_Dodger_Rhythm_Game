@@ -9,7 +9,7 @@ public class RhythmChartEditor : EditorWindow
     private Vector2 scrollPos;
     
     private const float LaneWidth = 60f;
-    private const float PixelsPerSecond = 200f;
+    private float pixelsPerSecond = 200f;
     private const float TimelineWidth = 300f;
     private const float SidebarWidth = 200f;
 
@@ -19,6 +19,10 @@ public class RhythmChartEditor : EditorWindow
 
     private NoteType selectedType = NoteType.Normal;
     private int selectedSpan = 1;
+
+    private float[] waveformData;
+    private AudioClip lastWaveformClip;
+    private const int WaveformRes = 2; // Pixels per sample point
     
     [MenuItem("Rhythm/Chart Editor")]
     public static void Open()
@@ -32,9 +36,15 @@ public class RhythmChartEditor : EditorWindow
 
         if (targetChart == null)
         {
-            EditorGUILayout.HelpBox("Select a RhythmChart to edit.", MessageType.Info);
-            targetChart = (RhythmChart)EditorGUILayout.ObjectField("Target Chart", targetChart, typeof(RhythmChart), false);
+            EditorGUILayout.HelpBox("편집할 RhythmChart를 선택해주세요.", MessageType.Info);
+            targetChart = (RhythmChart)EditorGUILayout.ObjectField("대상 차트", targetChart, typeof(RhythmChart), false);
             return;
+        }
+
+        // Ensure preview source is ready if we have a clip
+        if (previewSource == null && targetChart.musicClip != null)
+        {
+            InitializePreviewSource();
         }
 
         EditorGUILayout.BeginHorizontal();
@@ -44,7 +54,13 @@ public class RhythmChartEditor : EditorWindow
 
         UpdatePlayback();
         
-        if (GUI.changed || isPlaying) Repaint();
+        if (targetChart.musicClip != lastWaveformClip)
+        {
+            UpdateWaveform();
+        }
+
+        // Always repaint to keep playhead smooth, or at least when clip is assigned
+        if (GUI.changed || isPlaying || (previewSource != null && previewSource.clip != null)) Repaint();
     }
 
     private void OnDisable()
@@ -57,8 +73,8 @@ public class RhythmChartEditor : EditorWindow
         if (!isPlaying || previewSource == null) return;
 
         float time = previewSource.time;
-        float totalHeight = targetChart.musicClip.length * PixelsPerSecond;
-        float playheadY = totalHeight - (time * PixelsPerSecond);
+        float totalHeight = targetChart.musicClip.length * pixelsPerSecond;
+        float playheadY = totalHeight - (time * pixelsPerSecond);
 
         // Auto-scroll to keep playhead in view
         float windowHeight = position.height;
@@ -69,18 +85,17 @@ public class RhythmChartEditor : EditorWindow
     private void DrawToolbar()
     {
         EditorGUILayout.BeginHorizontal(EditorStyles.toolbar);
-        targetChart = (RhythmChart)EditorGUILayout.ObjectField("Chart", targetChart, typeof(RhythmChart), false, GUILayout.Width(250));
+        targetChart = (RhythmChart)EditorGUILayout.ObjectField("차트", targetChart, typeof(RhythmChart), false, GUILayout.Width(250));
         if (targetChart != null)
         {
-            targetChart.bpm = EditorGUILayout.FloatField("BPM", targetChart.bpm, GUILayout.Width(100));
-            targetChart.musicClip = (AudioClip)EditorGUILayout.ObjectField("Clip", targetChart.musicClip, typeof(AudioClip), false, GUILayout.Width(200));
+            targetChart.musicClip = (AudioClip)EditorGUILayout.ObjectField("클립", targetChart.musicClip, typeof(AudioClip), false);
         }
         EditorGUILayout.EndHorizontal();
     }
 
     private void DrawTimeline()
     {
-        float totalHeight = targetChart.musicClip != null ? targetChart.musicClip.length * PixelsPerSecond : 5000f;
+        float totalHeight = targetChart.musicClip != null ? targetChart.musicClip.length * pixelsPerSecond : 5000f;
         
         scrollPos = EditorGUILayout.BeginScrollView(scrollPos, GUILayout.Width(TimelineWidth + 50));
         
@@ -99,9 +114,9 @@ public class RhythmChartEditor : EditorWindow
         float viewStart = scrollPos.y;
         float viewEnd = scrollPos.y + position.height;
 
-        for (float t = 0; t < totalHeight / PixelsPerSecond; t += secondsPerBeat)
+        for (float t = 0; t < totalHeight / pixelsPerSecond; t += secondsPerBeat)
         {
-            float y = totalHeight - (t * PixelsPerSecond);
+            float y = totalHeight - (t * pixelsPerSecond);
             if (y < viewStart - 50 || y > viewEnd + 50) continue; // Culling
 
             Handles.color = new Color(0.3f, 0.3f, 0.3f);
@@ -114,12 +129,12 @@ public class RhythmChartEditor : EditorWindow
         {
             foreach (var note in targetChart.notes)
             {
-                float y = totalHeight - ((float)note.time * PixelsPerSecond);
+                float y = totalHeight - ((float)note.time * pixelsPerSecond);
                 if (y < viewStart - 50 || y > viewEnd + 50) continue; // Culling
 
                 float x = note.lane * LaneWidth;
                 float width = note.span * LaneWidth;
-                float height = 20f;
+                float height = Mathf.Max(5f, pixelsPerSecond * 0.1f); // Scale with zoom, min 5px
 
                 Color noteColor = GetNoteColor(note.type);
                 EditorGUI.DrawRect(new Rect(x + 2, y - height/2, width - 4, height), noteColor);
@@ -127,12 +142,18 @@ public class RhythmChartEditor : EditorWindow
         }
 
         // Draw Playhead
-        if (isPlaying && previewSource != null)
-        {
-            float playheadY = totalHeight - (previewSource.time * PixelsPerSecond);
-            Handles.color = Color.red;
-            Handles.DrawLine(new Vector2(0, playheadY), new Vector2(TimelineWidth, playheadY));
-        }
+        float curTime = (previewSource != null) ? previewSource.time : 0f;
+        float playheadY = totalHeight - (curTime * pixelsPerSecond);
+        
+        // Draw playhead with a thin outline for better contrast
+        EditorGUI.DrawRect(new Rect(0, playheadY - 2f, TimelineWidth, 4f), new Color(0.1f, 0.1f, 0.1f, 0.5f)); // Outline
+        EditorGUI.DrawRect(new Rect(0, playheadY - 1f, TimelineWidth, 2f), Color.red); // Core
+        
+        // Add time label with a background box for visibility
+        GUI.Box(new Rect(TimelineWidth + 5, playheadY - 10, 60, 22), $"{curTime:F2}s", EditorStyles.helpBox);
+
+        // Draw Waveform
+        DrawWaveform(timelineRect);
 
         // --- NEW: Handle inputs inside the scroll view context ---
         HandleInputs(timelineRect);
@@ -143,11 +164,11 @@ public class RhythmChartEditor : EditorWindow
     private void DrawSidebar()
     {
         EditorGUILayout.BeginVertical(GUILayout.Width(SidebarWidth));
-        EditorGUILayout.LabelField("Editor Settings", EditorStyles.boldLabel);
+        EditorGUILayout.LabelField("리듬 에디터 설정", EditorStyles.boldLabel);
         
-        if (GUILayout.Button("Clear All Notes"))
+        if (GUILayout.Button("노트 초기화"))
         {
-            if (EditorUtility.DisplayDialog("Clear Notes", "Are you sure?", "Yes", "No"))
+            if (EditorUtility.DisplayDialog("노트 초기화", "정말 모든 노트를 지우시겠습니까?", "네", "아니오"))
             {
                 targetChart.notes.Clear();
                 EditorUtility.SetDirty(targetChart);
@@ -157,29 +178,31 @@ public class RhythmChartEditor : EditorWindow
         EditorGUILayout.Space();
         if (isPlaying)
         {
-            if (GUILayout.Button("STOP Preview", GUILayout.Height(40))) StopPreview();
+            if (GUILayout.Button("정지", GUILayout.Height(40))) StopPreview();
         }
         else
         {
-            if (GUILayout.Button("PLAY Preview", GUILayout.Height(40))) StartPreview();
+            if (GUILayout.Button("재생", GUILayout.Height(40))) StartPreview();
         }
         
         EditorGUILayout.Space();
-        EditorGUILayout.LabelField("Shortcuts:");
-        EditorGUILayout.LabelField("L-Click: Add Note");
-        EditorGUILayout.LabelField("R-Click: Remove Note");
+        EditorGUILayout.LabelField("단축키:");
+        EditorGUILayout.LabelField("Shift + 좌클릭: 노트 추가");
+        EditorGUILayout.LabelField("좌클릭: 재생바 조절");
+        EditorGUILayout.LabelField("우클릭: 노트 지우기");
+        EditorGUILayout.LabelField("Ctrl + 휠: 확대 축소");
         
         EditorGUILayout.Space();
-        EditorGUILayout.LabelField("Note Palette", EditorStyles.boldLabel);
+        EditorGUILayout.LabelField("노트 종류", EditorStyles.boldLabel);
         
         // Note Type Selection
-        DrawTypeButton("Normal Note", NoteType.Normal);
-        DrawTypeButton("Double Tap", NoteType.Double);
-        DrawTypeButton("Dash Note", NoteType.Dash);
-        DrawTypeButton("Off-Beat", NoteType.OffBeat);
+        DrawTypeButton("일반 노트", NoteType.Normal);
+        DrawTypeButton("연타 노트", NoteType.Double);
+        DrawTypeButton("가속 노트", NoteType.Dash);
+        DrawTypeButton("엇박 노트", NoteType.OffBeat);
 
         EditorGUILayout.Space();
-        EditorGUILayout.LabelField("Lane Span (Chord)");
+        EditorGUILayout.LabelField("같이치기 길이 조절");
         selectedSpan = EditorGUILayout.IntSlider(selectedSpan, 1, 4);
 
         EditorGUILayout.EndVertical();
@@ -203,17 +226,45 @@ public class RhythmChartEditor : EditorWindow
     private void HandleInputs(Rect timelineRect)
     {
         Event e = Event.current;
-        // Check if mouse is within the timeline area
+
+        // Zoom logic with Ctrl + Scroll
+        if (e.type == EventType.ScrollWheel && e.control)
+        {
+            float zoomDelta = -e.delta.y * 20f;
+            float oldPPS = pixelsPerSecond;
+            pixelsPerSecond = Mathf.Clamp(pixelsPerSecond + zoomDelta, 50f, 1000f);
+
+            if (Mathf.Abs(oldPPS - pixelsPerSecond) > 0.01f)
+            {
+                // Re-generate waveform data for new resolution
+                UpdateWaveform();
+                Repaint();
+                e.Use();
+                return;
+            }
+        }
+
         if (!timelineRect.Contains(e.mousePosition)) return;
 
-        if (e.type == EventType.MouseDown)
+        if (e.type == EventType.MouseDown || e.type == EventType.MouseDrag)
         {
             if (e.button == 0) // Left Click
             {
-                TryAddNote(e.mousePosition, timelineRect.height);
-                e.Use();
+                if (e.shift)
+                {
+                    if (e.type == EventType.MouseDown)
+                    {
+                        TryAddNote(e.mousePosition, timelineRect.height);
+                        e.Use();
+                    }
+                }
+                else
+                {
+                    SetPlaybackTime(e.mousePosition, timelineRect.height);
+                    e.Use();
+                }
             }
-            else if (e.button == 1) // Right Click
+            else if (e.button == 1 && e.type == EventType.MouseDown) // Right Click
             {
                 TryRemoveNote(e.mousePosition, timelineRect.height);
                 e.Use();
@@ -221,12 +272,28 @@ public class RhythmChartEditor : EditorWindow
         }
     }
 
+    private void SetPlaybackTime(Vector2 mousePos, float totalHeight)
+    {
+        if (targetChart == null || targetChart.musicClip == null) return;
+
+        float time = (totalHeight - mousePos.y) / pixelsPerSecond;
+        time = Mathf.Clamp(time, 0, targetChart.musicClip.length - 0.01f);
+
+        if (previewSource == null)
+        {
+            InitializePreviewSource();
+        }
+
+        previewSource.time = time;
+        if (!isPlaying) Repaint();
+    }
+
     private void TryAddNote(Vector2 mousePos, float totalHeight)
     {
         int lane = Mathf.FloorToInt(mousePos.x / LaneWidth);
         if (lane < 0 || lane >= 4) return;
 
-        float time = (totalHeight - mousePos.y) / PixelsPerSecond;
+        float time = (totalHeight - mousePos.y) / pixelsPerSecond;
         if (time < 0) return;
 
         // Snap to grid
@@ -242,7 +309,7 @@ public class RhythmChartEditor : EditorWindow
     private void TryRemoveNote(Vector2 mousePos, float totalHeight)
     {
         int lane = Mathf.FloorToInt(mousePos.x / LaneWidth);
-        float time = (totalHeight - mousePos.y) / PixelsPerSecond;
+        float time = (totalHeight - mousePos.y) / pixelsPerSecond;
 
         NoteData toRemove = targetChart.notes.Find(n => Math.Abs(n.time - time) < 0.1f && n.lane == lane);
         if (toRemove != null)
@@ -270,20 +337,108 @@ public class RhythmChartEditor : EditorWindow
 
         if (previewSource == null)
         {
-            GameObject go = new GameObject("EditorPreviewAudio");
-            go.hideFlags = HideFlags.HideAndDontSave;
-            previewSource = go.AddComponent<AudioSource>();
+            InitializePreviewSource();
         }
 
         previewSource.clip = targetChart.musicClip;
-        previewSource.time = Mathf.Max(0, (targetChart.musicClip.length * PixelsPerSecond - (scrollPos.y + position.height * 0.8f)) / PixelsPerSecond);
+        
+        // If time is 0 (first start), jump to visible area. Otherwise, continue from current time.
+        if (previewSource.time <= 0.001f)
+        {
+            float targetTime = Mathf.Max(0, (targetChart.musicClip.length * pixelsPerSecond - (scrollPos.y + position.height * 0.5f)) / pixelsPerSecond);
+            previewSource.time = targetTime;
+        }
+        
         previewSource.Play();
         isPlaying = true;
     }
 
+    private void InitializePreviewSource()
+    {
+        if (previewSource != null) return;
+
+        AudioSource[] sources = Resources.FindObjectsOfTypeAll<AudioSource>();
+        foreach (var s in sources)
+        {
+            if (s.name == "EditorPreviewAudio")
+            {
+                previewSource = s;
+                previewSource.clip = targetChart.musicClip;
+                return;
+            }
+        }
+
+        GameObject go = new GameObject("EditorPreviewAudio");
+        go.hideFlags = HideFlags.HideAndDontSave;
+        previewSource = go.AddComponent<AudioSource>();
+        previewSource.clip = targetChart.musicClip;
+    }
+
+    private void UpdateWaveform()
+    {
+        lastWaveformClip = targetChart.musicClip;
+        if (lastWaveformClip == null)
+        {
+            waveformData = null;
+            return;
+        }
+
+        // Downsample audio data for visualization
+        int sampleCount = (int)(lastWaveformClip.length * pixelsPerSecond / WaveformRes);
+        waveformData = new float[sampleCount];
+
+        float[] samples = new float[lastWaveformClip.samples * lastWaveformClip.channels];
+        lastWaveformClip.GetData(samples, 0);
+
+        int samplesPerPoint = samples.Length / sampleCount;
+        if (samplesPerPoint <= 0) samplesPerPoint = 1;
+
+        for (int i = 0; i < sampleCount; i++)
+        {
+            float max = 0;
+            for (int j = 0; j < samplesPerPoint; j++)
+            {
+                int idx = i * samplesPerPoint + j;
+                if (idx < samples.Length)
+                {
+                    float val = Math.Abs(samples[idx]);
+                    if (val > max) max = val;
+                }
+            }
+            waveformData[i] = max;
+        }
+    }
+
+    private void DrawWaveform(Rect rect)
+    {
+        if (waveformData == null || targetChart.musicClip == null) return;
+
+        float totalHeight = rect.height;
+        float viewStart = scrollPos.y;
+        float viewEnd = scrollPos.y + position.height;
+
+        float startX = 4 * LaneWidth;
+        float width = TimelineWidth - startX;
+        float centerX = startX + width / 2f;
+        float maxHalfWidth = width / 2f;
+
+        Handles.color = new Color(0.3f, 0.5f, 1f, 0.4f); // Semi-transparent blue
+
+        for (int i = 0; i < waveformData.Length; i++)
+        {
+            float y = totalHeight - (i * WaveformRes);
+            if (y < viewStart - 50 || y > viewEnd + 50) continue;
+
+            float w = waveformData[i] * maxHalfWidth;
+            if (w < 1f) w = 1f; // Minimum visibility
+
+            Handles.DrawLine(new Vector2(centerX - w, y), new Vector2(centerX + w, y));
+        }
+    }
+
     private void StopPreview()
     {
-        if (previewSource != null) previewSource.Stop();
+        if (previewSource != null) previewSource.Pause();
         isPlaying = false;
     }
 }

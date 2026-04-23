@@ -15,40 +15,4 @@ MonoBehaviour:
   audioName: 
   musicClip: {fileID: 8300000, guid: f56ddce3c17ece64ab5dde92d266bccd, type: 3}
   bpm: 120
-  notes:
-  - time: 0
-    lane: 0
-    span: 1
-    type: 0
-  - time: 0.5
-    lane: 0
-    span: 1
-    type: 0
-  - time: 1
-    lane: 0
-    span: 1
-    type: 0
-  - time: 1.5
-    lane: 0
-    span: 1
-    type: 0
-  - time: 2
-    lane: 0
-    span: 1
-    type: 0
-  - time: 2.5
-    lane: 0
-    span: 1
-    type: 0
-  - time: 3
-    lane: 0
-    span: 1
-    type: 0
-  - time: 3.5
-    lane: 0
-    span: 1
-    type: 0
-  - time: 4
-    lane: 0
-    span: 1
-    type: 0
+  notes: []
