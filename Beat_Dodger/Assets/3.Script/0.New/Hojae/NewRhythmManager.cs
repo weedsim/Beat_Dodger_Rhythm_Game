@@ -43,6 +43,9 @@ public class NewRhythmManager : NetworkBehaviour
     public event Action<Judgment, int> OnNoteHit;
 
     private bool isGameStart = false;
+    public bool IsFeverTime = false;
+    public static event Action<bool> OnFeverStateChanged;
+
     private void Awake()
     {
         if (Instance == null) Instance = this;
