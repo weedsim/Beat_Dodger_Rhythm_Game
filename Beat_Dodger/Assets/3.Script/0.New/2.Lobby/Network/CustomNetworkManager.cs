@@ -15,6 +15,7 @@ namespace BeatDodger.Network
     /// 비트 발키리 프로젝트의 메인 네트워크 관리자.
     /// DB 서비스와 세션 코디네이터를 통합하여 서버/클라이언트의 흐름을 제어한다.
     /// </summary>
+    [RequireComponent(typeof(kcp2k.KcpTransport), typeof(SessionCoordinator), typeof(ClientPlayerManager))]
     public class CustomNetworkManager : NetworkManager
     {
         #region Variables
