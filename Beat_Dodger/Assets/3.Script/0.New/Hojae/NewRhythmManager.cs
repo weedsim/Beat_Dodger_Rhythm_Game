@@ -3,10 +3,17 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Pool;
 using UnityEngine.InputSystem;
+using Mirror;
 
-public class NewRhythmManager : MonoBehaviour
+public class NewRhythmManager : NetworkBehaviour
 {
     public static NewRhythmManager Instance { get; private set; }
+
+
+    [Header("Sync Settings")]
+    [SyncVar] public double exactStartTime; // 다 같이 시작할 절대 시간!
+    private HashSet<int> hitNoteIds = new HashSet<int>(); // 이미 맞춘 노트 명부
+    private int _globalNoteId = 0; // 번호표 기계
 
     [Header("Rhythm Settings")]
     [SerializeField] private float bpm = 120f;
@@ -33,7 +40,11 @@ public class NewRhythmManager : MonoBehaviour
 
     // 이벤트 (UI 및 시스템 연동용)
     public static event Action OnBeat;
-    public event Action<Judgment, int> OnNoteHit; 
+    public event Action<Judgment, int> OnNoteHit;
+
+    private bool isGameStart = false;
+    public bool IsFeverTime = false;
+    public static event Action<bool> OnFeverStateChanged;
 
     private void Awake()
     {
@@ -108,6 +119,17 @@ public class NewRhythmManager : MonoBehaviour
 
     private void Update()
     {
+        if (Input.GetKeyDown(KeyCode.Return))
+        {
+            Debug.Log($"[띠또 보고] 엔터키 눌림! 방장 맞음?: {isServer} / 이미 시작함?: {isGameStart}");
+
+            if (isServer && !isGameStart)
+            {
+                RpcStartMultiGame();
+            }
+        }
+
+        if (!isGameStart) return;
         double currentTime = AudioSettings.dspTime;
 
         if (currentTime >= nextBeatTime)
@@ -133,6 +155,8 @@ public class NewRhythmManager : MonoBehaviour
     private void SpawnIndividualNote(int startLane, int span, double hitTime, NoteType type)
     {
         NoteEnemy enemy = enemyPool.Get();
+        enemy.myNoteId = _globalNoteId;
+        _globalNoteId++;
         enemy.Initialize(enemyPool, startLane, span, hitTime, noteDuration, beatsToArrive, type);
     }
 
@@ -285,5 +309,50 @@ public class NewRhythmManager : MonoBehaviour
     private void ResetCombo()
     {
         currentCombo = 0;
+    }
+    [Command(requiresAuthority = false)]
+    public void CmdRequestHitNote(int noteId, NetworkConnectionToClient sender = null)
+    {
+        if (hitNoteIds.Contains(noteId)) return; // 딴 놈이 쳤으면 무시!
+        hitNoteIds.Add(noteId);
+        RpcNotifyHit(noteId, sender.connectionId);
+    }
+
+    [ClientRpc]
+    private void RpcNotifyHit(int noteId, int playerConnId)
+    {
+        // 1. 여기서 noteId를 가진 노트를 찾아서 화면에서 없앱니다!
+        NoteEnemy targetNote = activeNotes.Find(n => n.myNoteId == noteId);
+        if (targetNote != null)
+        {
+            activeNotes.Remove(targetNote);
+            targetNote.gameObject.SetActive(false); // 또는 풀로 반환
+
+            // 2. 이펙트 빵! (주인님 기존 이펙트 함수 호출)
+            // SpawnHitEffect(Judgment.Perfect, targetNote.StartLane);
+        }
+    }
+    [ClientRpc]
+    private void RpcStartMultiGame()
+    {
+       isGameStart = true; // 자물쇠 해제!
+
+        secondsPerBeat = 60f / bpm;
+        noteDuration = beatsToArrive * secondsPerBeat;
+
+        double startDelay = 3.0;
+        nextBeatTime = AudioSettings.dspTime + startDelay;
+
+        AudioSource audio = GetComponent<AudioSource>();
+        if (audio != null && audio.clip != null)
+        {
+            audio.PlayScheduled(nextBeatTime);
+        }
+        else
+        {
+            Debug.LogWarning("주인님! 오디오 소스에 음악(Clip)이 안 들어있사옵니다!");
+        }
+
+        Debug.Log("멀티 리듬 게임 진짜 시작!! 노트야 쏟아져라!!");
     }
 }
