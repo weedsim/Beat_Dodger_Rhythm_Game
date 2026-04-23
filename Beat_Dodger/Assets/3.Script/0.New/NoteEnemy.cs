@@ -1,7 +1,7 @@
 using UnityEngine;
 using UnityEngine.Pool;
 
-public enum NoteType { Normal, Dash, Double } // Dash: 돌진형, Double: 2연타
+public enum NoteType { Normal, Dash, Double, OffBeat, Fever } // Dash: 돌진형, Double: 2연타, OffBeat: 엇박, Fever: 피버용
 
 public class NoteEnemy : MonoBehaviour
 {
@@ -62,6 +62,8 @@ public class NoteEnemy : MonoBehaviour
 
     public void MarkLaneHit(int lane)
     {
+        if (type == NoteType.Double) return;
+
         int localIndex = lane - startLane;
         if (localIndex >= 0 && localIndex < hitLanesMask.Length)
         {
@@ -71,6 +73,8 @@ public class NoteEnemy : MonoBehaviour
 
     public bool IsLaneAlreadyHit(int lane)
     {
+        if (type == NoteType.Double) return false;
+
         int localIndex = lane - startLane;
         if (localIndex >= 0 && localIndex < hitLanesMask.Length)
         {
@@ -156,6 +160,8 @@ public class NoteEnemy : MonoBehaviour
         {
             NoteType.Dash => Color.red,
             NoteType.Double => Color.yellow,
+            NoteType.OffBeat => Color.green,
+            NoteType.Fever => new Color(1f, 0.8f, 0.2f), // Gold/Amber for Fever notes
             _ => new Color(0.2f, 0.6f, 1f)
         };
         meshRenderer.GetPropertyBlock(propBlock);
@@ -169,7 +175,7 @@ public class NoteEnemy : MonoBehaviour
         if (hitsRemaining <= 0) ReleaseToPool();
     }
 
-    private void ReleaseToPool()
+    public void ReleaseToPool()
     {
         if (pool != null) pool.Release(this);
     }

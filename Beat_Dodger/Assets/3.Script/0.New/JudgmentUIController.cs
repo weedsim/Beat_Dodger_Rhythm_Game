@@ -7,10 +7,11 @@ public class JudgmentUIController : MonoBehaviour
     public static JudgmentUIController Instance { get; private set; }
 
     [Header("UI References")]
-    [SerializeField] private TextMeshProUGUI[] laneTexts; // 4개의 레인별 텍스트
+    [SerializeField] private TextMeshProUGUI[] laneTexts; // Text per lane
     
     [Header("Visual Settings")]
-    [SerializeField] private TMP_FontAsset[] judgmentFonts; // Perfect, Great, Good, Miss 순서
+    [SerializeField] private TMP_FontAsset[] judgmentFonts; // Order: Perfect, Great, Good, Miss
+    [SerializeField] private TMP_FontAsset feverFont;
     [SerializeField] private float animationDuration = 0.2f;
     [SerializeField] private float punchScaleAmount = 0.3f;
     [SerializeField] private float fadeDuration = 0.4f;
@@ -35,36 +36,44 @@ public class JudgmentUIController : MonoBehaviour
         ClearAll();
     }
 
-    public void DisplayJudgment(int laneIndex, Judgment judgment)
+    public void DisplayJudgment(int laneIndex, Judgment judgment, bool isFever = false)
     {
-        if (laneIndex < 0 || laneIndex >= laneTexts.Length || judgment == Judgment.None) return;
+        if (laneIndex < 0 || laneIndex >= laneTexts.Length || (judgment == Judgment.None && !isFever)) return;
 
         TextMeshProUGUI targetText = laneTexts[laneIndex];
         if (targetText == null) return;
 
-        // 기존 애니메이션 중지
+        // Kill existing animation
         laneSequences[laneIndex]?.Kill(true);
         
-        // 텍스트 및 폰트 설정
-        targetText.text = judgment.ToString().ToUpper();
-        int fontIndex = (int)judgment - 1; // None(0) 제외 1부터 시작
-        if (judgmentFonts != null && fontIndex >= 0 && fontIndex < judgmentFonts.Length)
+        // Text and Font setup
+        if (isFever)
         {
-            if (judgmentFonts[fontIndex] != null)
-                targetText.font = judgmentFonts[fontIndex];
+            targetText.text = "FEVER";
+            if (feverFont != null) targetText.font = feverFont;
+        }
+        else
+        {
+            targetText.text = judgment.ToString().ToUpper();
+            int fontIndex = (int)judgment - 1; 
+            if (judgmentFonts != null && fontIndex >= 0 && fontIndex < judgmentFonts.Length)
+            {
+                if (judgmentFonts[fontIndex] != null)
+                    targetText.font = judgmentFonts[fontIndex];
+            }
         }
 
-        // 새 애니메이션 시퀀스
+        // New animation sequence
         Sequence seq = DOTween.Sequence();
         
-        // 중요: Vector3.one 대신 원래 가지고 있던 작은 스케일(0.01 등)로 초기화
+        // Use initial localScale instead of Vector3.one
         Vector3 baseScale = initialScales[laneIndex];
         targetText.transform.localScale = baseScale;
 
         CanvasGroup cg = targetText.GetComponent<CanvasGroup>();
         if (cg != null) cg.alpha = 1f;
 
-        // 연출: 원래 크기에서 punchScaleAmount 배율만큼 커졌다가 돌아옴
+        // Animation: Scale up by punchScaleAmount then back to base
         seq.Append(targetText.transform.DOScale(baseScale * (1f + punchScaleAmount), animationDuration * 0.5f).SetEase(Ease.OutQuad));
         seq.Append(targetText.transform.DOScale(baseScale, animationDuration * 0.5f).SetEase(Ease.InQuad));
         
