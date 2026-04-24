@@ -10,6 +10,7 @@ public class NewRhythmManager : MonoBehaviour
 
     [Header("Rhythm Settings")]
     [SerializeField] private float bpm = 120f;
+    public float BPM => bpm;
     [SerializeField] private int beatsToArrive = 4;
     [SerializeField] private float startDelay = 2.0f; // Seconds to wait before music starts
     public int BeatsToArrive => beatsToArrive;
@@ -18,7 +19,10 @@ public class NewRhythmManager : MonoBehaviour
     [SerializeField] private float feverDuration = 5.0f;
     [SerializeField] private float gaugePerHit = 10f; // Fever after 10 hits (Gauge 100)
     [SerializeField] private float gaugeLossOnMiss = 5f; // Gauge loss on Miss
-    [SerializeField] private UnityEngine.UI.Slider feverSlider; // Temporary UI reference
+    [SerializeField] private UnityEngine.UI.Slider feverSlider; // Fever Gauge / Boss HP
+    [SerializeField] private int feverAttackRequirement = 30; // Number of hits to kill boss
+    [SerializeField] private GameObject feverBossPrefab;    // Unique Boss Prefab
+    [SerializeField] private GameObject feverBossExplosion; // Unique Explosion Effect
     
     public enum SpawnMode { Random, Chart }
     [Header("Spawn Mode")]
@@ -28,10 +32,11 @@ public class NewRhythmManager : MonoBehaviour
 
     private bool isFeverTime;
     private float feverTimer;
-    private float feverSpawnTimer;
+    private int currentFeverHits;
+    private NoteEnemy currentFeverBoss;
     private float currentFeverGauge;
+    private bool isWaitingToResume;
     private const float MaxFeverGauge = 100f;
-    private const float FeverSpawnInterval = 0.15f;
 
     public bool IsFeverTime => isFeverTime;
     public float FeverProgress => isFeverTime ? (feverTimer / feverDuration) : Mathf.Clamp01(currentFeverGauge / MaxFeverGauge);
@@ -54,6 +59,7 @@ public class NewRhythmManager : MonoBehaviour
     private float noteDuration;
     private double nextBeatTime;
     private double songStartTime;
+    public double SongStartTime => songStartTime;
     private RhythmChart loadedChart;
     private int nextNoteIndex;
     private bool isSongPlaying;
@@ -197,7 +203,7 @@ public class NewRhythmManager : MonoBehaviour
         {
             // Use mainAudioSource.time for perfect sync with audio
             double relativeTime = mainAudioSource != null ? mainAudioSource.time : AudioSettings.dspTime - songStartTime;
-            HandleChartUpdate(relativeTime);
+            if (!isWaitingToResume) HandleChartUpdate(relativeTime);
         }
 
         HandleSyncAdjustment();
@@ -220,8 +226,7 @@ public class NewRhythmManager : MonoBehaviour
 
     private void HandleChartUpdate(double relativeTime)
     {
-        // 1. Beat Event Logic (Visual/UI feedback)
-        // For beat events, we still use dspTime for smooth UI animations
+        // 1. Beat Event Logic
         double currentTime = AudioSettings.dspTime;
         if (currentTime >= nextBeatTime)
         {
@@ -229,10 +234,11 @@ public class NewRhythmManager : MonoBehaviour
             OnBeat?.Invoke();
         }
 
+        if (isFeverTime) return; // Don't spawn chart notes during Fever
+
         // 2. Note Spawning Logic
         if (nextNoteIndex < loadedChart.notes.Count)
         {
-            // Spawn notes ahead of time (noteDuration) so they arrive on beat
             NoteData nextNote = loadedChart.notes[nextNoteIndex];
             
             if (relativeTime >= nextNote.time - noteDuration)
@@ -245,22 +251,6 @@ public class NewRhythmManager : MonoBehaviour
 
     private void HandleFeverUpdate(float dt)
     {
-        feverTimer -= dt;
-        if (feverTimer <= 0)
-        {
-            SetFeverState(false);
-            return;
-        }
-
-        feverSpawnTimer -= dt;
-        if (feverSpawnTimer <= 0)
-        {
-            int lane = UnityEngine.Random.Range(0, RhythmConfig.Instance.LaneCount);
-            // Spawn Fever special notes during Fever time
-            SpawnIndividualNote(lane, 1, AudioSettings.dspTime + (secondsPerBeat * 2.0f), NoteType.Fever);
-            feverSpawnTimer = FeverSpawnInterval;
-        }
-
         UpdateFeverUI();
     }
 
@@ -268,8 +258,57 @@ public class NewRhythmManager : MonoBehaviour
     {
         if (feverSlider != null)
         {
-            feverSlider.value = FeverProgress;
+            feverSlider.value = isFeverTime 
+                ? (float)currentFeverHits / feverAttackRequirement 
+                : currentFeverGauge / MaxFeverGauge;
         }
+    }
+
+    private void HandleFeverAttack(int laneIndex)
+    {
+        currentFeverHits++;
+        SpawnHitEffect(Judgment.Perfect, laneIndex);
+        
+        if (currentFeverHits >= feverAttackRequirement)
+        {
+            FinishFeverBoss();
+        }
+        UpdateFeverUI();
+    }
+
+    private void FinishFeverBoss()
+    {
+        if (currentFeverBoss != null)
+        {
+            // Play big explosion effect at boss's current world position
+            if (feverBossExplosion != null)
+            {
+                Instantiate(feverBossExplosion, currentFeverBoss.transform.position, Quaternion.identity);
+            }
+            
+            activeNotes.Remove(currentFeverBoss);
+            Destroy(currentFeverBoss.gameObject);
+            currentFeverBoss = null;
+        }
+        
+        StartCoroutine(ResumeChartAfterFever());
+    }
+
+    private System.Collections.IEnumerator ResumeChartAfterFever()
+    {
+        isWaitingToResume = true;
+        SetFeverState(false);
+        
+        yield return new WaitForSeconds(1.5f); // Delay before chart resumes
+        
+        // Skip notes that passed during Fever to keep sync
+        double relativeTime = mainAudioSource != null ? mainAudioSource.time : AudioSettings.dspTime - songStartTime;
+        while (nextNoteIndex < loadedChart.notes.Count && loadedChart.notes[nextNoteIndex].time < relativeTime)
+        {
+            nextNoteIndex++;
+        }
+        
+        isWaitingToResume = false;
     }
 
     private void GeneratePattern()
@@ -336,6 +375,12 @@ public class NewRhythmManager : MonoBehaviour
 
     private void ProcessHitInput(int laneIndex)
     {
+        if (isFeverTime)
+        {
+            HandleFeverAttack(laneIndex);
+            return;
+        }
+
         NoteEnemy closestNote = null;
         double minTimeOffset = double.MaxValue;
 
@@ -480,23 +525,26 @@ public class NewRhythmManager : MonoBehaviour
         isFeverTime = active;
         if (active)
         {
-            // Clear all existing normal notes to avoid overlap with Fever notes
+            // 1. Clear all existing notes
             List<NoteEnemy> notesToClear = new List<NoteEnemy>(activeNotes);
-            foreach (var note in notesToClear)
-            {
-                note.ReleaseToPool();
-            }
+            foreach (var note in notesToClear) note.ReleaseToPool();
 
-            feverTimer = feverDuration;
-            feverSpawnTimer = 0f;
-        }
-        else
-        {
-            // Re-align next beat timeline after Fever ends
-            nextBeatTime = AudioSettings.dspTime + secondsPerBeat;
+            // 2. Spawn Giant Boss from unique prefab
+            currentFeverHits = 0;
+            double bossHitTime = AudioSettings.dspTime + (secondsPerBeat * 4.0f);
+            
+            GameObject bossGo = Instantiate(feverBossPrefab);
+            // Search in children as well to be safer
+            currentFeverBoss = bossGo.GetComponentInChildren<NoteEnemy>();
+            
+            if (currentFeverBoss != null)
+            {
+                // Must add to activeNotes for consistent management
+                activeNotes.Add(currentFeverBoss);
+                currentFeverBoss.Initialize(null, 0, 4, bossHitTime, secondsPerBeat * 4f, 4, NoteType.Fever);
+            }
         }
 
         OnFeverStateChanged?.Invoke(active);
-        Debug.Log($"Fever Time Changed: {active}");
     }
 }

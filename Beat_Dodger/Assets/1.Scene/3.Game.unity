@@ -1413,10 +1413,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 4af9d7d198bda994fa271da77354e0af, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::NoteRecorder
-  isRecording: 0
-  fileName: NewChart.json
-  targetAsset: {fileID: 0}
-  audioSource: {fileID: 0}
 --- !u!4 &421135138
 Transform:
   m_ObjectHideFlags: 0
@@ -2012,9 +2008,12 @@ MonoBehaviour:
   beatsToArrive: 8
   startDelay: 2
   feverDuration: 5
-  gaugePerHit: 0.1
+  gaugePerHit: 10
   gaugeLossOnMiss: 5
   feverSlider: {fileID: 1763810703}
+  feverAttackRequirement: 30
+  feverBossPrefab: {fileID: 1949709881640222526, guid: 5e801a6768f00234dbcad7da42c60e2e, type: 3}
+  feverBossExplosion: {fileID: 552793109724768, guid: 8e300af2a1e0c864d8f5f994673d1ac4, type: 3}
   spawnMode: 1
   chartAsset: {fileID: 11400000, guid: 01895c86a0c3fc84ab4d70bd17945c76, type: 2}
   mainAudioSource: {fileID: 619845343}
@@ -2782,9 +2781,9 @@ Transform:
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
+  - {fileID: 619845340}
   - {fileID: 1987420504}
   - {fileID: 1707022806}
-  - {fileID: 619845340}
   - {fileID: 1182672398}
   - {fileID: 1090484335}
   - {fileID: 2039764094}

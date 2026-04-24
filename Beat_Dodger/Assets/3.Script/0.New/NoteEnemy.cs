@@ -111,17 +111,23 @@ public class NoteEnemy : MonoBehaviour
         if (type == NoteType.Dash)
         {
             float stopProgressThreshold = (float)(beatsToArrive - 2.0f) / beatsToArrive;
-            if (progress < stopProgressThreshold) finalProgress = CalculateSteppedProgress(progress);
-            else if (progress < 0.96f) finalProgress = CalculateSteppedProgress(stopProgressThreshold);
+            if (progress < stopProgressThreshold) finalProgress = CalculateSteppedProgress(progress, false);
+            else if (progress < 0.96f) finalProgress = CalculateSteppedProgress(stopProgressThreshold, false);
             else
             {
                 float dashProgress = Mathf.InverseLerp(0.96f, 1.0f, progress);
-                finalProgress = Mathf.Lerp(CalculateSteppedProgress(stopProgressThreshold), 1f, dashProgress);
+                finalProgress = Mathf.Lerp(CalculateSteppedProgress(stopProgressThreshold, false), 1f, dashProgress);
             }
+        }
+        else if (type == NoteType.OffBeat)
+        {
+            // 엇박 노트는 글로벌 비트가 아닌 자신의 타겟 타이밍에 맞춰 정확히 이동
+            finalProgress = CalculateSteppedProgress(progress, false);
         }
         else
         {
-            finalProgress = CalculateSteppedProgress(progress);
+            // 일반/연타 노트는 글로벌 비트에 맞춰 동기화된 정박 이동
+            finalProgress = CalculateSteppedProgress(progress, true);
         }
         
         float centerLane = startLane + (laneSpan - 1) / 2f;
@@ -140,17 +146,41 @@ public class NoteEnemy : MonoBehaviour
         cachedTransform.localPosition = Vector3.Lerp(startPosition, endPosition, finalProgress);
     }
 
-    private float CalculateSteppedProgress(float progress)
+    private float CalculateSteppedProgress(float progress, bool useGlobalSync)
     {
-        int totalSteps = beatsToArrive;
-        int currentStep = Mathf.FloorToInt(progress * totalSteps);
-        float stepBase = (float)currentStep / totalSteps;
-        float nextStepBase = (float)(currentStep + 1) / totalSteps;
-        float innerProgress = (progress * totalSteps) - currentStep;
+        if (NewRhythmManager.Instance == null) return progress;
+
+        float bpm = NewRhythmManager.Instance.BPM;
+        float secondsPerBeat = 60f / bpm;
+        
+        // 엇박 노트만 0.5박자 단위로 이동, 나머지는 1박자 단위 유지
+        float resolution = (type == NoteType.OffBeat) ? 2f : 1f;
+        float secondsPerStep = secondsPerBeat / resolution;
+        
+        double songStartTime = NewRhythmManager.Instance.SongStartTime;
+        
+        // 1. 시간 기준점 결정
+        double referenceTime = useGlobalSync ? AudioSettings.dspTime : targetHitTime - ((1f - progress) * noteDurationSeconds);
+        
+        // 2. 글로벌 스텝 계산
+        double timeSinceStart = referenceTime - songStartTime;
+        float globalStep = (float)(timeSinceStart / secondsPerStep);
+        int floorGlobalStep = Mathf.FloorToInt(globalStep + 0.001f);
+        float innerProgress = globalStep - floorGlobalStep;
+        
+        // 3. 목표 스텝 및 남은 단계 계산
+        float targetStep = (float)((targetHitTime - songStartTime) / secondsPerStep);
+        int stepsRemaining = Mathf.FloorToInt(targetStep - floorGlobalStep + 0.001f);
+        
+        // 4. 스텝 위치 계산
+        int totalSteps = Mathf.RoundToInt(beatsToArrive * resolution);
+        float stepBase = 1f - (float)stepsRemaining / totalSteps;
+        float nextStepBase = 1f - (float)(stepsRemaining - 1) / totalSteps;
+
+        // 5. 부드러운 이동 연출
         float movementCurve = Mathf.SmoothStep(0, 1, Mathf.InverseLerp(StepStartThreshold, 1.0f, innerProgress));
         return Mathf.Lerp(stepBase, nextStepBase, movementCurve);
     }
-
     private void ApplyTypeColor()
     {
         if (meshRenderer == null) return;

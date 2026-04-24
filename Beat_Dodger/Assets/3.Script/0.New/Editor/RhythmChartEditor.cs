@@ -23,6 +23,8 @@ public class RhythmChartEditor : EditorWindow
     private float[] waveformData;
     private AudioClip lastWaveformClip;
     private const int WaveformRes = 2; // Pixels per sample point
+
+    private float autoThreshold = 0.5f;
     
     [MenuItem("Rhythm/Chart Editor")]
     public static void Open()
@@ -183,6 +185,17 @@ public class RhythmChartEditor : EditorWindow
         else
         {
             if (GUILayout.Button("재생", GUILayout.Height(40))) StartPreview();
+        }
+
+        EditorGUILayout.Space();
+        EditorGUILayout.LabelField("자동 노트 생성 (BETA)", EditorStyles.boldLabel);
+        autoThreshold = EditorGUILayout.Slider("감도 (Threshold)", autoThreshold, 0.01f, 1f);
+        if (GUILayout.Button("자동 노트 생성 실행"))
+        {
+            if (EditorUtility.DisplayDialog("자동 생성", "기존 노트를 유지하면서 새로운 노트를 추가하시겠습니까?", "추가", "취소"))
+            {
+                AutoGenerateNotes();
+            }
         }
         
         EditorGUILayout.Space();
@@ -434,6 +447,67 @@ public class RhythmChartEditor : EditorWindow
 
             Handles.DrawLine(new Vector2(centerX - w, y), new Vector2(centerX + w, y));
         }
+    }
+
+    private void AutoGenerateNotes()
+    {
+        if (targetChart == null || targetChart.musicClip == null) return;
+
+        Undo.RecordObject(targetChart, "Auto Generate Notes");
+
+        AudioClip clip = targetChart.musicClip;
+        float[] samples = new float[clip.samples * clip.channels];
+        clip.GetData(samples, 0);
+
+        float secondsPerBeat = 60f / targetChart.bpm;
+        float snapInterval = secondsPerBeat; // 1박자(정박) 단위로 스냅 변경
+        
+        int sampleRate = clip.frequency;
+        int stepSamples = (int)(snapInterval * sampleRate);
+        
+        HashSet<float> existingTimes = new HashSet<float>();
+        foreach(var n in targetChart.notes) existingTimes.Add(Mathf.Round((float)n.time * 1000f) / 1000f);
+
+        for (int i = 0; i < samples.Length - stepSamples; i += stepSamples)
+        {
+            // Calculate RMS energy for this chunk
+            float sum = 0;
+            for (int j = 0; j < stepSamples; j++)
+            {
+                float s = samples[i + j];
+                sum += s * s;
+            }
+            float rms = Mathf.Sqrt(sum / stepSamples);
+
+            // Peak detection logic
+            if (rms > autoThreshold)
+            {
+                float time = (float)i / (sampleRate * clip.channels);
+                float snappedTime = Mathf.Round(time / snapInterval) * snapInterval;
+                float key = Mathf.Round(snappedTime * 1000f) / 1000f;
+
+                if (!existingTimes.Contains(key))
+                {
+                    // 엇박을 제외한 다양한 노트 타입 랜덤 선택
+                    NoteType type = NoteType.Normal;
+                    int span = 1;
+                    float typeRand = UnityEngine.Random.value;
+                    
+                    if (typeRand < 0.15f) type = NoteType.Dash; // 가속 (15%)
+                    else if (typeRand < 0.30f) type = NoteType.Double; // 연타 (15%)
+                    else if (typeRand < 0.45f) span = UnityEngine.Random.Range(2, 5); // 같이치기 (15%, 2~4칸)
+
+                    int lane = UnityEngine.Random.Range(0, 5 - span);
+                    targetChart.notes.Add(new NoteData(snappedTime, lane, span, type));
+                    existingTimes.Add(key);
+                }
+            }
+        }
+
+        targetChart.SortNotes();
+        EditorUtility.SetDirty(targetChart);
+        AssetDatabase.SaveAssets();
+        Repaint();
     }
 
     private void StopPreview()
