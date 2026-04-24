@@ -11,7 +11,7 @@ public class NewRhythmManager : NetworkBehaviour
 
 
     [Header("Sync Settings")]
-    [SyncVar] public double exactStartTime; // 다 같이 시작할 절대 시간!
+    public double exactStartTime;
     private HashSet<int> hitNoteIds = new HashSet<int>(); // 이미 맞춘 노트 명부
     private int _globalNoteId = 0; // 번호표 기계
 
@@ -25,6 +25,10 @@ public class NewRhythmManager : NetworkBehaviour
     [SerializeField] private LaneInputEffect[] inputEffects;
     [SerializeField] private GameObject hitEffectPerfect; // Perfect & Great용
     [SerializeField] private GameObject hitEffectGood;    // Good용
+
+    [Header("Chart Settings")]
+    [SerializeField] private RhythmChart currentChart; // 유니티 인스펙터에서 채보를 넣을 칸!
+    private int currentNoteIndex = 0; // 지금 몇 번째 노트를 꺼낼 차례인가?
 
     private IObjectPool<NoteEnemy> enemyPool;
     private IObjectPool<GameObject> poolPerfect;
@@ -119,24 +123,39 @@ public class NewRhythmManager : NetworkBehaviour
 
     private void Update()
     {
+        // (엔터키 시작 로직은 그대로 둡니다)
         if (Input.GetKeyDown(KeyCode.Return))
         {
-            Debug.Log($"[띠또 보고] 엔터키 눌림! 방장 맞음?: {isServer} / 이미 시작함?: {isGameStart}");
-
-            if (isServer && !isGameStart)
-            {
-                RpcStartMultiGame();
-            }
+            if (isServer && !isGameStart) RpcStartMultiGame();
         }
 
         if (!isGameStart) return;
         double currentTime = AudioSettings.dspTime;
 
-        if (currentTime >= nextBeatTime)
-        {
+        /* if (currentTime >= nextBeatTime) {
             GeneratePattern();
             nextBeatTime += secondsPerBeat;
             OnBeat?.Invoke();
+        } 
+        */
+
+        if (currentChart != null && currentNoteIndex < currentChart.notes.Count)
+        {
+            // 이번에 뱉어내야 할 노트 정보 확인
+            NoteData nextNote = currentChart.notes[currentNoteIndex];
+
+            // 이 노트가 판정선에 닿아야 할 완벽한 타격 시간 = 시작 시간 + 채보에 적힌 시간
+            double targetHitTime = exactStartTime + nextNote.time;
+
+            // 지금 시간이 '타격 시간'보다 '노트가 날아가는 시간(noteDuration)'만큼 전이라면? -> 발사!
+            if (currentTime >= targetHitTime - noteDuration)
+            {
+                // 채보에 적힌 레인, 칸 수, 타입 그대로 생성!
+                SpawnIndividualNote(nextNote.lane, nextNote.span, targetHitTime, nextNote.type);
+
+                // 생성 완료! 다음 노트 대기
+                currentNoteIndex++;
+            }
         }
     }
 
@@ -335,24 +354,36 @@ public class NewRhythmManager : NetworkBehaviour
     [ClientRpc]
     private void RpcStartMultiGame()
     {
-       isGameStart = true; // 자물쇠 해제!
+        isGameStart = true;
+        currentNoteIndex = 0;
+        //  만약 채보가 꽂혀있다면, 채보에 적힌 BPM을 가져오기!
+        if (currentChart != null) bpm = currentChart.bpm;
 
         secondsPerBeat = 60f / bpm;
         noteDuration = beatsToArrive * secondsPerBeat;
 
         double startDelay = 3.0;
-        nextBeatTime = AudioSettings.dspTime + startDelay;
+        exactStartTime = AudioSettings.dspTime + startDelay; //  게임이 진짜 시작되는 절대 시간!
+        nextBeatTime = exactStartTime;
 
         AudioSource audio = GetComponent<AudioSource>();
         if (audio != null && audio.clip != null)
         {
-            audio.PlayScheduled(nextBeatTime);
+            // 채보에 음악이 설정되어 있으면 교체
+            if (currentChart != null && currentChart.musicClip != null)
+                audio.clip = currentChart.musicClip;
+
+            audio.PlayScheduled(exactStartTime);
         }
         else
         {
             Debug.LogWarning("주인님! 오디오 소스에 음악(Clip)이 안 들어있사옵니다!");
         }
 
-        Debug.Log("멀티 리듬 게임 진짜 시작!! 노트야 쏟아져라!!");
+        Debug.Log("멀티 리듬 게임 진짜 시작!! 채보대로 노트가 쏟아집니다!!");
+    }
+    public void TriggerLaneInput(int laneIndex)
+    {
+        ExecuteInput(laneIndex);
     }
 }

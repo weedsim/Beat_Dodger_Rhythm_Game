@@ -13,7 +13,7 @@ GameObject:
   - component: {fileID: 5380021481156374035}
   - component: {fileID: 4825685280129393026}
   - component: {fileID: 5816284128693702890}
-  - component: {fileID: 6613207730484249135}
+  - component: {fileID: 2821376620559569402}
   m_Layer: 0
   m_Name: Player
   m_TagString: Untagged
@@ -132,7 +132,7 @@ MonoBehaviour:
   serverOnly: 0
   visibility: 0
   hasSpawned: 0
---- !u!114 &6613207730484249135
+--- !u!114 &2821376620559569402
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -141,11 +141,10 @@ MonoBehaviour:
   m_GameObject: {fileID: 7706577704150088299}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 8cae9325de443e54f8f9e29d119a5c9c, type: 3}
+  m_Script: {fileID: 11500000, guid: a8ebc2f4e39b6214bb765cf71062b204, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::LobbyPlayer
+  m_EditorClassIdentifier: Assembly-CSharp::RhythmPlayer
   syncDirection: 0
   syncMode: 0
   syncInterval: 0
-  isReady: 0
-  playerIndex: -1
+  myLaneIndex: -1
