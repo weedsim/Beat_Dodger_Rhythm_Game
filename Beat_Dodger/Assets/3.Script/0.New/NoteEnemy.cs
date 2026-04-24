@@ -22,8 +22,9 @@ public class NoteEnemy : MonoBehaviour
     public NoteType Type => type;
     private int hitsRemaining;
     public int HitsRemaining => hitsRemaining;
+    public bool HasContributedToFever { get; set; }
     
-    private bool[] hitLanesMask;
+    private int hitLanesMask;
 
     private Transform cachedTransform;
     private MeshRenderer meshRenderer;
@@ -31,6 +32,8 @@ public class NoteEnemy : MonoBehaviour
     private static readonly int ColorProperty = Shader.PropertyToID("_BaseColor");
 
     private Vector3 originalScale; // 프리팹 원래 스케일 저장
+    private float cachedXPosition;
+    private Vector3 cachedFinalScale;
 
     private void Awake()
     {
@@ -50,9 +53,20 @@ public class NoteEnemy : MonoBehaviour
         beatsToArrive = beats;
         type = noteType;
         
-        // 동시치기 거대 노트는 차지하는 칸 수만큼 타격 필요
-        hitsRemaining = (type == NoteType.Double) ? 2 : laneSpan;
-        hitLanesMask = new bool[laneSpan];
+        // For chords, we need all players to hit. If Double, they must all hit twice.
+        hitsRemaining = laneSpan * (type == NoteType.Double ? 2 : 1);
+        hitLanesMask = 0; // Bitmask reset
+        HasContributedToFever = false;
+
+        // Cache positions and scales that don't change
+        float centerLane = startLane + (laneSpan - 1) / 2f;
+        cachedXPosition = (centerLane - (RhythmConfig.Instance.LaneCount / 2f - 0.5f)) * RhythmConfig.Instance.LaneSpacing;
+        
+        cachedFinalScale = originalScale;
+        if (laneSpan > 1)
+        {
+            cachedFinalScale.x = originalScale.x + (laneSpan - 1) * RhythmConfig.Instance.LaneSpacing;
+        }
 
         ApplyTypeColor();
         UpdatePosition(0f);
@@ -63,9 +77,9 @@ public class NoteEnemy : MonoBehaviour
         if (type == NoteType.Double) return;
 
         int localIndex = lane - startLane;
-        if (localIndex >= 0 && localIndex < hitLanesMask.Length)
+        if (localIndex >= 0 && localIndex < 32) // Use bitmask (max 32 lanes, but usually 4)
         {
-            hitLanesMask[localIndex] = true;
+            hitLanesMask |= (1 << localIndex);
         }
     }
 
@@ -74,9 +88,9 @@ public class NoteEnemy : MonoBehaviour
         if (type == NoteType.Double) return false;
 
         int localIndex = lane - startLane;
-        if (localIndex >= 0 && localIndex < hitLanesMask.Length)
+        if (localIndex >= 0 && localIndex < 32)
         {
-            return hitLanesMask[localIndex];
+            return (hitLanesMask & (1 << localIndex)) != 0;
         }
         return false;
     }
@@ -121,27 +135,17 @@ public class NoteEnemy : MonoBehaviour
         }
         else if (type == NoteType.OffBeat)
         {
-            // 엇박 노트는 글로벌 비트가 아닌 자신의 타겟 타이밍에 맞춰 정확히 이동
             finalProgress = CalculateSteppedProgress(progress, false);
         }
         else
         {
-            // 일반/연타 노트는 글로벌 비트에 맞춰 동기화된 정박 이동
             finalProgress = CalculateSteppedProgress(progress, true);
         }
         
-        float centerLane = startLane + (laneSpan - 1) / 2f;
-        float xPosition = (centerLane - (RhythmConfig.Instance.LaneCount / 2f - 0.5f)) * RhythmConfig.Instance.LaneSpacing;
-        
-        Vector3 finalScale = originalScale;
-        if (laneSpan > 1)
-        {
-            finalScale.x = originalScale.x + (laneSpan - 1) * RhythmConfig.Instance.LaneSpacing;
-        }
-        cachedTransform.localScale = finalScale;
+        cachedTransform.localScale = cachedFinalScale;
 
-        Vector3 startPosition = new Vector3(xPosition, RhythmConfig.Instance.YOffset, RhythmConfig.Instance.SpawnLineZ);
-        Vector3 endPosition = new Vector3(xPosition, RhythmConfig.Instance.YOffset, RhythmConfig.Instance.JudgeLineZ);
+        Vector3 startPosition = new Vector3(cachedXPosition, RhythmConfig.Instance.YOffset, RhythmConfig.Instance.SpawnLineZ);
+        Vector3 endPosition = new Vector3(cachedXPosition, RhythmConfig.Instance.YOffset, RhythmConfig.Instance.JudgeLineZ);
 
         cachedTransform.localPosition = Vector3.Lerp(startPosition, endPosition, finalProgress);
     }
@@ -200,11 +204,20 @@ public class NoteEnemy : MonoBehaviour
     public void OnHit()
     {
         hitsRemaining--;
+
+        // For Double notes, reset the hit mask after the first full set of hits 
+        // so players can hit the same lanes again for the second set.
+        if (type == NoteType.Double && hitsRemaining == laneSpan)
+        {
+            hitLanesMask = 0;
+        }
+
         if (hitsRemaining <= 0) ReleaseToPool();
     }
 
     public void ReleaseToPool()
     {
         if (pool != null) pool.Release(this);
+        else Destroy(gameObject); // For non-pooled objects like the Boss
     }
 }

@@ -102,6 +102,10 @@ public class RhythmColorSwitcher : MonoBehaviour
 
         if (propertyBlock == null) propertyBlock = new MaterialPropertyBlock();
 
+        bool isFever = NewRhythmManager.Instance != null && NewRhythmManager.Instance.IsFeverTime;
+        Color currentA = isFever ? feverColorA : colorA;
+        Color currentB = isFever ? feverColorB : colorB;
+
         for (int r = 0; r < laneRenderers.Count; r++)
         {
             MeshRenderer[] renderersInRow = laneRenderers[r];
@@ -113,17 +117,11 @@ public class RhythmColorSwitcher : MonoBehaviour
                 if (renderer == null) continue;
 
                 bool useColorA = ((r + c) % 2 == 0) ^ isAlternate;
-                
-                Color currentA = NewRhythmManager.Instance != null && NewRhythmManager.Instance.IsFeverTime ? feverColorA : colorA;
-                Color currentB = NewRhythmManager.Instance != null && NewRhythmManager.Instance.IsFeverTime ? feverColorB : colorB;
-                
                 Color targetColor = useColorA ? currentA : currentB;
 
                 renderer.GetPropertyBlock(propertyBlock);
-                
                 propertyBlock.SetColor(ColorId, targetColor);
                 propertyBlock.SetColor(BaseColorId, targetColor);
-                
                 renderer.SetPropertyBlock(propertyBlock);
             }
         }

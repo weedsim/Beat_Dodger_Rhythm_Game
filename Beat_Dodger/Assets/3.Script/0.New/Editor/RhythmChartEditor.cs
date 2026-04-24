@@ -25,6 +25,19 @@ public class RhythmChartEditor : EditorWindow
     private const int WaveformRes = 2; // Pixels per sample point
 
     private float autoThreshold = 0.5f;
+    private float offBeatThreshold = 0.6f;
+    private float span2Threshold = 1.4f;
+    private float span4Threshold = 2.0f;
+    private float specialNoteChance = 0.2f;
+    private float lastSpan4Time = -10f; 
+    private float lastSpan2Time = -10f; // Cooldown for 2-player notes
+
+    // FFT Data
+    private struct Complex 
+    { 
+        public float r; 
+        public float i; 
+    }
     
     [MenuItem("Rhythm/Chart Editor")]
     public static void Open()
@@ -188,11 +201,16 @@ public class RhythmChartEditor : EditorWindow
         }
 
         EditorGUILayout.Space();
-        EditorGUILayout.LabelField("자동 노트 생성 (BETA)", EditorStyles.boldLabel);
-        autoThreshold = EditorGUILayout.Slider("감도 (Threshold)", autoThreshold, 0.01f, 1f);
-        if (GUILayout.Button("자동 노트 생성 실행"))
+        EditorGUILayout.LabelField("자동 노트 생성 설정", EditorStyles.boldLabel);
+        autoThreshold = EditorGUILayout.Slider("기본 감도 (Global)", autoThreshold, 0.01f, 1f);
+        offBeatThreshold = EditorGUILayout.Slider("엇박 감도 (Off-Beat)", offBeatThreshold, 0.01f, 1f);
+        span2Threshold = EditorGUILayout.Slider("2인 같이치기 감도", span2Threshold, 0.1f, 50.0f);
+        span4Threshold = EditorGUILayout.Slider("4인 같이치기 감도", span4Threshold, 0.1f, 50.0f);
+        specialNoteChance = EditorGUILayout.Slider("특수노트 확률", specialNoteChance, 0f, 1f);
+
+        if (GUILayout.Button("자동 노트 생성 실행", GUILayout.Height(30)))
         {
-            if (EditorUtility.DisplayDialog("자동 생성", "기존 노트를 유지하면서 새로운 노트를 추가하시겠습니까?", "추가", "취소"))
+            if (EditorUtility.DisplayDialog("자동 생성", "기본 설정을 기반으로 노트를 생성하시겠습니까?", "생성", "취소"))
             {
                 AutoGenerateNotes();
             }
@@ -453,53 +471,118 @@ public class RhythmChartEditor : EditorWindow
     {
         if (targetChart == null || targetChart.musicClip == null) return;
 
-        Undo.RecordObject(targetChart, "Auto Generate Notes");
+        Undo.RecordObject(targetChart, "Auto Generate Notes (Co-op Optimized)");
 
         AudioClip clip = targetChart.musicClip;
-        float[] samples = new float[clip.samples * clip.channels];
+        int channels = clip.channels;
+        int sampleRate = clip.frequency;
+        float[] samples = new float[clip.samples * channels];
         clip.GetData(samples, 0);
 
         float secondsPerBeat = 60f / targetChart.bpm;
-        float snapInterval = secondsPerBeat; // 1박자(정박) 단위로 스냅 변경
         
-        int sampleRate = clip.frequency;
+        // Reset cooldowns for a fresh generation run
+        lastSpan2Time = -100f;
+        lastSpan4Time = -100f;
+
+        float snapInterval = secondsPerBeat; 
         int stepSamples = (int)(snapInterval * sampleRate);
         
+        // FFT Settings
+        int fftSize = 1024; 
+        
+        // Lane balancing data
+        int[] laneNoteCounts = new int[4];
         HashSet<float> existingTimes = new HashSet<float>();
-        foreach(var n in targetChart.notes) existingTimes.Add(Mathf.Round((float)n.time * 1000f) / 1000f);
-
-        for (int i = 0; i < samples.Length - stepSamples; i += stepSamples)
+        foreach (var n in targetChart.notes)
         {
-            // Calculate RMS energy for this chunk
+            existingTimes.Add(Mathf.Round((float)n.time * 1000f) / 1000f);
+            if (n.lane >= 0 && n.lane < 4) laneNoteCounts[n.lane]++;
+        }
+
+        // Scan at 0.5 beat (8th note) resolution for a cleaner chart
+        int microStep = stepSamples / 2; 
+        float lastNoteTime = -1f;
+        int lastLane = -1;
+
+        for (int i = 0; i < samples.Length - stepSamples - fftSize; i += microStep)
+        {
+            // 1. Calculate RMS for Timing
             float sum = 0;
-            for (int j = 0; j < stepSamples; j++)
+            for (int j = 0; j < microStep; j++)
             {
                 float s = samples[i + j];
                 sum += s * s;
             }
-            float rms = Mathf.Sqrt(sum / stepSamples);
+            float rms = Mathf.Sqrt(sum / microStep);
 
-            // Peak detection logic
             if (rms > autoThreshold)
             {
-                float time = (float)i / (sampleRate * clip.channels);
-                float snappedTime = Mathf.Round(time / snapInterval) * snapInterval;
+                float time = (float)i / (sampleRate * channels);
+                float halfBeatInterval = secondsPerBeat / 2f;
+                float snappedTime = Mathf.Round(time / halfBeatInterval) * halfBeatInterval;
                 float key = Mathf.Round(snappedTime * 1000f) / 1000f;
 
                 if (!existingTimes.Contains(key))
                 {
-                    // 엇박을 제외한 다양한 노트 타입 랜덤 선택
+                    // Density Control: If a note was added very recently, require much higher energy
+                    float timeSinceLastNote = snappedTime - lastNoteTime;
+                    if (timeSinceLastNote < secondsPerBeat * 0.49f && rms < autoThreshold * 1.5f) continue;
+
+                    // 2. Perform FFT for Frequency
+                    float dominantFreq = GetDominantFrequency(samples, i, fftSize, sampleRate, channels);
+                    
+                    // 3. Determine Note Type & Span
                     NoteType type = NoteType.Normal;
                     int span = 1;
-                    float typeRand = UnityEngine.Random.value;
-                    
-                    if (typeRand < 0.15f) type = NoteType.Dash; // 가속 (15%)
-                    else if (typeRand < 0.30f) type = NoteType.Double; // 연타 (15%)
-                    else if (typeRand < 0.45f) span = UnityEngine.Random.Range(2, 5); // 같이치기 (15%, 2~4칸)
+                    float ratio = rms / autoThreshold;
 
-                    int lane = UnityEngine.Random.Range(0, 5 - span);
-                    targetChart.notes.Add(new NoteData(snappedTime, lane, span, type));
+                    // Detect Off-Beat (on the x.5 position)
+                    float beatPos = snappedTime / secondsPerBeat;
+                    bool isMainBeat = Mathf.Approximately(beatPos % 1.0f, 0);
+                    
+                    if (!isMainBeat) 
+                    {
+                        // Use specific off-beat threshold
+                        if (rms < offBeatThreshold) continue;
+                        type = NoteType.OffBeat;
+                    }
+                    else
+                    {
+                        // Together hits (Span 2/4) only appear on main beats
+                        if (ratio >= span4Threshold && (snappedTime - lastSpan4Time >= secondsPerBeat * 3.9f)) 
+                        {
+                            span = 4;
+                            lastSpan4Time = snappedTime;
+                        }
+                        else if (ratio >= span2Threshold && (snappedTime - lastSpan2Time >= secondsPerBeat * 0.95f)) 
+                        {
+                            // Increased probability to 90%
+                            if (UnityEngine.Random.value < 0.9f)
+                            {
+                                span = 2;
+                                lastSpan2Time = snappedTime;
+                            }
+                        }
+                    }
+                    
+                    // 4. Select Fairest Start Lane
+                    int startLane = SelectFairestStartLane(span, dominantFreq, laneNoteCounts, lastLane);
+
+                    // Add variety using specialNoteChance
+                    if (type == NoteType.Normal)
+                    {
+                        float typeRand = UnityEngine.Random.value;
+                        if (typeRand < specialNoteChance * 0.5f) type = NoteType.Dash;
+                        else if (typeRand < specialNoteChance) type = NoteType.Double;
+                    }
+
+                    targetChart.notes.Add(new NoteData(snappedTime, startLane, span, type));
+                    
+                    for (int l = startLane; l < startLane + span && l < 4; l++) laneNoteCounts[l]++;
                     existingTimes.Add(key);
+                    lastNoteTime = snappedTime;
+                    lastLane = startLane;
                 }
             }
         }
@@ -508,6 +591,121 @@ public class RhythmChartEditor : EditorWindow
         EditorUtility.SetDirty(targetChart);
         AssetDatabase.SaveAssets();
         Repaint();
+        Debug.Log("<color=green>[AutoMap]</color> Generated with Co-op Balance Logic.");
+    }
+
+    private float GetDominantFrequency(float[] samples, int startIdx, int fftSize, int sampleRate, int channels)
+    {
+        Complex[] complexData = new Complex[fftSize];
+        for (int i = 0; i < fftSize; i++)
+        {
+            int idx = startIdx + (i * channels);
+            if (idx < samples.Length)
+            {
+                // Applying Hamming window
+                float window = 0.54f - 0.46f * Mathf.Cos(2 * Mathf.PI * i / (fftSize - 1));
+                complexData[i].r = samples[idx] * window;
+            }
+        }
+
+        PerformFFT(complexData);
+
+        float maxMag = 0;
+        int maxBin = 0;
+        for (int i = 0; i < fftSize / 2; i++)
+        {
+            float mag = Mathf.Sqrt(complexData[i].r * complexData[i].r + complexData[i].i * complexData[i].i);
+            if (mag > maxMag)
+            {
+                maxMag = mag;
+                maxBin = i;
+            }
+        }
+
+        return (float)maxBin * sampleRate / fftSize;
+    }
+
+    private int SelectFairestStartLane(int span, float freq, int[] currentCounts, int lastLane)
+    {
+        if (span >= 4) return 0;
+
+        int bestStartLane = 0;
+        float minScore = float.MaxValue;
+
+        int maxStartLane = 4 - span;
+        int preferredSide = (freq < 1000f) ? 0 : 2; 
+
+        for (int i = 0; i <= maxStartLane; i++)
+        {
+            float avgCount = 0;
+            for (int l = i; l < i + span; l++) avgCount += currentCounts[l];
+            avgCount /= span;
+
+            // 1. Fairness Score (Base)
+            float score = avgCount;
+
+            // 2. Frequency Bias
+            if (i >= preferredSide && i < preferredSide + 2) score -= 0.3f;
+
+            // 3. Sequential Penalty (Prevent 1->2->3->4 stairs)
+            // If this lane is right next to the last one, add a penalty
+            if (lastLane != -1)
+            {
+                int dist = Mathf.Abs(i - lastLane);
+                if (dist == 1) score += 0.8f; // Strong penalty for adjacent lanes
+                else if (dist == 0) score += 1.5f; // Very strong penalty for same lane
+            }
+
+            // 4. Random Noise (Break deterministic ties)
+            score += UnityEngine.Random.value * 0.2f;
+
+            if (score < minScore)
+            {
+                minScore = score;
+                bestStartLane = i;
+            }
+        }
+
+        return bestStartLane;
+    }
+
+    private void PerformFFT(Complex[] data)
+    {
+        int n = data.Length;
+        int m = (int)Mathf.Log(n, 2);
+
+        // Bit-reversal permutation
+        for (int i = 0; i < n; i++)
+        {
+            int j = 0;
+            for (int k = 0; k < m; k++) j |= ((i >> k) & 1) << (m - 1 - k);
+            if (j > i) { var temp = data[i]; data[i] = data[j]; data[j] = temp; }
+        }
+
+        // Cooley-Tukey FFT
+        for (int i = 0; i < m; i++)
+        {
+            int step = 1 << (i + 1);
+            int halfStep = 1 << i;
+            float angle = -2 * Mathf.PI / step;
+            for (int k = 0; k < halfStep; k++)
+            {
+                Complex w = new Complex { r = Mathf.Cos(k * angle), i = Mathf.Sin(k * angle) };
+                for (int j = k; j < n; j += step)
+                {
+                    Complex u = data[j];
+                    Complex v = new Complex 
+                    { 
+                        r = data[j + halfStep].r * w.r - data[j + halfStep].i * w.i, 
+                        i = data[j + halfStep].r * w.i + data[j + halfStep].i * w.r 
+                    };
+                    data[j].r = u.r + v.r;
+                    data[j].i = u.i + v.i;
+                    data[j + halfStep].r = u.r - v.r;
+                    data[j + halfStep].i = u.i - v.i;
+                }
+            }
+        }
     }
 
     private void StopPreview()

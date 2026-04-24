@@ -17,265 +17,329 @@ MonoBehaviour:
   bpm: 120
   notes:
   - time: 0
-    lane: 3
+    lane: 2
     span: 1
     type: 0
   - time: 0.5
     lane: 0
     span: 1
-    type: 0
-  - time: 0.75
+    type: 1
+  - time: 1
     lane: 3
     span: 1
-    type: 3
-  - time: 1
-    lane: 0
-    span: 1
     type: 0
-  - time: 1.25
-    lane: 2
-    span: 1
-    type: 3
   - time: 1.5
-    lane: 0
-    span: 1
-    type: 0
-  - time: 1.75
     lane: 1
     span: 1
-    type: 3
+    type: 2
   - time: 2
-    lane: 0
-    span: 1
-    type: 0
-  - time: 2.25
-    lane: 2
-    span: 1
-    type: 3
-  - time: 2.5
-    lane: 0
-    span: 1
-    type: 0
-  - time: 2.75
     lane: 3
     span: 1
-    type: 3
+    type: 0
+  - time: 2.5
+    lane: 1
+    span: 1
+    type: 0
   - time: 3
     lane: 0
     span: 1
-    type: 0
+    type: 2
   - time: 3.5
-    lane: 1
+    lane: 2
     span: 1
-    type: 0
+    type: 2
   - time: 4
-    lane: 1
+    lane: 0
     span: 1
-    type: 0
+    type: 2
   - time: 4.5
-    lane: 1
+    lane: 3
     span: 1
-    type: 0
+    type: 2
   - time: 5
     lane: 1
     span: 1
     type: 0
   - time: 5.5
-    lane: 0
-    span: 1
-    type: 1
-  - time: 6
     lane: 2
     span: 1
-    type: 0
-  - time: 6.5
-    lane: 3
+    type: 2
+  - time: 6
+    lane: 0
     span: 1
-    type: 1
-  - time: 7
+    type: 0
+  - time: 6.25
+    lane: 2
+    span: 1
+    type: 3
+  - time: 6.5
     lane: 1
     span: 1
     type: 0
+  - time: 6.75
+    lane: 3
+    span: 1
+    type: 3
+  - time: 7
+    lane: 0
+    span: 1
+    type: 0
+  - time: 7.25
+    lane: 2
+    span: 1
+    type: 3
   - time: 7.5
     lane: 1
     span: 1
-    type: 2
+    type: 1
+  - time: 7.75
+    lane: 3
+    span: 1
+    type: 3
   - time: 8
     lane: 0
     span: 1
-    type: 0
+    type: 1
   - time: 8.5
-    lane: 0
-    span: 1
+    lane: 2
+    span: 2
     type: 0
-  - time: 9
+  - time: 8.75
     lane: 1
+    span: 1
+    type: 3
+  - time: 9
+    lane: 3
     span: 1
     type: 0
   - time: 9.5
+    lane: 1
+    span: 2
+    type: 0
+  - time: 9.75
     lane: 0
     span: 1
-    type: 0
+    type: 3
   - time: 10
-    lane: 3
-    span: 1
-    type: 1
+    lane: 2
+    span: 2
+    type: 0
   - time: 10.5
     lane: 0
-    span: 1
-    type: 0
-  - time: 11
-    lane: 3
-    span: 1
-    type: 0
-  - time: 11.5
-    lane: 0
     span: 4
     type: 0
-  - time: 12
-    lane: 0
-    span: 1
-    type: 0
-  - time: 12.5
+  - time: 10.75
     lane: 1
     span: 1
-    type: 1
-  - time: 13
+    type: 3
+  - time: 11
     lane: 0
-    span: 4
+    span: 2
     type: 0
-  - time: 13.5
+  - time: 11.5
+    lane: 2
+    span: 1
+    type: 2
+  - time: 11.75
     lane: 0
     span: 1
+    type: 3
+  - time: 12
+    lane: 2
+    span: 2
     type: 0
+  - time: 12.5
+    lane: 0
+    span: 2
+    type: 0
+  - time: 12.75
+    lane: 3
+    span: 1
+    type: 3
+  - time: 13
+    lane: 1
+    span: 2
+    type: 2
+  - time: 13.5
+    lane: 0
+    span: 2
+    type: 2
+  - time: 13.75
+    lane: 3
+    span: 1
+    type: 3
   - time: 14
+    lane: 1
+    span: 2
+    type: 2
+  - time: 14.25
+    lane: 3
+    span: 1
+    type: 3
+  - time: 14.5
+    lane: 0
+    span: 2
+    type: 0
+  - time: 14.75
+    lane: 3
+    span: 1
+    type: 3
+  - time: 15
+    lane: 0
+    span: 2
+    type: 0
+  - time: 15.5
+    lane: 2
+    span: 2
+    type: 1
+  - time: 15.75
+    lane: 0
+    span: 1
+    type: 3
+  - time: 16
     lane: 2
     span: 1
     type: 0
-  - time: 14.5
-    lane: 3
-    span: 1
-    type: 1
-  - time: 15
-    lane: 3
-    span: 1
-    type: 1
-  - time: 15.5
+  - time: 16.25
     lane: 0
     span: 1
-    type: 0
-  - time: 16
-    lane: 0
-    span: 1
-    type: 0
+    type: 3
   - time: 16.5
     lane: 3
     span: 1
     type: 0
   - time: 17
-    lane: 1
+    lane: 0
     span: 1
     type: 0
   - time: 17.5
-    lane: 1
-    span: 2
-    type: 0
-  - time: 18
     lane: 2
     span: 1
-    type: 2
+    type: 0
+  - time: 18
+    lane: 1
+    span: 1
+    type: 0
   - time: 18.5
     lane: 3
     span: 1
     type: 0
   - time: 19
     lane: 0
+    span: 4
+    type: 0
+  - time: 19.25
+    lane: 2
     span: 1
-    type: 1
+    type: 3
   - time: 19.5
+    lane: 0
+    span: 1
+    type: 0
+  - time: 19.75
+    lane: 2
+    span: 1
+    type: 3
+  - time: 20
+    lane: 1
+    span: 1
+    type: 0
+  - time: 20.5
     lane: 3
     span: 1
     type: 2
-  - time: 20
-    lane: 2
-    span: 2
-    type: 0
-  - time: 20.5
-    lane: 2
-    span: 1
-    type: 0
   - time: 21
-    lane: 0
+    lane: 1
     span: 1
     type: 1
   - time: 21.5
-    lane: 1
+    lane: 3
     span: 1
     type: 0
   - time: 22
-    lane: 2
-    span: 1
-    type: 0
-  - time: 22.5
-    lane: 3
-    span: 1
-    type: 2
-  - time: 23
-    lane: 3
-    span: 1
-    type: 0
-  - time: 23.5
-    lane: 3
-    span: 1
-    type: 2
-  - time: 24
-    lane: 1
-    span: 1
-    type: 0
-  - time: 24.5
-    lane: 1
-    span: 1
-    type: 1
-  - time: 25
     lane: 0
     span: 1
     type: 2
+  - time: 22.5
+    lane: 2
+    span: 1
+    type: 1
+  - time: 23
+    lane: 0
+    span: 1
+    type: 2
+  - time: 23.25
+    lane: 2
+    span: 1
+    type: 3
+  - time: 23.5
+    lane: 1
+    span: 1
+    type: 0
+  - time: 24
+    lane: 3
+    span: 1
+    type: 1
+  - time: 24.5
+    lane: 1
+    span: 2
+    type: 1
+  - time: 25
+    lane: 0
+    span: 2
+    type: 0
+  - time: 25.25
+    lane: 3
+    span: 1
+    type: 3
   - time: 25.5
+    lane: 0
+    span: 1
+    type: 2
+  - time: 25.75
     lane: 2
     span: 1
-    type: 0
+    type: 3
   - time: 26
-    lane: 3
+    lane: 0
     span: 1
-    type: 0
+    type: 2
   - time: 26.5
-    lane: 1
-    span: 1
-    type: 0
-  - time: 27
-    lane: 1
-    span: 1
-    type: 0
-  - time: 27.5
     lane: 3
     span: 1
-    type: 0
-  - time: 28
-    lane: 2
+    type: 1
+  - time: 26.75
+    lane: 1
     span: 1
+    type: 3
+  - time: 27
+    lane: 2
+    span: 2
+    type: 1
+  - time: 27.5
+    lane: 0
+    span: 2
+    type: 2
+  - time: 27.75
+    lane: 3
+    span: 1
+    type: 3
+  - time: 28
+    lane: 1
+    span: 2
     type: 0
   - time: 28.5
-    lane: 1
+    lane: 3
     span: 1
     type: 0
   - time: 29
-    lane: 3
+    lane: 0
     span: 1
-    type: 0
+    type: 1
   - time: 29.5
-    lane: 1
+    lane: 2
     span: 1
-    type: 0
+    type: 1
   - time: 30
     lane: 0
     span: 1
@@ -284,412 +348,528 @@ MonoBehaviour:
     lane: 2
     span: 1
     type: 0
-  - time: 31.5
+  - time: 31.25
     lane: 1
+    span: 1
+    type: 3
+  - time: 31.5
+    lane: 2
     span: 2
     type: 0
-  - time: 32
+  - time: 31.75
     lane: 0
     span: 1
+    type: 3
+  - time: 32
+    lane: 2
+    span: 2
     type: 0
   - time: 32.5
-    lane: 3
-    span: 1
-    type: 1
-  - time: 33
-    lane: 2
-    span: 1
-    type: 0
-  - time: 33.5
-    lane: 1
-    span: 1
-    type: 0
-  - time: 34
-    lane: 0
-    span: 1
-    type: 1
-  - time: 34.5
     lane: 1
     span: 1
     type: 2
-  - time: 35
+  - time: 32.75
+    lane: 3
+    span: 1
+    type: 3
+  - time: 33
     lane: 1
-    span: 3
+    span: 1
     type: 0
-  - time: 35.5
+  - time: 33.5
+    lane: 0
+    span: 1
+    type: 2
+  - time: 33.75
     lane: 2
     span: 1
+    type: 3
+  - time: 34
+    lane: 0
+    span: 1
+    type: 2
+  - time: 34.5
+    lane: 2
+    span: 2
+    type: 0
+  - time: 35
+    lane: 1
+    span: 1
+    type: 1
+  - time: 35.5
+    lane: 0
+    span: 2
     type: 0
   - time: 36
     lane: 3
     span: 1
-    type: 0
+    type: 1
   - time: 36.5
     lane: 0
-    span: 3
-    type: 0
-  - time: 37
-    lane: 2
-    span: 1
-    type: 0
-  - time: 37.5
+    span: 2
+    type: 2
+  - time: 36.75
     lane: 3
     span: 1
+    type: 3
+  - time: 37
+    lane: 1
+    span: 2
     type: 0
+  - time: 37.25
+    lane: 3
+    span: 1
+    type: 3
+  - time: 37.5
+    lane: 0
+    span: 2
+    type: 2
+  - time: 37.75
+    lane: 2
+    span: 1
+    type: 3
   - time: 38
     lane: 0
     span: 1
-    type: 1
+    type: 0
   - time: 38.5
-    lane: 1
-    span: 1
+    lane: 0
+    span: 4
     type: 2
   - time: 39
-    lane: 1
-    span: 3
-    type: 0
-  - time: 39.5
-    lane: 0
-    span: 1
-    type: 1
-  - time: 40
-    lane: 0
-    span: 1
-    type: 1
-  - time: 40.5
-    lane: 3
-    span: 1
-    type: 1
-  - time: 41
-    lane: 0
-    span: 3
-    type: 0
-  - time: 41.5
-    lane: 2
-    span: 1
-    type: 0
-  - time: 42
-    lane: 0
-    span: 1
-    type: 1
-  - time: 42.5
-    lane: 2
-    span: 1
-    type: 0
-  - time: 43
     lane: 2
     span: 2
-    type: 0
-  - time: 43.5
+    type: 2
+  - time: 39.25
     lane: 0
-    span: 3
+    span: 1
+    type: 3
+  - time: 39.5
+    lane: 2
+    span: 2
+    type: 2
+  - time: 39.75
+    lane: 1
+    span: 1
+    type: 3
+  - time: 40
+    lane: 3
+    span: 1
+    type: 0
+  - time: 40.5
+    lane: 0
+    span: 4
+    type: 2
+  - time: 41
+    lane: 2
+    span: 1
+    type: 1
+  - time: 41.5
+    lane: 0
+    span: 1
+    type: 2
+  - time: 41.75
+    lane: 1
+    span: 1
+    type: 3
+  - time: 42
+    lane: 3
+    span: 1
+    type: 0
+  - time: 42.25
+    lane: 1
+    span: 1
+    type: 3
+  - time: 42.5
+    lane: 0
+    span: 2
+    type: 0
+  - time: 42.75
+    lane: 2
+    span: 1
+    type: 3
+  - time: 43
+    lane: 0
+    span: 1
+    type: 2
+  - time: 43.5
+    lane: 3
+    span: 1
     type: 0
   - time: 44
     lane: 0
     span: 1
-    type: 0
+    type: 2
   - time: 44.5
+    lane: 2
+    span: 2
+    type: 0
+  - time: 44.75
     lane: 1
     span: 1
-    type: 0
+    type: 3
   - time: 45
-    lane: 3
-    span: 1
-    type: 0
+    lane: 2
+    span: 2
+    type: 2
   - time: 45.5
-    lane: 2
-    span: 1
-    type: 1
+    lane: 0
+    span: 4
+    type: 0
   - time: 46
-    lane: 2
-    span: 1
+    lane: 1
+    span: 2
     type: 0
   - time: 46.5
     lane: 0
     span: 1
-    type: 2
-  - time: 47
+    type: 0
+  - time: 46.75
     lane: 2
+    span: 1
+    type: 3
+  - time: 47
+    lane: 0
     span: 1
     type: 0
   - time: 47.5
-    lane: 1
+    lane: 3
     span: 1
     type: 0
   - time: 48
-    lane: 0
-    span: 1
-    type: 0
+    lane: 1
+    span: 2
+    type: 1
   - time: 48.5
-    lane: 2
+    lane: 3
     span: 1
     type: 0
   - time: 49
-    lane: 1
-    span: 1
-    type: 1
+    lane: 0
+    span: 2
+    type: 0
   - time: 49.5
     lane: 3
     span: 1
-    type: 0
+    type: 2
   - time: 50
-    lane: 3
+    lane: 1
     span: 1
     type: 1
   - time: 50.5
-    lane: 1
+    lane: 0
     span: 1
-    type: 0
+    type: 2
   - time: 51
-    lane: 3
-    span: 1
-    type: 0
-  - time: 51.5
     lane: 2
+    span: 1
+    type: 1
+  - time: 51.25
+    lane: 0
+    span: 1
+    type: 3
+  - time: 51.5
+    lane: 3
     span: 1
     type: 0
   - time: 52
-    lane: 2
+    lane: 1
     span: 1
-    type: 1
+    type: 0
   - time: 52.5
     lane: 2
     span: 1
-    type: 0
+    type: 1
   - time: 53
+    lane: 0
+    span: 1
+    type: 2
+  - time: 53.5
+    lane: 2
+    span: 2
+    type: 0
+  - time: 54
+    lane: 0
+    span: 2
+    type: 0
+  - time: 54.25
     lane: 2
     span: 1
-    type: 0
-  - time: 53.5
-    lane: 3
-    span: 1
-    type: 1
-  - time: 54
-    lane: 1
-    span: 1
-    type: 0
+    type: 3
   - time: 54.5
     lane: 1
     span: 1
-    type: 0
+    type: 1
   - time: 55
-    lane: 1
-    span: 1
+    lane: 2
+    span: 2
     type: 0
   - time: 55.5
-    lane: 3
-    span: 1
+    lane: 0
+    span: 4
     type: 0
   - time: 56
+    lane: 2
+    span: 2
+    type: 0
+  - time: 56.25
     lane: 0
     span: 1
-    type: 0
+    type: 3
   - time: 56.5
     lane: 1
     span: 1
     type: 0
+  - time: 56.75
+    lane: 3
+    span: 1
+    type: 3
   - time: 57
-    lane: 1
-    span: 1
-    type: 0
-  - time: 57.5
-    lane: 3
-    span: 1
-    type: 2
-  - time: 58
-    lane: 3
-    span: 1
-    type: 2
-  - time: 58.5
-    lane: 2
+    lane: 0
     span: 2
     type: 0
-  - time: 59
+  - time: 57.25
+    lane: 3
+    span: 1
+    type: 3
+  - time: 57.5
     lane: 0
     span: 1
-    type: 0
-  - time: 59.5
+    type: 2
+  - time: 57.75
+    lane: 2
+    span: 1
+    type: 3
+  - time: 58
     lane: 1
     span: 1
-    type: 2
-  - time: 60
-    lane: 1
-    span: 3
     type: 0
+  - time: 58.5
+    lane: 3
+    span: 1
+    type: 0
+  - time: 59
+    lane: 1
+    span: 1
+    type: 1
+  - time: 59.5
+    lane: 0
+    span: 1
+    type: 1
+  - time: 60
+    lane: 2
+    span: 1
+    type: 1
   - time: 60.5
     lane: 0
     span: 1
-    type: 0
+    type: 1
   - time: 61
-    lane: 1
+    lane: 3
     span: 1
     type: 0
+  - time: 61.25
+    lane: 1
+    span: 1
+    type: 3
   - time: 61.5
-    lane: 1
-    span: 3
-    type: 0
-  - time: 62
-    lane: 1
+    lane: 2
     span: 1
-    type: 0
-  - time: 62.5
+    type: 1
+  - time: 61.75
     lane: 0
     span: 1
+    type: 3
+  - time: 62
+    lane: 3
+    span: 1
+    type: 1
+  - time: 62.5
+    lane: 1
+    span: 2
     type: 0
   - time: 63
-    lane: 1
+    lane: 3
     span: 1
-    type: 1
+    type: 2
   - time: 63.5
     lane: 1
-    span: 1
-    type: 1
+    span: 2
+    type: 0
   - time: 64
-    lane: 3
+    lane: 0
     span: 1
     type: 0
   - time: 64.5
-    lane: 3
+    lane: 2
+    span: 2
+    type: 0
+  - time: 65
+    lane: 0
     span: 1
     type: 2
-  - time: 65
-    lane: 3
-    span: 1
-    type: 0
   - time: 65.5
-    lane: 2
+    lane: 1
     span: 1
     type: 0
   - time: 66
+    lane: 3
+    span: 1
+    type: 2
+  - time: 66.5
+    lane: 0
+    span: 2
+    type: 2
+  - time: 67
+    lane: 2
+    span: 1
+    type: 1
+  - time: 67.5
+    lane: 0
+    span: 2
+    type: 2
+  - time: 68
+    lane: 2
+    span: 2
+    type: 1
+  - time: 68.25
     lane: 0
     span: 1
-    type: 0
-  - time: 66.5
-    lane: 2
-    span: 1
-    type: 0
-  - time: 67
-    lane: 3
-    span: 1
-    type: 2
-  - time: 67.5
-    lane: 1
-    span: 1
-    type: 0
-  - time: 68
-    lane: 3
-    span: 1
-    type: 2
+    type: 3
   - time: 68.5
     lane: 2
-    span: 1
+    span: 2
     type: 0
   - time: 69
     lane: 0
-    span: 4
+    span: 2
     type: 0
   - time: 69.5
-    lane: 3
+    lane: 2
     span: 1
-    type: 0
+    type: 1
   - time: 70
-    lane: 0
+    lane: 1
     span: 1
     type: 2
   - time: 70.5
-    lane: 1
-    span: 1
-    type: 0
+    lane: 2
+    span: 2
+    type: 2
   - time: 71
-    lane: 1
+    lane: 0
     span: 1
     type: 0
   - time: 71.5
     lane: 3
     span: 1
-    type: 0
+    type: 1
   - time: 72
-    lane: 3
-    span: 1
-    type: 0
-  - time: 72.5
     lane: 1
     span: 1
-    type: 0
+    type: 1
+  - time: 72.5
+    lane: 0
+    span: 2
+    type: 2
+  - time: 72.75
+    lane: 3
+    span: 1
+    type: 3
   - time: 73
-    lane: 2
+    lane: 0
     span: 1
     type: 0
   - time: 73.5
-    lane: 1
+    lane: 2
     span: 1
     type: 0
   - time: 74
     lane: 1
     span: 1
-    type: 0
+    type: 2
   - time: 74.5
-    lane: 0
-    span: 1
-    type: 0
+    lane: 2
+    span: 2
+    type: 1
   - time: 75
-    lane: 3
+    lane: 0
     span: 1
     type: 0
   - time: 75.5
-    lane: 0
-    span: 1
-    type: 0
-  - time: 76
+    lane: 2
+    span: 2
+    type: 1
+  - time: 75.75
     lane: 1
+    span: 1
+    type: 3
+  - time: 76
+    lane: 3
     span: 1
     type: 1
   - time: 76.5
+    lane: 1
+    span: 2
+    type: 0
+  - time: 76.75
     lane: 0
     span: 1
-    type: 1
+    type: 3
   - time: 77
-    lane: 1
-    span: 1
-    type: 2
+    lane: 2
+    span: 2
+    type: 0
   - time: 77.5
-    lane: 3
+    lane: 0
     span: 1
     type: 0
+  - time: 77.75
+    lane: 2
+    span: 1
+    type: 3
   - time: 78
     lane: 1
     span: 1
     type: 2
   - time: 78.5
-    lane: 0
-    span: 4
-    type: 0
-  - time: 79.5
-    lane: 2
-    span: 1
-    type: 0
-  - time: 80
-    lane: 2
-    span: 1
-    type: 1
-  - time: 80.5
-    lane: 2
-    span: 1
-    type: 0
-  - time: 81
-    lane: 1
-    span: 1
-    type: 0
-  - time: 81.5
     lane: 3
     span: 1
     type: 0
-  - time: 82
+  - time: 79
+    lane: 1
+    span: 1
+    type: 0
+  - time: 79.5
+    lane: 0
+    span: 1
+    type: 0
+  - time: 80
+    lane: 3
+    span: 1
+    type: 1
+  - time: 80.5
+    lane: 0
+    span: 1
+    type: 2
+  - time: 81
     lane: 2
+    span: 1
+    type: 2
+  - time: 81.5
+    lane: 1
+    span: 1
+    type: 0
+  - time: 82
+    lane: 3
     span: 1
     type: 0
   - time: 82.5
-    lane: 1
+    lane: 0
+    span: 1
+    type: 2
+  - time: 83
+    lane: 2
     span: 1
     type: 1
   - time: 83.5
@@ -697,220 +877,228 @@ MonoBehaviour:
     span: 1
     type: 2
   - time: 84
-    lane: 0
-    span: 3
-    type: 0
+    lane: 3
+    span: 1
+    type: 1
   - time: 84.5
     lane: 1
-    span: 3
+    span: 1
     type: 0
   - time: 85
     lane: 0
-    span: 1
+    span: 2
     type: 0
   - time: 85.5
     lane: 2
     span: 1
-    type: 2
+    type: 0
   - time: 86
     lane: 0
     span: 1
     type: 2
   - time: 86.5
-    lane: 2
-    span: 1
-    type: 1
-  - time: 87
-    lane: 0
-    span: 1
-    type: 0
-  - time: 87.5
-    lane: 1
-    span: 3
-    type: 0
-  - time: 88
-    lane: 1
-    span: 1
-    type: 0
-  - time: 88.5
-    lane: 3
-    span: 1
-    type: 2
-  - time: 89
-    lane: 3
-    span: 1
-    type: 2
-  - time: 89.5
     lane: 0
     span: 4
-    type: 0
-  - time: 90
+    type: 2
+  - time: 87
     lane: 2
+    span: 2
+    type: 0
+  - time: 87.5
+    lane: 0
     span: 1
     type: 1
+  - time: 88
+    lane: 3
+    span: 1
+    type: 1
+  - time: 88.5
+    lane: 1
+    span: 1
+    type: 0
+  - time: 89
+    lane: 2
+    span: 1
+    type: 0
+  - time: 89.5
+    lane: 0
+    span: 1
+    type: 0
+  - time: 90
+    lane: 3
+    span: 1
+    type: 0
   - time: 90.5
     lane: 1
     span: 1
     type: 1
   - time: 91
-    lane: 1
+    lane: 2
     span: 1
     type: 0
   - time: 91.5
-    lane: 1
+    lane: 0
     span: 1
-    type: 0
+    type: 2
   - time: 92
-    lane: 1
+    lane: 3
     span: 1
     type: 0
   - time: 93
     lane: 1
-    span: 3
-    type: 0
+    span: 1
+    type: 2
+  - time: 93.25
+    lane: 2
+    span: 1
+    type: 3
   - time: 93.5
     lane: 0
-    span: 1
-    type: 1
-  - time: 94
-    lane: 3
-    span: 1
+    span: 2
     type: 0
+  - time: 94
+    lane: 2
+    span: 1
+    type: 2
   - time: 94.5
     lane: 0
-    span: 1
+    span: 2
     type: 0
   - time: 95
     lane: 3
     span: 1
     type: 0
   - time: 95.5
-    lane: 2
+    lane: 0
     span: 1
     type: 2
   - time: 96
-    lane: 1
-    span: 3
-    type: 0
+    lane: 3
+    span: 1
+    type: 1
   - time: 96.5
-    lane: 0
-    span: 1
-    type: 0
-  - time: 97
-    lane: 2
-    span: 1
-    type: 0
-  - time: 97.5
-    lane: 0
-    span: 4
-    type: 0
-  - time: 98
-    lane: 0
-    span: 1
-    type: 0
-  - time: 98.5
-    lane: 2
+    lane: 1
     span: 2
     type: 0
+  - time: 97
+    lane: 3
+    span: 1
+    type: 1
+  - time: 97.5
+    lane: 0
+    span: 1
+    type: 1
+  - time: 98
+    lane: 2
+    span: 1
+    type: 1
+  - time: 98.5
+    lane: 0
+    span: 4
+    type: 2
   - time: 99
-    lane: 0
-    span: 1
-    type: 0
-  - time: 99.5
-    lane: 2
-    span: 1
-    type: 1
-  - time: 100
-    lane: 1
-    span: 1
-    type: 1
-  - time: 100.5
-    lane: 1
-    span: 1
-    type: 0
-  - time: 101
-    lane: 0
-    span: 1
-    type: 1
-  - time: 101.5
-    lane: 1
-    span: 1
-    type: 0
-  - time: 102
-    lane: 2
-    span: 1
-    type: 0
-  - time: 102.5
-    lane: 2
-    span: 1
-    type: 0
-  - time: 103
-    lane: 1
-    span: 1
-    type: 1
-  - time: 103.5
-    lane: 2
-    span: 1
-    type: 0
-  - time: 104
     lane: 3
     span: 1
     type: 2
-  - time: 104.5
-    lane: 2
+  - time: 99.5
+    lane: 1
     span: 2
+    type: 1
+  - time: 100
+    lane: 3
+    span: 1
     type: 0
+  - time: 100.5
+    lane: 0
+    span: 4
+    type: 0
+  - time: 101
+    lane: 2
+    span: 1
+    type: 0
+  - time: 101.5
+    lane: 0
+    span: 1
+    type: 1
+  - time: 102
+    lane: 1
+    span: 1
+    type: 1
+  - time: 102.5
+    lane: 0
+    span: 2
+    type: 1
+  - time: 103
+    lane: 3
+    span: 1
+    type: 2
+  - time: 103.5
+    lane: 0
+    span: 1
+    type: 0
+  - time: 104
+    lane: 2
+    span: 1
+    type: 0
+  - time: 104.5
+    lane: 0
+    span: 2
+    type: 1
   - time: 105
     lane: 3
     span: 1
-    type: 1
+    type: 0
   - time: 105.5
     lane: 1
-    span: 1
+    span: 2
     type: 0
   - time: 106
     lane: 3
     span: 1
     type: 0
   - time: 106.5
-    lane: 2
-    span: 2
+    lane: 0
+    span: 4
     type: 0
+  - time: 106.75
+    lane: 2
+    span: 1
+    type: 3
   - time: 107
-    lane: 1
+    lane: 0
     span: 1
     type: 1
   - time: 107.5
     lane: 2
-    span: 1
-    type: 0
+    span: 2
+    type: 1
   - time: 108
-    lane: 1
-    span: 1
+    lane: 0
+    span: 2
     type: 0
   - time: 108.5
     lane: 3
     span: 1
-    type: 2
-  - time: 109
-    lane: 0
-    span: 1
     type: 0
-  - time: 109.5
+  - time: 109
     lane: 1
     span: 1
     type: 0
-  - time: 110
-    lane: 3
-    span: 1
-    type: 0
-  - time: 110.5
+  - time: 109.5
     lane: 2
     span: 1
     type: 0
-  - time: 111
+  - time: 110
     lane: 0
-    span: 4
+    span: 1
+    type: 1
+  - time: 110.5
+    lane: 3
+    span: 1
+    type: 0
+  - time: 111
+    lane: 1
+    span: 1
     type: 0
   - time: 111.5
     lane: 2
@@ -918,200 +1106,216 @@ MonoBehaviour:
     type: 0
   - time: 112
     lane: 0
-    span: 3
+    span: 1
     type: 0
   - time: 112.5
-    lane: 1
-    span: 1
-    type: 2
-  - time: 113
-    lane: 2
+    lane: 3
     span: 1
     type: 0
+  - time: 113
+    lane: 1
+    span: 1
+    type: 0
+  - time: 113.25
+    lane: 2
+    span: 1
+    type: 3
   - time: 113.5
     lane: 0
     span: 1
     type: 1
   - time: 114
-    lane: 1
-    span: 2
-    type: 0
-  - time: 114.5
     lane: 2
     span: 1
     type: 0
-  - time: 115
+  - time: 114.5
     lane: 3
     span: 1
-    type: 0
-  - time: 115.5
-    lane: 1
-    span: 3
-    type: 0
-  - time: 116
+    type: 2
+  - time: 115
     lane: 1
     span: 1
     type: 2
+  - time: 115.5
+    lane: 0
+    span: 2
+    type: 2
+  - time: 116
+    lane: 2
+    span: 1
+    type: 0
+  - time: 116.25
+    lane: 0
+    span: 1
+    type: 3
   - time: 116.5
     lane: 3
     span: 1
     type: 0
   - time: 117
-    lane: 0
+    lane: 1
     span: 1
-    type: 0
-  - time: 117.5
+    type: 1
+  - time: 117.25
     lane: 3
     span: 1
-    type: 0
-  - time: 118
+    type: 3
+  - time: 117.5
     lane: 1
+    span: 2
+    type: 1
+  - time: 118
+    lane: 3
     span: 1
     type: 0
   - time: 118.5
-    lane: 2
+    lane: 0
     span: 1
     type: 0
   - time: 119
-    lane: 3
+    lane: 2
     span: 1
     type: 1
-  - time: 119.5
+  - time: 119.25
     lane: 0
     span: 1
-    type: 0
+    type: 3
+  - time: 119.5
+    lane: 2
+    span: 1
+    type: 2
   - time: 120
     lane: 1
     span: 1
-    type: 0
+    type: 1
   - time: 120.5
-    lane: 0
-    span: 2
+    lane: 3
+    span: 1
     type: 0
   - time: 121
-    lane: 2
+    lane: 0
     span: 1
     type: 0
   - time: 121.5
-    lane: 1
-    span: 1
-    type: 2
-  - time: 122
     lane: 2
     span: 1
-    type: 0
+    type: 1
+  - time: 122
+    lane: 1
+    span: 1
+    type: 1
   - time: 122.5
     lane: 3
     span: 1
-    type: 2
-  - time: 123
-    lane: 3
-    span: 1
     type: 0
-  - time: 123.5
-    lane: 0
-    span: 1
-    type: 2
-  - time: 124
+  - time: 123
     lane: 1
     span: 1
     type: 0
-  - time: 124.5
+  - time: 123.5
     lane: 3
     span: 1
-    type: 0
-  - time: 125
-    lane: 2
-    span: 1
-    type: 0
-  - time: 125.5
+    type: 2
+  - time: 124
     lane: 0
     span: 1
     type: 1
-  - time: 126
-    lane: 3
+  - time: 124.5
+    lane: 2
+    span: 2
+    type: 2
+  - time: 125
+    lane: 0
     span: 1
-    type: 0
+    type: 1
+  - time: 125.5
+    lane: 2
+    span: 1
+    type: 1
+  - time: 126
+    lane: 1
+    span: 1
+    type: 2
   - time: 126.5
     lane: 3
     span: 1
     type: 0
   - time: 127
-    lane: 0
+    lane: 1
     span: 1
-    type: 1
+    type: 0
   - time: 127.5
     lane: 0
-    span: 4
+    span: 1
     type: 0
   - time: 128
-    lane: 0
-    span: 2
-    type: 0
+    lane: 2
+    span: 1
+    type: 2
   - time: 128.5
-    lane: 3
+    lane: 0
     span: 1
     type: 0
   - time: 129
-    lane: 0
-    span: 3
-    type: 0
-  - time: 129.5
-    lane: 0
+    lane: 3
     span: 1
+    type: 2
+  - time: 129.5
+    lane: 1
+    span: 2
     type: 0
   - time: 130
     lane: 3
     span: 1
-    type: 0
+    type: 1
   - time: 130.5
-    lane: 2
+    lane: 0
     span: 1
-    type: 0
+    type: 2
   - time: 131
-    lane: 3
-    span: 1
-    type: 0
-  - time: 131.5
     lane: 2
+    span: 2
+    type: 2
+  - time: 131.5
+    lane: 1
     span: 1
-    type: 0
+    type: 2
   - time: 132
     lane: 0
+    span: 1
+    type: 1
+  - time: 132.5
+    lane: 2
     span: 2
     type: 0
-  - time: 132.5
+  - time: 133
     lane: 1
     span: 1
-    type: 2
-  - time: 133
+    type: 0
+  - time: 133.5
     lane: 0
     span: 1
-    type: 2
-  - time: 133.5
-    lane: 1
-    span: 1
-    type: 2
+    type: 0
   - time: 134
-    lane: 3
+    lane: 2
     span: 1
     type: 0
   - time: 134.5
-    lane: 3
-    span: 1
-    type: 0
-  - time: 135
     lane: 0
+    span: 2
+    type: 1
+  - time: 135
+    lane: 2
     span: 1
     type: 0
   - time: 135.5
     lane: 1
     span: 1
-    type: 2
+    type: 0
   - time: 136
-    lane: 1
+    lane: 3
     span: 1
-    type: 1
+    type: 2
   - time: 136.5
     lane: 1
     span: 1
@@ -1121,47 +1325,47 @@ MonoBehaviour:
     span: 1
     type: 2
   - time: 137.5
-    lane: 3
-    span: 1
-    type: 2
-  - time: 138
     lane: 0
-    span: 4
+    span: 1
     type: 0
-  - time: 138.5
+  - time: 138
     lane: 2
     span: 1
     type: 0
-  - time: 139
+  - time: 138.5
     lane: 0
-    span: 3
+    span: 1
     type: 0
+  - time: 139
+    lane: 2
+    span: 2
+    type: 1
   - time: 139.5
     lane: 1
     span: 1
     type: 0
   - time: 140
-    lane: 2
+    lane: 3
     span: 1
     type: 0
   - time: 140.5
-    lane: 1
-    span: 1
-    type: 0
-  - time: 141
-    lane: 1
-    span: 1
-    type: 2
-  - time: 141.5
     lane: 0
     span: 1
-    type: 0
-  - time: 142
+    type: 1
+  - time: 141
     lane: 2
     span: 1
     type: 0
+  - time: 141.5
+    lane: 1
+    span: 1
+    type: 0
+  - time: 142
+    lane: 3
+    span: 1
+    type: 0
   - time: 142.5
-    lane: 0
+    lane: 1
     span: 1
     type: 0
   - time: 143
@@ -1169,269 +1373,273 @@ MonoBehaviour:
     span: 1
     type: 0
   - time: 143.5
-    lane: 0
+    lane: 2
     span: 1
-    type: 0
+    type: 1
   - time: 144
-    lane: 2
+    lane: 0
     span: 1
-    type: 0
+    type: 1
   - time: 144.5
-    lane: 0
+    lane: 2
     span: 1
-    type: 0
+    type: 1
   - time: 145
-    lane: 0
-    span: 1
-    type: 0
-  - time: 145.5
-    lane: 3
-    span: 1
-    type: 0
-  - time: 146
-    lane: 1
-    span: 1
-    type: 0
-  - time: 146.5
-    lane: 0
-    span: 1
-    type: 0
-  - time: 147
-    lane: 0
-    span: 1
-    type: 1
-  - time: 147.5
-    lane: 2
-    span: 1
-    type: 0
-  - time: 148
-    lane: 3
-    span: 1
-    type: 0
-  - time: 148.5
-    lane: 3
-    span: 1
-    type: 0
-  - time: 149
-    lane: 3
-    span: 1
-    type: 0
-  - time: 149.5
-    lane: 3
-    span: 1
-    type: 0
-  - time: 150
-    lane: 3
-    span: 1
-    type: 0
-  - time: 150.5
-    lane: 2
-    span: 1
-    type: 0
-  - time: 151
-    lane: 2
-    span: 1
-    type: 0
-  - time: 151.5
-    lane: 0
-    span: 3
-    type: 0
-  - time: 152
-    lane: 0
-    span: 1
-    type: 1
-  - time: 152.5
-    lane: 0
-    span: 3
-    type: 0
-  - time: 153
-    lane: 3
-    span: 1
-    type: 0
-  - time: 153.5
     lane: 1
     span: 1
     type: 2
-  - time: 154
+  - time: 145.5
+    lane: 3
+    span: 1
+    type: 1
+  - time: 146
     lane: 0
+    span: 1
+    type: 0
+  - time: 146.5
+    lane: 3
+    span: 1
+    type: 0
+  - time: 147
+    lane: 1
+    span: 1
+    type: 0
+  - time: 147.5
+    lane: 2
+    span: 1
+    type: 2
+  - time: 148
+    lane: 0
+    span: 1
+    type: 2
+  - time: 148.5
+    lane: 2
+    span: 1
+    type: 0
+  - time: 149
+    lane: 1
+    span: 1
+    type: 0
+  - time: 149.5
+    lane: 2
+    span: 2
+    type: 0
+  - time: 150
+    lane: 0
+    span: 1
+    type: 0
+  - time: 150.5
+    lane: 3
+    span: 1
+    type: 0
+  - time: 151
+    lane: 1
+    span: 1
+    type: 0
+  - time: 151.25
+    lane: 3
+    span: 1
+    type: 3
+  - time: 151.5
+    lane: 1
+    span: 1
+    type: 2
+  - time: 152
+    lane: 0
+    span: 1
+    type: 0
+  - time: 152.5
+    lane: 2
+    span: 1
+    type: 0
+  - time: 153
+    lane: 0
+    span: 1
+    type: 1
+  - time: 153.5
+    lane: 2
+    span: 2
+    type: 0
+  - time: 154
+    lane: 1
     span: 1
     type: 2
   - time: 154.5
     lane: 3
     span: 1
-    type: 0
+    type: 1
   - time: 155
-    lane: 3
-    span: 1
-    type: 0
-  - time: 155.5
-    lane: 3
+    lane: 1
     span: 1
     type: 1
+  - time: 155.5
+    lane: 0
+    span: 1
+    type: 0
   - time: 156
-    lane: 1
+    lane: 2
     span: 1
     type: 0
   - time: 156.5
-    lane: 2
+    lane: 0
     span: 1
     type: 0
   - time: 157
-    lane: 1
-    span: 3
+    lane: 2
+    span: 1
     type: 0
   - time: 157.5
+    lane: 1
+    span: 1
+    type: 0
+  - time: 158
     lane: 3
     span: 1
     type: 1
-  - time: 158
+  - time: 158.5
     lane: 0
     span: 1
-    type: 2
-  - time: 158.5
-    lane: 2
-    span: 2
     type: 0
   - time: 159
-    lane: 0
-    span: 3
-    type: 0
-  - time: 159.5
-    lane: 0
+    lane: 3
     span: 1
     type: 0
+  - time: 159.5
+    lane: 1
+    span: 1
+    type: 2
   - time: 160
-    lane: 3
+    lane: 2
     span: 1
     type: 1
   - time: 160.5
     lane: 0
     span: 1
-    type: 0
+    type: 1
   - time: 161
-    lane: 0
+    lane: 3
     span: 1
     type: 1
   - time: 161.5
-    lane: 3
+    lane: 1
     span: 1
     type: 0
   - time: 162
     lane: 2
     span: 1
-    type: 0
+    type: 1
   - time: 162.5
-    lane: 3
+    lane: 0
     span: 1
     type: 0
   - time: 163
-    lane: 2
+    lane: 3
     span: 1
-    type: 1
+    type: 0
   - time: 163.5
-    lane: 0
+    lane: 1
     span: 1
     type: 0
   - time: 164
-    lane: 0
-    span: 4
-    type: 0
-  - time: 164.5
-    lane: 1
-    span: 3
-    type: 0
-  - time: 165
-    lane: 3
+    lane: 2
     span: 1
     type: 0
+  - time: 164.5
+    lane: 0
+    span: 1
+    type: 0
+  - time: 165
+    lane: 2
+    span: 1
+    type: 2
   - time: 165.5
-    lane: 3
+    lane: 1
     span: 1
     type: 0
   - time: 166
-    lane: 2
+    lane: 3
     span: 1
-    type: 0
+    type: 1
   - time: 166.5
-    lane: 2
+    lane: 1
     span: 1
     type: 0
   - time: 167
-    lane: 0
+    lane: 3
     span: 1
     type: 0
   - time: 167.5
     lane: 0
-    span: 4
+    span: 1
     type: 0
   - time: 168
-    lane: 3
+    lane: 2
     span: 1
     type: 0
   - time: 168.5
-    lane: 3
+    lane: 0
     span: 1
     type: 0
   - time: 169
     lane: 2
-    span: 1
-    type: 1
+    span: 2
+    type: 0
   - time: 169.5
     lane: 1
     span: 1
     type: 0
   - time: 170
-    lane: 0
+    lane: 3
     span: 1
     type: 0
   - time: 170.5
     lane: 1
     span: 1
-    type: 0
+    type: 1
   - time: 171
+    lane: 0
+    span: 1
+    type: 1
+  - time: 171.5
     lane: 2
     span: 1
     type: 0
-  - time: 171.5
-    lane: 3
+  - time: 172
+    lane: 0
     span: 1
     type: 2
-  - time: 172
-    lane: 3
-    span: 1
-    type: 0
   - time: 172.5
     lane: 3
     span: 1
     type: 1
   - time: 173
-    lane: 2
+    lane: 1
     span: 1
     type: 1
   - time: 173.5
     lane: 2
     span: 1
-    type: 0
+    type: 1
   - time: 174
     lane: 0
     span: 1
-    type: 2
+    type: 0
   - time: 174.5
-    lane: 1
+    lane: 2
     span: 1
     type: 0
   - time: 175
-    lane: 0
-    span: 4
+    lane: 1
+    span: 1
     type: 0
   - time: 175.5
     lane: 3
     span: 1
     type: 0
   - time: 176
-    lane: 0
+    lane: 1
     span: 1
-    type: 2
+    type: 0
   - time: 176.5
     lane: 3
     span: 1
@@ -1439,31 +1647,31 @@ MonoBehaviour:
   - time: 177
     lane: 0
     span: 1
-    type: 0
+    type: 2
   - time: 177.5
-    lane: 1
-    span: 3
-    type: 0
-  - time: 178
     lane: 2
     span: 1
-    type: 0
+    type: 2
+  - time: 178
+    lane: 0
+    span: 1
+    type: 2
   - time: 178.5
     lane: 2
     span: 1
     type: 0
   - time: 179
-    lane: 0
-    span: 1
-    type: 0
-  - time: 179.5
-    lane: 0
+    lane: 1
     span: 1
     type: 1
-  - time: 180
+  - time: 179.5
     lane: 3
     span: 1
-    type: 1
+    type: 0
+  - time: 180
+    lane: 0
+    span: 1
+    type: 2
   - time: 180.5
     lane: 2
     span: 1
@@ -1471,55 +1679,55 @@ MonoBehaviour:
   - time: 181
     lane: 1
     span: 1
-    type: 0
+    type: 2
   - time: 181.5
-    lane: 0
+    lane: 3
+    span: 1
+    type: 2
+  - time: 182
+    lane: 1
     span: 1
     type: 1
-  - time: 182
-    lane: 2
-    span: 1
-    type: 0
   - time: 182.5
     lane: 3
     span: 1
-    type: 0
+    type: 2
   - time: 183
     lane: 0
     span: 1
-    type: 0
+    type: 1
   - time: 183.5
-    lane: 1
+    lane: 2
+    span: 1
+    type: 0
+  - time: 184
+    lane: 0
     span: 1
     type: 1
-  - time: 184
+  - time: 184.5
     lane: 3
     span: 1
     type: 0
-  - time: 184.5
-    lane: 0
-    span: 3
-    type: 0
   - time: 185
-    lane: 0
-    span: 4
-    type: 0
+    lane: 1
+    span: 1
+    type: 1
   - time: 185.5
-    lane: 0
+    lane: 2
     span: 1
     type: 0
   - time: 186
-    lane: 1
+    lane: 0
     span: 1
     type: 0
   - time: 186.5
-    lane: 1
-    span: 3
+    lane: 2
+    span: 1
     type: 0
   - time: 187
     lane: 1
     span: 1
-    type: 1
+    type: 2
   - time: 187.5
     lane: 3
     span: 1
@@ -1527,53 +1735,53 @@ MonoBehaviour:
   - time: 188
     lane: 1
     span: 1
-    type: 0
+    type: 2
   - time: 188.5
-    lane: 0
+    lane: 3
     span: 1
     type: 0
   - time: 189
     lane: 0
-    span: 2
+    span: 1
     type: 0
   - time: 189.5
-    lane: 1
+    lane: 2
     span: 1
     type: 0
   - time: 190
-    lane: 2
+    lane: 0
     span: 1
-    type: 0
+    type: 2
   - time: 190.5
-    lane: 2
+    lane: 3
     span: 1
-    type: 0
+    type: 1
   - time: 191
-    lane: 0
-    span: 1
-    type: 0
-  - time: 191.5
-    lane: 0
-    span: 1
-    type: 0
-  - time: 192
     lane: 1
     span: 1
     type: 0
+  - time: 191.5
+    lane: 2
+    span: 1
+    type: 2
+  - time: 192
+    lane: 0
+    span: 1
+    type: 0
   - time: 192.5
-    lane: 3
+    lane: 2
     span: 1
     type: 2
   - time: 193
     lane: 1
     span: 1
-    type: 0
+    type: 1
   - time: 193.5
-    lane: 1
+    lane: 3
     span: 1
-    type: 2
+    type: 0
   - time: 194
-    lane: 0
+    lane: 1
     span: 1
     type: 0
   - time: 194.5
@@ -1581,175 +1789,175 @@ MonoBehaviour:
     span: 1
     type: 0
   - time: 195
-    lane: 2
+    lane: 0
     span: 1
     type: 0
   - time: 195.5
     lane: 2
     span: 1
-    type: 0
+    type: 1
   - time: 196
-    lane: 1
+    lane: 0
     span: 1
     type: 1
   - time: 196.5
     lane: 3
     span: 1
-    type: 1
+    type: 0
   - time: 197
-    lane: 2
+    lane: 1
     span: 1
-    type: 1
+    type: 2
   - time: 197.5
-    lane: 3
+    lane: 2
     span: 1
     type: 0
   - time: 198
-    lane: 2
+    lane: 0
     span: 1
-    type: 2
+    type: 0
   - time: 198.5
     lane: 2
     span: 1
-    type: 2
+    type: 0
   - time: 199
-    lane: 0
+    lane: 1
     span: 1
     type: 0
   - time: 199.5
-    lane: 1
-    span: 2
+    lane: 3
+    span: 1
     type: 0
   - time: 200
     lane: 0
-    span: 4
+    span: 1
     type: 0
   - time: 200.5
-    lane: 1
-    span: 3
+    lane: 3
+    span: 1
     type: 0
   - time: 201
-    lane: 0
+    lane: 1
     span: 1
     type: 0
   - time: 201.5
-    lane: 1
+    lane: 2
     span: 1
-    type: 1
+    type: 0
   - time: 202
     lane: 0
-    span: 4
+    span: 1
     type: 0
   - time: 202.5
-    lane: 0
+    lane: 3
     span: 1
-    type: 1
+    type: 2
   - time: 203
     lane: 1
     span: 1
-    type: 2
+    type: 1
   - time: 203.5
     lane: 2
     span: 1
     type: 0
   - time: 204
-    lane: 2
+    lane: 0
     span: 1
     type: 0
   - time: 204.5
-    lane: 1
-    span: 3
-    type: 0
-  - time: 205
     lane: 2
     span: 1
-    type: 2
+    type: 0
+  - time: 205
+    lane: 1
+    span: 1
+    type: 1
   - time: 205.5
     lane: 3
     span: 1
-    type: 0
+    type: 1
   - time: 206
-    lane: 0
-    span: 4
+    lane: 1
+    span: 1
     type: 0
   - time: 206.5
-    lane: 0
+    lane: 3
     span: 1
-    type: 2
+    type: 0
   - time: 207
     lane: 0
-    span: 2
+    span: 1
     type: 0
   - time: 207.5
     lane: 2
     span: 1
-    type: 2
+    type: 1
   - time: 208
-    lane: 3
+    lane: 0
     span: 1
-    type: 0
+    type: 2
   - time: 208.5
     lane: 3
     span: 1
     type: 1
   - time: 209
-    lane: 2
+    lane: 1
     span: 1
     type: 1
   - time: 209.5
+    lane: 2
+    span: 1
+    type: 2
+  - time: 210
+    lane: 0
+    span: 1
+    type: 0
+  - time: 210.5
+    lane: 3
+    span: 1
+    type: 0
+  - time: 211
     lane: 1
     span: 1
     type: 0
-  - time: 210
+  - time: 211.5
     lane: 2
     span: 1
-    type: 1
-  - time: 210.5
-    lane: 0
-    span: 4
-    type: 0
-  - time: 211
-    lane: 0
-    span: 1
-    type: 0
-  - time: 211.5
-    lane: 0
-    span: 1
-    type: 0
+    type: 2
   - time: 212
     lane: 0
     span: 1
     type: 0
   - time: 212.5
+    lane: 2
+    span: 1
+    type: 1
+  - time: 213
     lane: 1
     span: 1
-    type: 2
-  - time: 213
-    lane: 2
-    span: 1
-    type: 0
+    type: 1
   - time: 213.5
-    lane: 2
+    lane: 3
     span: 1
-    type: 0
+    type: 1
   - time: 214
-    lane: 0
+    lane: 1
     span: 1
     type: 1
   - time: 214.5
     lane: 3
     span: 1
-    type: 2
+    type: 0
   - time: 215
     lane: 0
-    span: 2
-    type: 0
-  - time: 215.5
-    lane: 0
     span: 1
-    type: 0
-  - time: 216
+    type: 2
+  - time: 215.5
     lane: 2
+    span: 1
+    type: 1
+  - time: 216
+    lane: 0
     span: 1
     type: 0
   - time: 216.5
@@ -1757,51 +1965,51 @@ MonoBehaviour:
     span: 1
     type: 2
   - time: 217
-    lane: 3
+    lane: 1
     span: 1
-    type: 2
+    type: 0
   - time: 217.5
-    lane: 2
+    lane: 3
     span: 1
     type: 0
   - time: 218
+    lane: 1
+    span: 1
+    type: 2
+  - time: 218.5
     lane: 3
     span: 1
-    type: 0
-  - time: 218.5
-    lane: 0
-    span: 1
-    type: 0
+    type: 1
   - time: 219
-    lane: 2
+    lane: 0
     span: 1
     type: 0
   - time: 219.5
-    lane: 1
-    span: 2
-    type: 0
-  - time: 220
-    lane: 1
-    span: 3
-    type: 0
-  - time: 220.5
-    lane: 1
+    lane: 2
     span: 1
-    type: 0
-  - time: 221
+    type: 2
+  - time: 220
     lane: 0
     span: 1
     type: 0
-  - time: 221.5
+  - time: 220.5
     lane: 3
     span: 1
-    type: 0
+    type: 1
+  - time: 221
+    lane: 1
+    span: 1
+    type: 2
+  - time: 221.5
+    lane: 2
+    span: 1
+    type: 1
   - time: 222
     lane: 0
     span: 1
-    type: 0
+    type: 1
   - time: 222.5
-    lane: 1
+    lane: 3
     span: 1
     type: 0
   - time: 223
@@ -1809,143 +2017,143 @@ MonoBehaviour:
     span: 1
     type: 2
   - time: 223.5
-    lane: 1
+    lane: 2
     span: 1
     type: 0
   - time: 224
-    lane: 2
+    lane: 0
     span: 1
-    type: 2
+    type: 0
   - time: 224.5
-    lane: 2
+    lane: 3
     span: 1
-    type: 1
+    type: 0
   - time: 225
     lane: 1
     span: 1
-    type: 1
+    type: 2
   - time: 225.5
-    lane: 1
+    lane: 2
     span: 1
-    type: 1
+    type: 2
   - time: 226
-    lane: 1
+    lane: 0
     span: 1
-    type: 0
+    type: 2
   - time: 226.5
     lane: 3
     span: 1
-    type: 2
+    type: 0
   - time: 227
-    lane: 0
+    lane: 1
     span: 1
     type: 0
   - time: 227.5
+    lane: 2
+    span: 1
+    type: 2
+  - time: 228
     lane: 0
     span: 1
-    type: 0
-  - time: 228
-    lane: 1
-    span: 2
     type: 0
   - time: 228.5
     lane: 2
     span: 1
-    type: 0
+    type: 1
   - time: 229
+    lane: 1
+    span: 1
+    type: 1
+  - time: 229.5
     lane: 3
     span: 1
     type: 0
-  - time: 229.5
-    lane: 2
-    span: 1
-    type: 0
   - time: 230
-    lane: 1
+    lane: 0
     span: 1
-    type: 2
+    type: 1
   - time: 230.5
-    lane: 2
+    lane: 3
     span: 1
     type: 0
   - time: 231
-    lane: 0
+    lane: 1
     span: 1
-    type: 1
+    type: 2
   - time: 231.5
-    lane: 0
+    lane: 2
     span: 1
-    type: 1
+    type: 0
   - time: 232
     lane: 0
-    span: 3
+    span: 1
     type: 0
   - time: 232.5
     lane: 2
     span: 1
-    type: 0
+    type: 1
   - time: 233
-    lane: 0
-    span: 2
-    type: 0
-  - time: 233.5
     lane: 1
     span: 1
-    type: 0
+    type: 1
+  - time: 233.5
+    lane: 3
+    span: 1
+    type: 2
   - time: 234
-    lane: 2
+    lane: 1
     span: 1
     type: 0
   - time: 234.5
-    lane: 0
+    lane: 3
     span: 1
-    type: 2
+    type: 0
   - time: 235
-    lane: 1
+    lane: 0
     span: 1
     type: 0
   - time: 235.5
-    lane: 1
+    lane: 2
     span: 1
     type: 0
   - time: 236
-    lane: 3
+    lane: 0
     span: 1
     type: 0
   - time: 236.5
     lane: 2
     span: 1
-    type: 0
+    type: 1
   - time: 237
-    lane: 2
+    lane: 1
     span: 1
     type: 2
   - time: 237.5
-    lane: 2
-    span: 1
-    type: 0
-  - time: 238
     lane: 3
     span: 1
-    type: 0
+    type: 1
+  - time: 238
+    lane: 0
+    span: 1
+    type: 2
   - time: 238.5
     lane: 2
-    span: 2
+    span: 1
     type: 0
   - time: 239
     lane: 1
-    span: 3
+    span: 1
     type: 0
   - time: 239.5
-    lane: 2
+    lane: 3
+    span: 1
+    type: 1
+  - time: 240
+    lane: 1
     span: 1
     type: 0
-  - time: 240
-    lane: 2
-    span: 1
-    type: 2
   - time: 240.5
-    lane: 1
+    lane: 3
     span: 1
     type: 1
   - time: 241

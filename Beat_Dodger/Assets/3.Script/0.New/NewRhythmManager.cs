@@ -36,7 +36,13 @@ public class NewRhythmManager : MonoBehaviour
     private NoteEnemy currentFeverBoss;
     private float currentFeverGauge;
     private bool isWaitingToResume;
+    
     private const float MaxFeverGauge = 100f;
+    private const float ResumeDelaySeconds = 1.5f;
+    private const float EffectReturnDelaySeconds = 1.0f;
+
+    private readonly WaitForSeconds resumeDelay = new WaitForSeconds(ResumeDelaySeconds);
+    private readonly WaitForSeconds effectReturnDelay = new WaitForSeconds(EffectReturnDelaySeconds);
 
     public bool IsFeverTime => isFeverTime;
     public float FeverProgress => isFeverTime ? (feverTimer / feverDuration) : Mathf.Clamp01(currentFeverGauge / MaxFeverGauge);
@@ -146,6 +152,11 @@ public class NewRhythmManager : MonoBehaviour
             actionOnDestroy: (go) => Destroy(go),
             collectionCheck: false, defaultCapacity: 5, maxSize: 10
         );
+
+        if (feverBossExplosion != null)
+        {
+            // Optional: Pool for explosion if reused
+        }
     }
 
     private NoteEnemy CreateNoteEnemy()
@@ -251,15 +262,17 @@ public class NewRhythmManager : MonoBehaviour
 
     private void HandleFeverUpdate(float dt)
     {
-        UpdateFeverUI();
+        // UI updates are now event-driven or state-driven to reduce overhead
     }
 
     private void UpdateFeverUI()
     {
         if (feverSlider != null)
         {
+            // During Fever, show Boss HP (starts full, decreases)
+            // Otherwise show Fever Gauge progress (starts empty, increases)
             feverSlider.value = isFeverTime 
-                ? (float)currentFeverHits / feverAttackRequirement 
+                ? 1.0f - ((float)currentFeverHits / feverAttackRequirement) 
                 : currentFeverGauge / MaxFeverGauge;
         }
     }
@@ -267,8 +280,14 @@ public class NewRhythmManager : MonoBehaviour
     private void HandleFeverAttack(int laneIndex)
     {
         currentFeverHits++;
+        // Combo no longer builds up during Fever Boss encounter
+        
         SpawnHitEffect(Judgment.Perfect, laneIndex);
         
+        // Notify UI for feedback, but pass the existing static combo
+        OnNoteHit?.Invoke(Judgment.Perfect, currentCombo);
+        JudgmentUIController.Instance?.DisplayJudgment(laneIndex, Judgment.Perfect, true);
+
         if (currentFeverHits >= feverAttackRequirement)
         {
             FinishFeverBoss();
@@ -286,12 +305,20 @@ public class NewRhythmManager : MonoBehaviour
                 Instantiate(feverBossExplosion, currentFeverBoss.transform.position, Quaternion.identity);
             }
             
-            activeNotes.Remove(currentFeverBoss);
-            Destroy(currentFeverBoss.gameObject);
-            currentFeverBoss = null;
+            CleanupFeverBoss();
         }
         
         StartCoroutine(ResumeChartAfterFever());
+    }
+
+    private void CleanupFeverBoss()
+    {
+        if (currentFeverBoss == null) return;
+
+        activeNotes.Remove(currentFeverBoss);
+        // Note: Boss is not pooled, so we destroy it
+        Destroy(currentFeverBoss.gameObject);
+        currentFeverBoss = null;
     }
 
     private System.Collections.IEnumerator ResumeChartAfterFever()
@@ -299,7 +326,7 @@ public class NewRhythmManager : MonoBehaviour
         isWaitingToResume = true;
         SetFeverState(false);
         
-        yield return new WaitForSeconds(1.5f); // Delay before chart resumes
+        yield return resumeDelay;
         
         // Skip notes that passed during Fever to keep sync
         double relativeTime = mainAudioSource != null ? mainAudioSource.time : AudioSettings.dspTime - songStartTime;
@@ -445,8 +472,9 @@ public class NewRhythmManager : MonoBehaviour
             maxCombo = Math.Max(maxCombo, currentCombo);
 
             // Increase gauge only when not in Fever and not hitting Fever-only notes
-            if (!isFeverTime && !isFeverNote)
+            if (!isFeverTime && !isFeverNote && note != null && !note.HasContributedToFever)
             {
+                note.HasContributedToFever = true; // Mark as contributed
                 currentFeverGauge += gaugePerHit;
                 if (currentFeverGauge >= MaxFeverGauge)
                 {
@@ -482,12 +510,18 @@ public class NewRhythmManager : MonoBehaviour
 
     private System.Collections.IEnumerator ReturnToPoolAfterDelay(GameObject effect, IObjectPool<GameObject> pool, float delay)
     {
-        yield return new WaitForSeconds(delay);
+        yield return effectReturnDelay;
         pool.Release(effect);
     }
 
     public void ReportMiss(NoteEnemy note)
     {
+        if (note == currentFeverBoss)
+        {
+            HandleBossMiss();
+            return;
+        }
+
         bool isFeverNote = note != null && note.Type == NoteType.Fever;
         if (isFeverTime || isFeverNote) return; // Maintain combo during Fever or for Fever notes
 
@@ -505,6 +539,21 @@ public class NewRhythmManager : MonoBehaviour
 
         OnNoteHit?.Invoke(Judgment.Miss, currentCombo);
         Debug.Log("Missed!");
+    }
+
+    private void HandleBossMiss()
+    {
+        CleanupFeverBoss();
+        ResetCombo();
+        
+        // Show MISS on all lanes for the boss
+        for (int i = 0; i < RhythmConfig.Instance.LaneCount; i++)
+        {
+            JudgmentUIController.Instance?.DisplayJudgment(i, Judgment.Miss, false);
+        }
+
+        OnNoteHit?.Invoke(Judgment.Miss, currentCombo);
+        StartCoroutine(ResumeChartAfterFever());
     }
 
     private void ResetCombo()
@@ -525,26 +574,28 @@ public class NewRhythmManager : MonoBehaviour
         isFeverTime = active;
         if (active)
         {
-            // 1. Clear all existing notes
-            List<NoteEnemy> notesToClear = new List<NoteEnemy>(activeNotes);
-            foreach (var note in notesToClear) note.ReleaseToPool();
+            // 1. Clear all existing notes without allocation
+            for (int i = activeNotes.Count - 1; i >= 0; i--)
+            {
+                activeNotes[i].ReleaseToPool();
+            }
 
             // 2. Spawn Giant Boss from unique prefab
             currentFeverHits = 0;
-            double bossHitTime = AudioSettings.dspTime + (secondsPerBeat * 4.0f);
+            const float BossWaitBeats = 4.0f;
+            double bossHitTime = AudioSettings.dspTime + (secondsPerBeat * BossWaitBeats);
             
             GameObject bossGo = Instantiate(feverBossPrefab);
-            // Search in children as well to be safer
             currentFeverBoss = bossGo.GetComponentInChildren<NoteEnemy>();
             
             if (currentFeverBoss != null)
             {
-                // Must add to activeNotes for consistent management
                 activeNotes.Add(currentFeverBoss);
-                currentFeverBoss.Initialize(null, 0, 4, bossHitTime, secondsPerBeat * 4f, 4, NoteType.Fever);
+                currentFeverBoss.Initialize(null, 0, RhythmConfig.Instance.LaneCount, bossHitTime, secondsPerBeat * BossWaitBeats, Mathf.RoundToInt(BossWaitBeats), NoteType.Fever);
             }
         }
 
+        UpdateFeverUI();
         OnFeverStateChanged?.Invoke(active);
     }
 }
