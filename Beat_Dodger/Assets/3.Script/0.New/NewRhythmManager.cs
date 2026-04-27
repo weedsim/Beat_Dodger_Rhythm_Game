@@ -114,6 +114,9 @@ public class NewRhythmManager : MonoBehaviour
             mainAudioSource.PlayScheduled(songStartTime);
         }
         
+        // Reset floor mover if exists
+        FindFirstObjectByType<RhythmFloorMover>()?.ResetFloor();
+
         nextBeatTime = songStartTime + secondsPerBeat;
     }
 
@@ -342,11 +345,10 @@ public class NewRhythmManager : MonoBehaviour
     {
         float rand = UnityEngine.Random.value;
 
-        if (rand < 0.15f) SpawnChordPattern();       // Chord (15%)
-        else if (rand < 0.25f) SpawnDoubleTapPattern(); // Double Tap (10%)
-        else if (rand < 0.35f) SpawnDashPattern();    // Dash (10%)
-        else if (rand < 0.45f) SpawnOffBeatPattern(); // Off-beat (10%)
-        else SpawnIndividualNote(UnityEngine.Random.Range(0, RhythmConfig.Instance.LaneCount), 1, nextBeatTime + noteDuration, NoteType.Normal); // Normal (55%)
+        if (rand < 0.2f) SpawnChordPattern();       // Chord (20%)
+        else if (rand < 0.35f) SpawnDoubleTapPattern(); // Double Tap (15%)
+        else if (rand < 0.5f) SpawnDashPattern();    // Dash (15%)
+        else SpawnIndividualNote(UnityEngine.Random.Range(0, RhythmConfig.Instance.LaneCount), 1, nextBeatTime + noteDuration, NoteType.Normal); // Normal (50%)
     }
 
     // Common logic for spawning individual or giant notes
@@ -380,12 +382,7 @@ public class NewRhythmManager : MonoBehaviour
         SpawnIndividualNote(lane, 1, nextBeatTime + noteDuration, NoteType.Dash);
     }
 
-    // 4. Off-beat Pattern (Spawn 0.5 beat late)
-    private void SpawnOffBeatPattern()
-    {
-        int lane = UnityEngine.Random.Range(0, RhythmConfig.Instance.LaneCount);
-        SpawnIndividualNote(lane, 1, nextBeatTime + noteDuration + (secondsPerBeat * 0.5f), NoteType.OffBeat);
-    }
+
 
     public void OnInputLane0(InputAction.CallbackContext context) { if (context.performed) ExecuteInput(0); }
     public void OnInputLane1(InputAction.CallbackContext context) { if (context.performed) ExecuteInput(1); }

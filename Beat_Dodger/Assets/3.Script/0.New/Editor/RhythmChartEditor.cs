@@ -203,7 +203,6 @@ public class RhythmChartEditor : EditorWindow
         EditorGUILayout.Space();
         EditorGUILayout.LabelField("자동 노트 생성 설정", EditorStyles.boldLabel);
         autoThreshold = EditorGUILayout.Slider("기본 감도 (Global)", autoThreshold, 0.01f, 1f);
-        offBeatThreshold = EditorGUILayout.Slider("엇박 감도 (Off-Beat)", offBeatThreshold, 0.01f, 1f);
         span2Threshold = EditorGUILayout.Slider("2인 같이치기 감도", span2Threshold, 0.1f, 50.0f);
         span4Threshold = EditorGUILayout.Slider("4인 같이치기 감도", span4Threshold, 0.1f, 50.0f);
         specialNoteChance = EditorGUILayout.Slider("특수노트 확률", specialNoteChance, 0f, 1f);
@@ -230,7 +229,6 @@ public class RhythmChartEditor : EditorWindow
         DrawTypeButton("일반 노트", NoteType.Normal);
         DrawTypeButton("연타 노트", NoteType.Double);
         DrawTypeButton("가속 노트", NoteType.Dash);
-        DrawTypeButton("엇박 노트", NoteType.OffBeat);
 
         EditorGUILayout.Space();
         EditorGUILayout.LabelField("같이치기 길이 조절");
@@ -357,7 +355,6 @@ public class RhythmChartEditor : EditorWindow
         {
             NoteType.Dash => Color.red,
             NoteType.Double => Color.yellow,
-            NoteType.OffBeat => Color.green,
             _ => new Color(0.2f, 0.6f, 1f)
         };
     }
@@ -537,32 +534,25 @@ public class RhythmChartEditor : EditorWindow
                     int span = 1;
                     float ratio = rms / autoThreshold;
 
-                    // Detect Off-Beat (on the x.5 position)
+                    // 엇박 제외 (정박 체크)
                     float beatPos = snappedTime / secondsPerBeat;
                     bool isMainBeat = Mathf.Approximately(beatPos % 1.0f, 0);
                     
-                    if (!isMainBeat) 
+                    if (!isMainBeat) continue;
+
+                    // Together hits (Span 2/4) only appear on main beats
+                    if (ratio >= span4Threshold && (snappedTime - lastSpan4Time >= secondsPerBeat * 3.9f)) 
                     {
-                        // Use specific off-beat threshold
-                        if (rms < offBeatThreshold) continue;
-                        type = NoteType.OffBeat;
+                        span = 4;
+                        lastSpan4Time = snappedTime;
                     }
-                    else
+                    else if (ratio >= span2Threshold && (snappedTime - lastSpan2Time >= secondsPerBeat * 0.95f)) 
                     {
-                        // Together hits (Span 2/4) only appear on main beats
-                        if (ratio >= span4Threshold && (snappedTime - lastSpan4Time >= secondsPerBeat * 3.9f)) 
+                        // Increased probability to 90%
+                        if (UnityEngine.Random.value < 0.9f)
                         {
-                            span = 4;
-                            lastSpan4Time = snappedTime;
-                        }
-                        else if (ratio >= span2Threshold && (snappedTime - lastSpan2Time >= secondsPerBeat * 0.95f)) 
-                        {
-                            // Increased probability to 90%
-                            if (UnityEngine.Random.value < 0.9f)
-                            {
-                                span = 2;
-                                lastSpan2Time = snappedTime;
-                            }
+                            span = 2;
+                            lastSpan2Time = snappedTime;
                         }
                     }
                     

@@ -1,7 +1,7 @@
 using UnityEngine;
 using UnityEngine.Pool;
 
-public enum NoteType { Normal, Dash, Double, OffBeat, Fever } // Dash: 돌진형, Double: 2연타, OffBeat: 엇박, Fever: 피버용
+public enum NoteType { Normal, Dash, Double, Fever } // Dash: 돌진형, Double: 2연타, Fever: 피버용
 
 public class NoteEnemy : MonoBehaviour
 {
@@ -133,10 +133,6 @@ public class NoteEnemy : MonoBehaviour
                 finalProgress = Mathf.Lerp(CalculateSteppedProgress(stopProgressThreshold, false), 1f, dashProgress);
             }
         }
-        else if (type == NoteType.OffBeat)
-        {
-            finalProgress = CalculateSteppedProgress(progress, false);
-        }
         else
         {
             finalProgress = CalculateSteppedProgress(progress, true);
@@ -157,9 +153,7 @@ public class NoteEnemy : MonoBehaviour
         float bpm = NewRhythmManager.Instance.BPM;
         float secondsPerBeat = 60f / bpm;
         
-        // 엇박 노트만 0.5박자 단위로 이동, 나머지는 1박자 단위 유지
-        float resolution = (type == NoteType.OffBeat) ? 2f : 1f;
-        float secondsPerStep = secondsPerBeat / resolution;
+        float secondsPerStep = secondsPerBeat;
         
         double songStartTime = NewRhythmManager.Instance.SongStartTime;
         
@@ -177,12 +171,13 @@ public class NoteEnemy : MonoBehaviour
         int stepsRemaining = Mathf.FloorToInt(targetStep - floorGlobalStep + 0.001f);
         
         // 4. 스텝 위치 계산
-        int totalSteps = Mathf.RoundToInt(beatsToArrive * resolution);
+        int totalSteps = Mathf.RoundToInt(beatsToArrive);
         float stepBase = 1f - (float)stepsRemaining / totalSteps;
         float nextStepBase = 1f - (float)(stepsRemaining - 1) / totalSteps;
 
-        // 5. 부드러운 이동 연출
-        float movementCurve = Mathf.SmoothStep(0, 1, Mathf.InverseLerp(StepStartThreshold, 1.0f, innerProgress));
+        // 5. 정박 70% 지점에서 다음 칸으로 스윽 이동 (Stay for 70%, Slide for 30%)
+        float slideStartThreshold = 0.7f;
+        float movementCurve = Mathf.SmoothStep(0, 1, Mathf.InverseLerp(slideStartThreshold, 1.0f, innerProgress));
         return Mathf.Lerp(stepBase, nextStepBase, movementCurve);
     }
     private void ApplyTypeColor()
@@ -192,7 +187,6 @@ public class NoteEnemy : MonoBehaviour
         {
             NoteType.Dash => Color.red,
             NoteType.Double => Color.yellow,
-            NoteType.OffBeat => Color.green,
             NoteType.Fever => new Color(1f, 0.8f, 0.2f), // Gold/Amber for Fever notes
             _ => new Color(0.2f, 0.6f, 1f)
         };
