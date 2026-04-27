@@ -48,12 +48,15 @@ public class NewRhythmManager : MonoBehaviour
     public float FeverProgress => isFeverTime ? (feverTimer / feverDuration) : Mathf.Clamp01(currentFeverGauge / MaxFeverGauge);
 
     [Header("References")]
-    [SerializeField] private GameObject enemyPrefab;
+    [Header("Note Prefabs")]
+    [SerializeField] private GameObject normalPrefab;
+    [SerializeField] private GameObject doublePrefab;
+    [SerializeField] private GameObject dashPrefab;
     [SerializeField] private LaneInputEffect[] inputEffects;
     [SerializeField] private GameObject hitEffectPerfect; // For Perfect & Great
     [SerializeField] private GameObject hitEffectGood;    // For Good
 
-    private IObjectPool<NoteEnemy> enemyPool;
+    private Dictionary<NoteType, IObjectPool<NoteEnemy>> notePools = new Dictionary<NoteType, IObjectPool<NoteEnemy>>();
     private IObjectPool<GameObject> poolPerfect;
     private IObjectPool<GameObject> poolGood;
     private readonly List<NoteEnemy> activeNotes = new List<NoteEnemy>();
@@ -128,15 +131,9 @@ public class NewRhythmManager : MonoBehaviour
 
     private void SetupObjectPool()
     {
-        enemyPool = new ObjectPool<NoteEnemy>(
-            createFunc: CreateNoteEnemy,
-            actionOnGet: OnGetNoteFromPool,
-            actionOnRelease: OnReleaseNoteToPool,
-            actionOnDestroy: OnDestroyNoteFromPool,
-            collectionCheck: false,
-            defaultCapacity: 10,
-            maxSize: 30
-        );
+        InitializeNotePool(NoteType.Normal, normalPrefab);
+        InitializeNotePool(NoteType.Double, doublePrefab);
+        InitializeNotePool(NoteType.Dash, dashPrefab);
 
         // Perfect & Great Effect Pool
         poolPerfect = new ObjectPool<GameObject>(
@@ -162,22 +159,30 @@ public class NewRhythmManager : MonoBehaviour
         }
     }
 
-    private NoteEnemy CreateNoteEnemy()
+    private void InitializeNotePool(NoteType type, GameObject prefab)
     {
-        GameObject noteInstance = Instantiate(enemyPrefab);
-        return noteInstance.TryGetComponent<NoteEnemy>(out NoteEnemy noteEnemy) ? noteEnemy : noteInstance.AddComponent<NoteEnemy>();
-    }
+        if (prefab == null) return;
 
-    private void OnGetNoteFromPool(NoteEnemy noteEnemy)
-    {
-        noteEnemy.gameObject.SetActive(true);
-        activeNotes.Add(noteEnemy);
-    }
-
-    private void OnReleaseNoteToPool(NoteEnemy noteEnemy)
-    {
-        noteEnemy.gameObject.SetActive(false);
-        activeNotes.Remove(noteEnemy);
+        var pool = new ObjectPool<NoteEnemy>(
+            createFunc: () => {
+                GameObject instance = Instantiate(prefab);
+                return instance.TryGetComponent<NoteEnemy>(out NoteEnemy note) ? note : instance.AddComponent<NoteEnemy>();
+            },
+            actionOnGet: (note) => {
+                note.gameObject.SetActive(true);
+                activeNotes.Add(note);
+            },
+            actionOnRelease: (note) => {
+                note.gameObject.SetActive(false);
+                activeNotes.Remove(note);
+            },
+            actionOnDestroy: (note) => Destroy(note.gameObject),
+            collectionCheck: false,
+            defaultCapacity: 10,
+            maxSize: 30
+        );
+        
+        notePools[type] = pool;
     }
 
     private void OnDestroyNoteFromPool(NoteEnemy noteEnemy) { Destroy(noteEnemy.gameObject); }
@@ -354,8 +359,20 @@ public class NewRhythmManager : MonoBehaviour
     // Common logic for spawning individual or giant notes
     private void SpawnIndividualNote(int startLane, int span, double hitTime, NoteType type)
     {
-        NoteEnemy enemy = enemyPool.Get();
-        enemy.Initialize(enemyPool, startLane, span, hitTime, noteDuration, beatsToArrive, type);
+        if (notePools.TryGetValue(type, out var pool))
+        {
+            NoteEnemy enemy = pool.Get();
+            enemy.Initialize(pool, startLane, span, hitTime, noteDuration, beatsToArrive, type);
+        }
+        else
+        {
+            // Fallback to normal pool if specific pool not found
+            if (notePools.TryGetValue(NoteType.Normal, out var normalPool))
+            {
+                NoteEnemy enemy = normalPool.Get();
+                enemy.Initialize(normalPool, startLane, span, hitTime, noteDuration, beatsToArrive, type);
+            }
+        }
     }
 
     // 1. Chord Pattern (One giant note spanning multiple lanes)
