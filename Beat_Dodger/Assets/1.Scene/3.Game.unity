@@ -647,6 +647,11 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 89545526}
   m_Mesh: {fileID: 10210, guid: 0000000000000000e000000000000000, type: 0}
+--- !u!1 &155566228 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 6939839740375324758, guid: 53a6b3e4572be3343914e4eec347267f, type: 3}
+  m_PrefabInstance: {fileID: 483976816}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1001 &195322900
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -1849,6 +1854,10 @@ MonoBehaviour:
   exitAnimDuration: 2
   requiredMashCount: 50
   feverBossExplosion: {fileID: 552793109724768, guid: 8e300af2a1e0c864d8f5f994673d1ac4, type: 3}
+  feverEnableObjects:
+  - {fileID: 155566228}
+  feverDisableObjects:
+  - {fileID: 1136389197}
   minAttackInterval: 2
   maxAttackInterval: 4
   spawnMode: 1
@@ -3930,6 +3939,11 @@ MonoBehaviour:
   scaleAmount: 0.2
   duration: 0.15
   inputCooldown: 0.05
+--- !u!1 &1136389197 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 4441442356476098431, guid: 99869870cefd3c742a64daa30dc757a5, type: 3}
+  m_PrefabInstance: {fileID: 1846597860}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1 &1173056632
 GameObject:
   m_ObjectHideFlags: 0
