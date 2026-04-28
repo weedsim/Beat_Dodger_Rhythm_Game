@@ -28,6 +28,12 @@ public class NewRhythmManager : MonoBehaviour
     [SerializeField] private int requiredMashCount = 50;
     [SerializeField] private GameObject feverBossExplosion;
     
+    [Header("Fever Toggle Objects")]
+    [Tooltip("피버 모드 진입 시 켜질 오브젝트들 (피버 종료 시 다시 꺼짐)")]
+    [SerializeField] private List<GameObject> feverEnableObjects = new List<GameObject>();
+    [Tooltip("피버 모드 진입 시 꺼질 오브젝트들 (피버 종료 시 다시 켜짐)")]
+    [SerializeField] private List<GameObject> feverDisableObjects = new List<GameObject>();
+    
     [Header("Boss Idle Animations")]
     [SerializeField] private float minAttackInterval = 4.0f;
     [SerializeField] private float maxAttackInterval = 8.0f;
@@ -346,6 +352,10 @@ public class NewRhythmManager : MonoBehaviour
 
         // 3. Exit Animation (결과 판정 및 대미지)
         currentFeverState = FeverState.ExitAnimation;
+        
+        // 연타 판정 종료 직후 타머(게이지 감소) 강제 중단 및 초기화
+        if (feverGaugeController != null) feverGaugeController.ResetGauge();
+
         if (currentMashCount >= requiredMashCount)
         {
             Debug.Log("Fever Success! Boss Takes Damage!");
@@ -361,7 +371,6 @@ public class NewRhythmManager : MonoBehaviour
         yield return new WaitForSeconds(exitAnimDuration);
 
         // 4. Resume
-        if (feverGaugeController != null) feverGaugeController.ResetGauge();
         StartCoroutine(ResumeChartAfterFever());
     }
 
@@ -369,6 +378,13 @@ public class NewRhythmManager : MonoBehaviour
     {
         isWaitingToResume = true;
         currentFeverState = FeverState.None;
+        
+        // 피버 모드 토글 오브젝트 원상 복구
+        if (feverEnableObjects != null) foreach (var obj in feverEnableObjects) if (obj != null) obj.SetActive(false);
+        if (feverDisableObjects != null) foreach (var obj in feverDisableObjects) if (obj != null) obj.SetActive(true);
+        
+        UpdateFeverUI(); // 평상시 모드로 UI 강제 갱신
+        OnFeverStateChanged?.Invoke(false); // UI 시스템에 피버 종료 알림
         
         yield return resumeDelay;
         
@@ -625,6 +641,10 @@ public class NewRhythmManager : MonoBehaviour
     {
         if (active)
         {
+            // 피버 모드 진입 시 오브젝트 켜기/끄기
+            if (feverEnableObjects != null) foreach (var obj in feverEnableObjects) if (obj != null) obj.SetActive(true);
+            if (feverDisableObjects != null) foreach (var obj in feverDisableObjects) if (obj != null) obj.SetActive(false);
+
             // 1. 화면에 남은 일반 노트들 클리어
             for (int i = activeNotes.Count - 1; i >= 0; i--)
             {
