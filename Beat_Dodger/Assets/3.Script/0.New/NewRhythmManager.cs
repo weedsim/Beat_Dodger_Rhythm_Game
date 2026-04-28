@@ -16,13 +16,21 @@ public class NewRhythmManager : MonoBehaviour
     public int BeatsToArrive => beatsToArrive;
 
     [Header("Fever Settings")]
-    [SerializeField] private float feverDuration = 5.0f;
-    [SerializeField] private float gaugePerHit = 10f; // Fever after 10 hits (Gauge 100)
-    [SerializeField] private float gaugeLossOnMiss = 5f; // Gauge loss on Miss
-    [SerializeField] private UnityEngine.UI.Slider feverSlider; // Fever Gauge / Boss HP
-    [SerializeField] private int feverAttackRequirement = 30; // Number of hits to kill boss
-    [SerializeField] private GameObject feverBossPrefab;    // Unique Boss Prefab
-    [SerializeField] private GameObject feverBossExplosion; // Unique Explosion Effect
+    [SerializeField] private float gaugePerHit = 10f;
+    [SerializeField] private float gaugeLossOnMiss = 5f;
+    [SerializeField] private FeverGaugeController feverGaugeController;
+    
+    [Header("Fever Phase Settings")]
+    [SerializeField] private Animator backgroundBossAnimator; // 배경의 거대 보스 애니메이터
+    [SerializeField] private float enterAnimDuration = 2.0f;
+    [SerializeField] private float mashingDuration = 5.0f;
+    [SerializeField] private float exitAnimDuration = 2.0f;
+    [SerializeField] private int requiredMashCount = 50;
+    [SerializeField] private GameObject feverBossExplosion;
+    
+    [Header("Boss Idle Animations")]
+    [SerializeField] private float minAttackInterval = 4.0f;
+    [SerializeField] private float maxAttackInterval = 8.0f;
     
     public enum SpawnMode { Random, Chart }
     [Header("Spawn Mode")]
@@ -30,12 +38,12 @@ public class NewRhythmManager : MonoBehaviour
     [SerializeField] private RhythmChart chartAsset;
     [SerializeField] private AudioSource mainAudioSource;
 
-    private bool isFeverTime;
-    private float feverTimer;
-    private int currentFeverHits;
-    private NoteEnemy currentFeverBoss;
+    public enum FeverState { None, EnterAnimation, Mashing, ExitAnimation }
+    private FeverState currentFeverState = FeverState.None;
+    private int currentMashCount;
     private float currentFeverGauge;
     private bool isWaitingToResume;
+    private Coroutine randomAttackCoroutine;
     
     private const float MaxFeverGauge = 100f;
     private const float ResumeDelaySeconds = 1.5f;
@@ -44,8 +52,8 @@ public class NewRhythmManager : MonoBehaviour
     private readonly WaitForSeconds resumeDelay = new WaitForSeconds(ResumeDelaySeconds);
     private readonly WaitForSeconds effectReturnDelay = new WaitForSeconds(EffectReturnDelaySeconds);
 
-    public bool IsFeverTime => isFeverTime;
-    public float FeverProgress => isFeverTime ? (feverTimer / feverDuration) : Mathf.Clamp01(currentFeverGauge / MaxFeverGauge);
+    public bool IsFeverTime => currentFeverState != FeverState.None;
+    public float FeverProgress => Mathf.Clamp01(currentFeverGauge / MaxFeverGauge);
 
     [Header("References")]
     [Header("Note Prefabs")]
@@ -121,6 +129,26 @@ public class NewRhythmManager : MonoBehaviour
         FindFirstObjectByType<RhythmFloorMover>()?.ResetFloor();
 
         nextBeatTime = songStartTime + secondsPerBeat;
+
+        // Start random boss attacks
+        if (randomAttackCoroutine != null) StopCoroutine(randomAttackCoroutine);
+        randomAttackCoroutine = StartCoroutine(RandomBossAttackRoutine());
+    }
+
+    private System.Collections.IEnumerator RandomBossAttackRoutine()
+    {
+        while (true)
+        {
+            float waitTime = UnityEngine.Random.Range(minAttackInterval, maxAttackInterval);
+            yield return new WaitForSeconds(waitTime);
+
+            if (!IsFeverTime && backgroundBossAnimator != null)
+            {
+                // 1 또는 2를 랜덤하게 선택하여 트리거 발동
+                int attackType = UnityEngine.Random.Range(1, 3);
+                backgroundBossAnimator.SetTrigger(attackType == 1 ? "Attack01" : "Attack02");
+            }
+        }
     }
 
     private void InitializeRhythmSettings()
@@ -205,9 +233,9 @@ public class NewRhythmManager : MonoBehaviour
 
         double currentTime = AudioSettings.dspTime;
 
-        if (isFeverTime)
+        if (IsFeverTime)
         {
-            HandleFeverUpdate(Time.deltaTime);
+            // Mashing 단계에서 남은 시간을 UI에 표시하거나 연출을 업데이트하는 로직이 필요하다면 여기에 추가
         }
         else if (spawnMode == SpawnMode.Random)
         {
@@ -253,7 +281,7 @@ public class NewRhythmManager : MonoBehaviour
             OnBeat?.Invoke();
         }
 
-        if (isFeverTime) return; // Don't spawn chart notes during Fever
+        if (IsFeverTime) return; // 피버 연출 중에는 노트 스폰 중지
 
         // 2. Note Spawning Logic
         if (nextNoteIndex < loadedChart.notes.Count)
@@ -268,79 +296,102 @@ public class NewRhythmManager : MonoBehaviour
         }
     }
 
-    private void HandleFeverUpdate(float dt)
-    {
-        // UI updates are now event-driven or state-driven to reduce overhead
-    }
-
     private void UpdateFeverUI()
     {
-        if (feverSlider != null)
+        if (feverGaugeController == null) return;
+
+        if (currentFeverState == FeverState.None)
         {
-            // During Fever, show Boss HP (starts full, decreases)
-            // Otherwise show Fever Gauge progress (starts empty, increases)
-            feverSlider.value = isFeverTime 
-                ? 1.0f - ((float)currentFeverHits / feverAttackRequirement) 
-                : currentFeverGauge / MaxFeverGauge;
+            // 평상시에는 피버 게이지 충전량 표시
+            feverGaugeController.UpdateFeverGauge(currentFeverGauge, MaxFeverGauge);
         }
     }
 
     private void HandleFeverAttack(int laneIndex)
     {
-        currentFeverHits++;
-        // Combo no longer builds up during Fever Boss encounter
-        
+        if (currentFeverState != FeverState.Mashing) return;
+
+        currentMashCount++;
         SpawnHitEffect(Judgment.Perfect, laneIndex);
         
-        // Notify UI for feedback, but pass the existing static combo
-        OnNoteHit?.Invoke(Judgment.Perfect, currentCombo);
+        // 연타 피드백 (UI)
         JudgmentUIController.Instance?.DisplayJudgment(laneIndex, Judgment.Perfect, true);
-
-        if (currentFeverHits >= feverAttackRequirement)
-        {
-            FinishFeverBoss();
-        }
         UpdateFeverUI();
     }
 
-    private void FinishFeverBoss()
+    private System.Collections.IEnumerator FeverSequenceCoroutine()
     {
-        if (currentFeverBoss != null)
+        // 1. Enter Animation (보스 쓰러짐)
+        currentFeverState = FeverState.EnterAnimation;
+        if (backgroundBossAnimator != null) backgroundBossAnimator.SetTrigger("FallDown"); // TODO: 실제 파라미터명에 맞게 수정 필요
+        yield return new WaitForSeconds(enterAnimDuration);
+
+        // 2. Mashing Phase (제한시간 연타)
+        currentFeverState = FeverState.Mashing;
+        currentMashCount = 0;
+        
+        // 제한 시간 동안 게이지 감소 연출 시작
+        if (feverGaugeController != null) feverGaugeController.StartCountdown(mashingDuration);
+        
+        float elapsedMashingTime = 0f;
+        while (elapsedMashingTime < mashingDuration)
         {
-            // Play big explosion effect at boss's current world position
-            if (feverBossExplosion != null)
+            if (currentMashCount >= requiredMashCount)
             {
-                Instantiate(feverBossExplosion, currentFeverBoss.transform.position, Quaternion.identity);
+                break; // 목표 달성 시 즉시 루프 탈출 (조기 종료)
             }
-            
-            CleanupFeverBoss();
+            elapsedMashingTime += Time.deltaTime;
+            yield return null;
+        }
+
+        // 3. Exit Animation (결과 판정 및 대미지)
+        currentFeverState = FeverState.ExitAnimation;
+        if (currentMashCount >= requiredMashCount)
+        {
+            Debug.Log("Fever Success! Boss Takes Damage!");
+            if (backgroundBossAnimator != null) backgroundBossAnimator.SetTrigger("TakeDamage");
+            if (feverBossExplosion != null) Instantiate(feverBossExplosion, Vector3.zero, Quaternion.identity); // TODO: 보스 위치 지정 필요
+        }
+        else
+        {
+            Debug.Log("Fever Failed!");
+            if (backgroundBossAnimator != null) backgroundBossAnimator.SetTrigger("Recover");
         }
         
+        yield return new WaitForSeconds(exitAnimDuration);
+
+        // 4. Resume
+        if (feverGaugeController != null) feverGaugeController.ResetGauge();
         StartCoroutine(ResumeChartAfterFever());
-    }
-
-    private void CleanupFeverBoss()
-    {
-        if (currentFeverBoss == null) return;
-
-        activeNotes.Remove(currentFeverBoss);
-        // Note: Boss is not pooled, so we destroy it
-        Destroy(currentFeverBoss.gameObject);
-        currentFeverBoss = null;
     }
 
     private System.Collections.IEnumerator ResumeChartAfterFever()
     {
         isWaitingToResume = true;
-        SetFeverState(false);
+        currentFeverState = FeverState.None;
         
         yield return resumeDelay;
         
-        // Skip notes that passed during Fever to keep sync
-        double relativeTime = mainAudioSource != null ? mainAudioSource.time : AudioSettings.dspTime - songStartTime;
-        while (nextNoteIndex < loadedChart.notes.Count && loadedChart.notes[nextNoteIndex].time < relativeTime)
+        double currentTime = AudioSettings.dspTime;
+
+        float secPerBeat = 60f / bpm;
+        float fourBeatsTime = 4.0f * secPerBeat;
+
+        if (spawnMode == SpawnMode.Chart && loadedChart != null)
         {
-            nextNoteIndex++;
+            // 인스펙터의 Beats To Arrive(예: 8)와 무관하게, 항상 정확히 '4박자' 위치(4번째 타일)에서 생성되도록 4박자 분량만 스킵합니다.
+            double relativeTime = mainAudioSource != null ? mainAudioSource.time : currentTime - songStartTime;
+            double skipThresholdTime = relativeTime + fourBeatsTime;
+            
+            while (nextNoteIndex < loadedChart.notes.Count && loadedChart.notes[nextNoteIndex].time < skipThresholdTime)
+            {
+                nextNoteIndex++;
+            }
+        }
+        else if (spawnMode == SpawnMode.Random)
+        {
+            // 랜덤 모드에서도 다음 생성될 노트가 정확히 4박자 전 위치에서 나타나도록 타이밍 조절
+            nextBeatTime = currentTime - (noteDuration - fourBeatsTime);
         }
         
         isWaitingToResume = false;
@@ -416,7 +467,7 @@ public class NewRhythmManager : MonoBehaviour
 
     private void ProcessHitInput(int laneIndex)
     {
-        if (isFeverTime)
+        if (IsFeverTime)
         {
             HandleFeverAttack(laneIndex);
             return;
@@ -474,7 +525,7 @@ public class NewRhythmManager : MonoBehaviour
         if (result == Judgment.Miss)
         {
             // Reset combo only for normal notes or fever notes after fever ended
-            if (!isFeverTime && !isFeverNote)
+            if (!IsFeverTime && !isFeverNote)
             {
                 ResetCombo();
                 DecreaseFeverGauge();
@@ -486,24 +537,30 @@ public class NewRhythmManager : MonoBehaviour
             maxCombo = Math.Max(maxCombo, currentCombo);
 
             // Increase gauge only when not in Fever and not hitting Fever-only notes
-            if (!isFeverTime && !isFeverNote && note != null && !note.HasContributedToFever)
+            if (!IsFeverTime && !isFeverNote && note != null && !note.HasContributedToFever)
             {
                 note.HasContributedToFever = true; // Mark as contributed
                 currentFeverGauge += gaugePerHit;
                 if (currentFeverGauge >= MaxFeverGauge)
                 {
                     currentFeverGauge = MaxFeverGauge;
+                    // 진입 전 시각적으로 100%를 찍도록 강제 업데이트
+                    if (feverGaugeController != null) feverGaugeController.UpdateFeverGauge(currentFeverGauge, MaxFeverGauge);
+                    
                     SetFeverState(true);
                     currentFeverGauge = 0f; // Reset after activation
                 }
-                UpdateFeverUI();
+                else
+                {
+                    UpdateFeverUI();
+                }
             }
 
             SpawnHitEffect(result, laneIndex); // Spawn effect
         }
 
         // Output judgment text per lane (FEVER if in Fever mode or hitting Fever note)
-        JudgmentUIController.Instance?.DisplayJudgment(laneIndex, result, isFeverTime || isFeverNote);
+        JudgmentUIController.Instance?.DisplayJudgment(laneIndex, result, IsFeverTime || isFeverNote);
 
         OnNoteHit?.Invoke(result, currentCombo);
         Debug.Log($"Hit! [{result}] Combo: {currentCombo}");
@@ -530,14 +587,8 @@ public class NewRhythmManager : MonoBehaviour
 
     public void ReportMiss(NoteEnemy note)
     {
-        if (note == currentFeverBoss)
-        {
-            HandleBossMiss();
-            return;
-        }
-
         bool isFeverNote = note != null && note.Type == NoteType.Fever;
-        if (isFeverTime || isFeverNote) return; // Maintain combo during Fever or for Fever notes
+        if (IsFeverTime || isFeverNote) return; // Maintain combo during Fever or for Fever notes
 
         ResetCombo();
         DecreaseFeverGauge();
@@ -547,7 +598,7 @@ public class NewRhythmManager : MonoBehaviour
         {
             if (!note.IsLaneAlreadyHit(i))
             {
-                JudgmentUIController.Instance?.DisplayJudgment(i, Judgment.Miss, isFeverTime || isFeverNote);
+                JudgmentUIController.Instance?.DisplayJudgment(i, Judgment.Miss, IsFeverTime || isFeverNote);
             }
         }
 
@@ -555,20 +606,7 @@ public class NewRhythmManager : MonoBehaviour
         Debug.Log("Missed!");
     }
 
-    private void HandleBossMiss()
-    {
-        CleanupFeverBoss();
-        ResetCombo();
-        
-        // Show MISS on all lanes for the boss
-        for (int i = 0; i < RhythmConfig.Instance.LaneCount; i++)
-        {
-            JudgmentUIController.Instance?.DisplayJudgment(i, Judgment.Miss, false);
-        }
 
-        OnNoteHit?.Invoke(Judgment.Miss, currentCombo);
-        StartCoroutine(ResumeChartAfterFever());
-    }
 
     private void ResetCombo()
     {
@@ -577,7 +615,7 @@ public class NewRhythmManager : MonoBehaviour
 
     private void DecreaseFeverGauge()
     {
-        if (isFeverTime) return;
+        if (IsFeverTime) return;
 
         currentFeverGauge = Mathf.Max(0f, currentFeverGauge - gaugeLossOnMiss);
         UpdateFeverUI();
@@ -585,31 +623,35 @@ public class NewRhythmManager : MonoBehaviour
 
     private void SetFeverState(bool active)
     {
-        isFeverTime = active;
         if (active)
         {
-            // 1. Clear all existing notes without allocation
+            // 1. 화면에 남은 일반 노트들 클리어
             for (int i = activeNotes.Count - 1; i >= 0; i--)
             {
                 activeNotes[i].ReleaseToPool();
             }
 
-            // 2. Spawn Giant Boss from unique prefab
-            currentFeverHits = 0;
-            const float BossWaitBeats = 4.0f;
-            double bossHitTime = AudioSettings.dspTime + (secondsPerBeat * BossWaitBeats);
-            
-            GameObject bossGo = Instantiate(feverBossPrefab);
-            currentFeverBoss = bossGo.GetComponentInChildren<NoteEnemy>();
-            
-            if (currentFeverBoss != null)
-            {
-                activeNotes.Add(currentFeverBoss);
-                currentFeverBoss.Initialize(null, 0, RhythmConfig.Instance.LaneCount, bossHitTime, secondsPerBeat * BossWaitBeats, Mathf.RoundToInt(BossWaitBeats), NoteType.Fever);
-            }
+            // 2. 새로운 피버 시퀀스 시작
+            StartCoroutine(FeverSequenceCoroutine());
         }
 
         UpdateFeverUI();
         OnFeverStateChanged?.Invoke(active);
+    }
+
+    private void OnGUI()
+    {
+        // 테스트용: Mashing 페이즈일 때 화면 중앙 상단에 연타 횟수 출력
+        if (currentFeverState == FeverState.Mashing)
+        {
+            GUIStyle style = new GUIStyle();
+            style.fontSize = 60;
+            style.fontStyle = FontStyle.Bold;
+            style.normal.textColor = Color.yellow;
+            style.alignment = TextAnchor.MiddleCenter;
+
+            Rect rect = new Rect(0, Screen.height * 0.3f, Screen.width, 100);
+            GUI.Label(rect, $"MASH: {currentMashCount} / {requiredMashCount}", style);
+        }
     }
 }
