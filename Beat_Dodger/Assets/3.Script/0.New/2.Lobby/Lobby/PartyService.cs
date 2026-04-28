@@ -38,10 +38,11 @@ namespace BeatDodger.Lobby
         /// 새로운 파티를 생성한다. 최대 파티 수 초과 시 null을 반환한다.
         /// </summary>
         /// <param name="roomName">방 이름</param>
-        /// <param name="difficulty">난이도</param>
+        /// <param name="password">방 비밀번호. 빈 문자열이면 공개방으로 생성된다.</param>
+        /// <param name="songName">방장이 선택한 곡 이름</param>
         /// <param name="leaderNetId">방장의 NetId</param>
         /// <returns>생성된 PartyInfo, 실패 시 null</returns>
-        public PartyInfo? CreateParty(string roomName, int difficulty, uint leaderNetId)
+        public PartyInfo? CreateParty(string roomName, string password, int songId, string songName, uint leaderNetId)
         {
             if (_repository.Count() >= _maxParties)
             {
@@ -49,23 +50,25 @@ namespace BeatDodger.Lobby
                 return null;
             }
 
-            PartyInfo created = _repository.CreateParty(roomName, difficulty, leaderNetId);
+            PartyInfo created = _repository.CreateParty(roomName, password, songId, songName, leaderNetId);
 
             Debug.Log($"[PartyService] [Server] 파티 생성 완료 | ID: {created._PartyId} | 방 이름: {created._RoomName}" +
-                      $" | 방장 NetId: {created._Slot0NetId}");
+                      $" | 곡 ID: {created._SongId} | 곡: {created._SongName} | 방장 NetId: {created._Slot0NetId} | 비밀번호 설정: {created._HasPassword}");
 
             return created;
         }
 
         /// <summary>
         /// 특정 파티에 플레이어를 참가시킨다. 성공 시 갱신된 PartyInfo를 반환한다.
+        /// 비밀번호가 틀리거나 방이 가득 찬 경우 null을 반환한다.
         /// </summary>
         /// <param name="partyId">참가할 파티 ID</param>
+        /// <param name="password">입력한 비밀번호. 공개방이면 빈 문자열을 전달한다.</param>
         /// <param name="joinerNetId">참가자의 NetId</param>
         /// <returns>갱신된 PartyInfo, 실패 시 null</returns>
-        public PartyInfo? JoinParty(int partyId, uint joinerNetId)
+        public PartyInfo? JoinParty(int partyId, string password, uint joinerNetId)
         {
-            if (_repository.TryJoinParty(partyId, joinerNetId, out PartyInfo updated))
+            if (_repository.TryJoinParty(partyId, password, joinerNetId, out PartyInfo updated))
             {
                 Debug.Log($"[PartyService] [Server] 파티 참가 완료 | ID: {partyId} | 참가자 NetId: {joinerNetId}");
                 return updated;
@@ -122,6 +125,28 @@ namespace BeatDodger.Lobby
             }
 
             Debug.LogWarning($"[PartyService] [Server] 준비 상태 변경 실패 | PartyId: {partyId} | NetId: {netId} | Ready: {ready}");
+            return null;
+        }
+
+        /// <summary>
+        /// 방장이 대기실에서 곡을 변경한다. 방장이 아닌 경우 null을 반환한다.
+        /// </summary>
+        /// <param name="partyId">대상 파티 ID</param>
+        /// <param name="songId">변경할 곡 고유 ID</param>
+        /// <param name="songName">변경할 곡 이름</param>
+        /// <param name="difficulty">변경할 곡 난이도</param>
+        /// <param name="tags">변경할 곡 해시태그 분위기 문자열</param>
+        /// <param name="requestingNetId">요청한 플레이어의 NetId (방장 검증용)</param>
+        /// <returns>갱신된 PartyInfo, 실패 시 null</returns>
+        public PartyInfo? UpdateSong(int partyId, int songId, string songName, int difficulty, string tags, uint requestingNetId)
+        {
+            if (_repository.TryUpdateSong(partyId, songId, songName, difficulty, tags, requestingNetId, out PartyInfo updated))
+            {
+                Debug.Log($"[PartyService] [Server] 곡 변경 완료 | PartyId: {partyId} | 곡 ID: {songId} | 곡: {songName} | 난이도: {difficulty}");
+                return updated;
+            }
+
+            Debug.LogWarning($"[PartyService] [Server] 곡 변경 실패 | PartyId: {partyId} | 요청 NetId: {requestingNetId}");
             return null;
         }
 

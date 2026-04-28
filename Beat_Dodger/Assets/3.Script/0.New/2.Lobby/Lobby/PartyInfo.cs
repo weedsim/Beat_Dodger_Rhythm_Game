@@ -19,7 +19,16 @@ namespace BeatDodger.Lobby
         public bool _IsActive;
         public int _PartyId;
         public string _RoomName;
+        /// <summary>방장이 선택한 곡 이름. 방 목록에 표시된다.</summary>
+        public string _SongName;
+        /// <summary>방장이 선택한 곡 고유 ID. 인게임 리소스 로드에 사용된다.</summary>
+        public int _SongId;
+        /// <summary>방장이 선택한 곡 난이도.</summary>
         public int _Difficulty;
+        /// <summary>방장이 선택한 곡의 해시태그 분위기 문자열 (예: "#신남 #빠름"). 대기실 전체에 표시된다.</summary>
+        public string _SongTags;
+        /// <summary>비밀번호 존재 여부 플래그. 실제 비밀번호는 서버(PartyRepository)에서만 관리한다.</summary>
+        public bool _HasPassword;
 
         public int _MemberCount;
         public int _MaxMembers;

@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using BeatDodger.Core;
 using BeatDodger.Lobby;
 using Mirror;
@@ -25,8 +26,21 @@ namespace BeatDodger.UI
         [SerializeField, Tooltip("멤버 이름 텍스트 (4개, Slot0~3 순서)")]
         private Text[] _memberNameTexts;
 
-        [SerializeField, Tooltip("멤버 악기 텍스트 (4개, Slot0~3 순서)")]
-        private Text[] _memberInstrumentTexts;
+        [SerializeField, Tooltip("멤버 악기 이미지 (4개, Slot0~3 순서)")]
+        private Image[] _memberInstrumentImages;
+
+        [Header("Instrument Sprites")]
+        [SerializeField, Tooltip("드럼 악기 스프라이트")]
+        private Sprite _drumSprite;
+
+        [SerializeField, Tooltip("기타 악기 스프라이트")]
+        private Sprite _guitarSprite;
+
+        [SerializeField, Tooltip("베이스 악기 스프라이트")]
+        private Sprite _bassSprite;
+
+        [SerializeField, Tooltip("키보드 악기 스프라이트")]
+        private Sprite _keyboardSprite;
 
         [Header("Instrument Buttons")]
         [SerializeField, Tooltip("드럼 선택 버튼")]
@@ -41,17 +55,52 @@ namespace BeatDodger.UI
         [SerializeField, Tooltip("키보드 선택 버튼")]
         private Button _keyboardButton;
 
+        [Header("Song Info Display (All Clients)")]
+        [SerializeField, Tooltip("선택된 곡 이름 텍스트 — 방 안 전체 클라이언트에 표시")]
+        private Text _songInfoNameText;
+
+        [SerializeField, Tooltip("선택된 곡 난이도 텍스트 — 방 안 전체 클라이언트에 표시")]
+        private Text _songInfoDifficultyText;
+
+        [SerializeField, Tooltip("선택된 곡 해시태그 분위기 텍스트 — 방 안 전체 클라이언트에 표시")]
+        private Text _songInfoTagsText;
+
+        [SerializeField, Tooltip("선택된 곡 썸네일 이미지 — 방 안 전체 클라이언트에 표시. SongId로 로컬 조회")]
+        private Image _songInfoThumbnailImage;
+
+        [Header("Song Selection (Leader Only)")]
+        [SerializeField, Tooltip("곡 선택 패널 루트 GameObject — 방장일 때만 활성화된다")]
+        private GameObject _songSelectPanel;
+
+        [SerializeField, Tooltip("Scroll View의 Content RectTransform — 곡 버튼이 동적으로 생성된다")]
+        private Transform _songScrollContent;
+
+        [SerializeField, Tooltip("곡 버튼 프리팹 (Button + Text 구성)")]
+        private GameObject _songButtonPrefab;
+
+        [SerializeField, Tooltip("선택된 곡 버튼 색상 (회색 계열 권장)")]
+        private Color _selectedSongColor = new Color(0.5f, 0.5f, 0.5f, 1f);
+
+        [SerializeField, Tooltip("선택 해제된 곡 버튼 기본 색상")]
+        private Color _normalSongColor = Color.white;
+
+        [SerializeField, Tooltip("드롭다운에 표시할 곡 목록 (Inspector에서 등록)")]
+        private List<SongData> _songList;
+
+        private const float SONG_CONFIRM_DELAY = 5f;
+        private float _songChangeTimer;
+        private bool _pendingSongUpdate;
+        private int _pendingSongIndex = -1;
+
+        private readonly List<Button> _songButtons = new List<Button>();
+        private int _selectedSongIndex = -1;
+        private bool _defaultSongSent = false;
+
         [Header("Room Controls")]
         [SerializeField, Tooltip("방 나가기 버튼")]
         private Button _leaveRoomButton;
 
-        [SerializeField, Tooltip("준비 버튼 (방장 외 3명용, 토글 동작)")]
-        private Button _readyButton;
-
-        [SerializeField, Tooltip("준비/준비 해제 텍스트 표시용")]
-        private Text _readyButtonText;
-
-        [SerializeField, Tooltip("시작 버튼 (방장 전용)")]
+        [SerializeField, Tooltip("시작 버튼 (방장 전용 수동 백업용 — 악기 전원 선택 시 자동 시작됨)")]
         private Button _startButton;
 
         #endregion
@@ -67,6 +116,7 @@ namespace BeatDodger.UI
             }
 
             RegisterButtonListeners();
+            BuildSongScrollView();
         }
 
         private void OnDisable()
@@ -77,6 +127,23 @@ namespace BeatDodger.UI
             }
 
             UnregisterButtonListeners();
+            _pendingSongUpdate = false;
+            _defaultSongSent = false;
+        }
+
+        private void Update()
+        {
+            if (!_pendingSongUpdate)
+            {
+                return;
+            }
+
+            _songChangeTimer -= Time.deltaTime;
+            if (_songChangeTimer <= 0f)
+            {
+                _pendingSongUpdate = false;
+                CommitSongSelection();
+            }
         }
 
         #endregion
@@ -157,10 +224,11 @@ namespace BeatDodger.UI
                     }
                 }
 
-                if (_memberInstrumentTexts != null && slot < _memberInstrumentTexts.Length &&
-                    _memberInstrumentTexts[slot] != null)
+                if (_memberInstrumentImages != null && slot < _memberInstrumentImages.Length &&
+                    _memberInstrumentImages[slot] != null)
                 {
-                    _memberInstrumentTexts[slot].text = slotNetId != 0 ? slotInstrument.ToString() : string.Empty;
+                    _memberInstrumentImages[slot].sprite = slotNetId != 0 ? GetInstrumentSprite(slotInstrument) : null;
+                    _memberInstrumentImages[slot].enabled = slotNetId != 0 && _memberInstrumentImages[slot].sprite != null;
                 }
             }
 
@@ -190,39 +258,53 @@ namespace BeatDodger.UI
                 _keyboardButton.interactable = !keyboardTaken;
             }
 
-            // 방장 여부에 따라 준비 버튼 / 시작 버튼 표시 전환
+            // 방장만 시작 버튼 표시 (악기 선택이 곧 준비 — 준비 버튼은 사용하지 않음)
             bool isLeader = localPlayer.netId == targetParty._Slot0NetId;
-
-            if (_readyButton != null)
-            {
-                _readyButton.gameObject.SetActive(!isLeader);
-            }
 
             if (_startButton != null)
             {
                 _startButton.gameObject.SetActive(isLeader);
-            }
 
-            if (isLeader)
-            {
-                // 방장: 시작 버튼 활성화 조건 로컬 평가
-                bool canStart = EvaluateCanStart(targetParty);
-                if (_startButton != null)
+                if (isLeader)
                 {
-                    _startButton.interactable = canStart;
+                    _startButton.interactable = EvaluateCanStart(targetParty);
                 }
             }
-            else
-            {
-                // 팀원: 본인 준비 상태에 따라 버튼 텍스트 변경
-                int localSlot = GetLocalSlot(targetParty, localPlayer.netId);
-                bool isReady = localSlot > 0 && targetParty.GetReady(localSlot);
 
-                if (_readyButtonText != null)
-                {
-                    _readyButtonText.text = isReady ? "준비 해제" : "준비";
-                }
+            // 곡 선택 패널은 방장만 표시
+            if (_songSelectPanel != null)
+            {
+                _songSelectPanel.SetActive(isLeader);
             }
+
+            // pending 중이 아닐 때만 현재 파티의 곡 선택 상태와 버튼 UI를 동기화
+            if (isLeader && _songList != null && !_pendingSongUpdate)
+            {
+                int matchIndex = 0;
+                for (int i = 0; i < _songList.Count; i++)
+                {
+                    if (_songList[i]._Id == targetParty._SongId)
+                    {
+                        matchIndex = i;
+                        break;
+                    }
+                }
+                SelectSongVisual(matchIndex);
+            }
+
+            // 방장이 방을 생성한 직후 (SongId == 0)이면 첫 번째 곡을 기본값으로 서버에 즉시 전송한다
+            // RefreshRoomUI는 SyncList 갱신 후 호출되므로 파티 데이터가 보장된다
+            if (isLeader && targetParty._SongId == 0 && !_defaultSongSent &&
+                _songList != null && _songList.Count > 0)
+            {
+                _defaultSongSent = true;
+                SongData defaultSong = _songList[0];
+                Debug.Log($"[RoomUIController] [Client] 기본 곡 자동 선택 전송 | PartyId: {currentPartyId} | 곡: {defaultSong._Name}");
+                _bridge.RequestUpdateSong(currentPartyId, defaultSong._Id, defaultSong._Name, defaultSong._Difficulty, defaultSong._Tags ?? string.Empty);
+            }
+
+            // 곡 정보 패널 갱신 — 방 안 전체 클라이언트에 표시
+            RefreshSongInfoDisplay(targetParty);
         }
 
         #endregion
@@ -261,12 +343,6 @@ namespace BeatDodger.UI
                 _leaveRoomButton.onClick.AddListener(OnClickLeaveRoom);
             }
 
-            if (_readyButton != null)
-            {
-                _readyButton.onClick.RemoveAllListeners();
-                _readyButton.onClick.AddListener(OnClickReady);
-            }
-
             if (_startButton != null)
             {
                 _startButton.onClick.RemoveAllListeners();
@@ -299,11 +375,6 @@ namespace BeatDodger.UI
             if (_leaveRoomButton != null)
             {
                 _leaveRoomButton.onClick.RemoveAllListeners();
-            }
-
-            if (_readyButton != null)
-            {
-                _readyButton.onClick.RemoveAllListeners();
             }
 
             if (_startButton != null)
@@ -371,49 +442,6 @@ namespace BeatDodger.UI
             _bridge.RequestSelectInstrument(partyId, instrument);
         }
 
-        private void OnClickReady()
-        {
-            if (_bridge == null || NetworkClient.localPlayer == null)
-            {
-                return;
-            }
-
-            if (!NetworkClient.localPlayer.TryGetComponent(out LobbyPlayer localPlayer))
-            {
-                return;
-            }
-
-            int partyId = localPlayer.CurrentPartyId;
-            if (partyId == 0)
-            {
-                return;
-            }
-
-            // 현재 준비 상태 조회 후 토글
-            PartyInfo targetParty = default;
-            bool found = false;
-            int partyListCount = _bridge.PartyList.Count;
-
-            for (int i = 0; i < partyListCount; i++)
-            {
-                if (_bridge.PartyList[i]._PartyId == partyId)
-                {
-                    targetParty = _bridge.PartyList[i];
-                    found = true;
-                    break;
-                }
-            }
-
-            if (!found)
-            {
-                return;
-            }
-
-            int localSlot = GetLocalSlot(targetParty, localPlayer.netId);
-            bool currentReady = localSlot > 0 && targetParty.GetReady(localSlot);
-            _bridge.RequestSetReady(!currentReady);
-        }
-
         private void OnClickStart()
         {
             if (_bridge != null)
@@ -448,17 +476,166 @@ namespace BeatDodger.UI
             return true;
         }
 
-        private int GetLocalSlot(PartyInfo party, uint localNetId)
+        private void BuildSongScrollView()
         {
-            for (int slot = 0; slot < PartyConstants.MAX_PARTY_MEMBERS; slot++)
+            if (_songScrollContent == null || _songButtonPrefab == null || _songList == null)
             {
-                if (party.GetSlot(slot) == localNetId)
+                return;
+            }
+
+            if (_songButtons.Count > 0)
+            {
+                return;
+            }
+
+            for (int i = 0; i < _songList.Count; i++)
+            {
+                int capturedIndex = i;
+                GameObject go = Instantiate(_songButtonPrefab, _songScrollContent);
+                Button btn = go.GetComponent<Button>();
+
+                Text label = go.GetComponentInChildren<Text>();
+                if (label != null)
                 {
-                    return slot;
+                    label.text = _songList[i]._Name;
+                }
+
+                if (btn != null)
+                {
+                    btn.onClick.AddListener(() => OnSongButtonClicked(capturedIndex));
+                    _songButtons.Add(btn);
                 }
             }
 
-            return -1;
+            // 첫 번째 곡을 기본 선택 상태로 표시 (서버 전송 없이 시각만 반영)
+            if (_songList.Count > 0)
+            {
+                SelectSongVisual(0);
+                _pendingSongIndex = 0;
+            }
+        }
+
+        private void OnSongButtonClicked(int index)
+        {
+            // 이미 선택된 곡을 다시 눌러도 선택 해제되지 않고 유지
+            if (index == _selectedSongIndex)
+            {
+                return;
+            }
+
+            SelectSongVisual(index);
+            _pendingSongIndex = index;
+            _pendingSongUpdate = true;
+            _songChangeTimer = SONG_CONFIRM_DELAY;
+        }
+
+        private void SelectSongVisual(int index)
+        {
+            // 이전 선택 버튼 색상 해제
+            if (_selectedSongIndex >= 0 && _selectedSongIndex < _songButtons.Count &&
+                _songButtons[_selectedSongIndex] != null)
+            {
+                Image prevImg = _songButtons[_selectedSongIndex].GetComponent<Image>();
+                if (prevImg != null)
+                {
+                    prevImg.color = _normalSongColor;
+                }
+            }
+
+            _selectedSongIndex = index;
+
+            // 새 선택 버튼 색상 적용
+            if (index >= 0 && index < _songButtons.Count && _songButtons[index] != null)
+            {
+                Image img = _songButtons[index].GetComponent<Image>();
+                if (img != null)
+                {
+                    img.color = _selectedSongColor;
+                }
+            }
+        }
+
+        private void CommitSongSelection()
+        {
+            if (_bridge == null || NetworkClient.localPlayer == null)
+            {
+                return;
+            }
+
+            if (!NetworkClient.localPlayer.TryGetComponent(out LobbyPlayer localPlayer))
+            {
+                return;
+            }
+
+            int partyId = localPlayer.CurrentPartyId;
+            if (partyId == 0)
+            {
+                return;
+            }
+
+            if (_songList == null || _pendingSongIndex < 0 || _pendingSongIndex >= _songList.Count)
+            {
+                return;
+            }
+
+            SongData selected = _songList[_pendingSongIndex];
+            Debug.Log($"[RoomUIController] [Client] 곡 선택 확정 전송 | PartyId: {partyId} | 곡 ID: {selected._Id} | 곡: {selected._Name} | 난이도: {selected._Difficulty}");
+            _bridge.RequestUpdateSong(partyId, selected._Id, selected._Name, selected._Difficulty, selected._Tags ?? string.Empty);
+        }
+
+        private void RefreshSongInfoDisplay(PartyInfo party)
+        {
+            if (_songInfoNameText != null)
+            {
+                _songInfoNameText.text = party._SongName;
+            }
+
+            if (_songInfoDifficultyText != null)
+            {
+                _songInfoDifficultyText.text = party._Difficulty.ToString();
+            }
+
+            if (_songInfoTagsText != null)
+            {
+                _songInfoTagsText.text = party._SongTags;
+            }
+
+            if (_songInfoThumbnailImage != null)
+            {
+                Sprite thumb = GetSongThumbnail(party._SongId);
+                _songInfoThumbnailImage.sprite = thumb;
+                _songInfoThumbnailImage.enabled = thumb != null;
+            }
+        }
+
+        private Sprite GetSongThumbnail(int songId)
+        {
+            if (_songList == null)
+            {
+                return null;
+            }
+
+            for (int i = 0; i < _songList.Count; i++)
+            {
+                if (_songList[i]._Id == songId)
+                {
+                    return _songList[i]._Thumbnail;
+                }
+            }
+
+            return null;
+        }
+
+        private Sprite GetInstrumentSprite(InstrumentType instrument)
+        {
+            return instrument switch
+            {
+                InstrumentType.Drum     => _drumSprite,
+                InstrumentType.Guitar   => _guitarSprite,
+                InstrumentType.Bass     => _bassSprite,
+                InstrumentType.Keyboard => _keyboardSprite,
+                _                       => null
+            };
         }
 
         private bool IsInstrumentTakenByOther(PartyInfo party, uint localNetId, InstrumentType instrument)

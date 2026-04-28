@@ -7,7 +7,6 @@ namespace BeatDodger.Lobby
     /// 로비에서 네트워크 상에 존재하는 플레이어 오브젝트.
     /// 서버에서 스폰되며 userId / userName 을 모든 클라이언트에 동기화한다.
     /// </summary>
-    [RequireComponent(typeof(NetworkIdentity))]
     public class LobbyPlayer : NetworkBehaviour
     {
         #region Variables

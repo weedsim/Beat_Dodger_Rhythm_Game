@@ -13,5 +13,11 @@ namespace BeatDodger.Network
 
         /// <summary>방 생성 시 설정된 난이도</summary>
         public int Difficulty;
+
+        /// <summary>방장이 선택한 곡 고유 ID</summary>
+        public int SongId;
+
+        /// <summary>방장이 선택한 곡 이름</summary>
+        public string SongName;
     }
 }

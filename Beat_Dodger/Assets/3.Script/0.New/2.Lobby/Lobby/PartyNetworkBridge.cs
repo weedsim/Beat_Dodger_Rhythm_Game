@@ -34,6 +34,7 @@ namespace BeatDodger.Lobby
         private PartyService _service;
 
         public event Action OnPartyListUpdated;
+        public event Action OnJoinFailed;
 
         #endregion
 
@@ -135,8 +136,10 @@ namespace BeatDodger.Lobby
         /// 새로운 파티 생성 요청을 서버로 전송한다. (클라이언트 호출)
         /// </summary>
         /// <param name="roomName">생성할 방 이름</param>
-        /// <param name="difficulty">선택한 난이도</param>
-        public void RequestCreateParty(string roomName, int difficulty)
+        /// <param name="password">방 비밀번호. 빈 문자열이면 공개방으로 생성된다.</param>
+        /// <param name="songId">방장이 선택한 곡 고유 ID</param>
+        /// <param name="songName">방장이 선택한 곡 이름</param>
+        public void RequestCreateParty(string roomName, string password, int songId, string songName)
         {
             if (NetworkClient.connection == null)
             {
@@ -151,14 +154,15 @@ namespace BeatDodger.Lobby
             }
 
             Debug.Log("[PartyNetworkBridge] [Client] 파티 생성 요청을 서버에 전송합니다.");
-            CmdCreateParty(roomName, difficulty);
+            CmdCreateParty(roomName, password, songId, songName);
         }
 
         /// <summary>
         /// 특정 파티에 참가 요청을 서버로 전송한다. (클라이언트 호출)
         /// </summary>
         /// <param name="partyId">참가할 파티의 고유 ID</param>
-        public void RequestJoinParty(int partyId)
+        /// <param name="password">입력한 비밀번호. 공개방이면 빈 문자열을 전달한다.</param>
+        public void RequestJoinParty(int partyId, string password)
         {
             if (NetworkClient.connection == null)
             {
@@ -170,7 +174,7 @@ namespace BeatDodger.Lobby
                 return;
             }
 
-            CmdJoinParty(partyId);
+            CmdJoinParty(partyId, password);
         }
 
         /// <summary>
@@ -237,6 +241,26 @@ namespace BeatDodger.Lobby
         }
 
         /// <summary>
+        /// 방장이 대기실에서 선택한 곡 정보를 서버로 전송한다. (클라이언트 호출)
+        /// 5초 이상 같은 곡을 선택 상태로 유지했을 때만 RoomUIController가 호출한다.
+        /// </summary>
+        /// <param name="partyId">대상 파티 ID</param>
+        /// <param name="songId">선택한 곡 고유 ID</param>
+        /// <param name="songName">선택한 곡 이름</param>
+        /// <param name="difficulty">선택한 곡 난이도</param>
+        /// <param name="tags">선택한 곡 해시태그 분위기 문자열</param>
+        public void RequestUpdateSong(int partyId, int songId, string songName, int difficulty, string tags)
+        {
+            if (NetworkClient.connection == null || NetworkClient.connection.identity == null)
+            {
+                Debug.LogWarning("[PartyNetworkBridge] [Client] RequestUpdateSong: connection 또는 identity 가 없습니다.");
+                return;
+            }
+
+            CmdUpdateSong(partyId, songId, songName, difficulty, tags);
+        }
+
+        /// <summary>
         /// 게임 시작 요청을 서버로 전송한다. 방장만 호출할 수 있다. (클라이언트 호출)
         /// </summary>
         public void RequestStartMatch()
@@ -262,10 +286,18 @@ namespace BeatDodger.Lobby
                 return;
             }
 
+            PartyInfo leaderParty = SnapshotLeaderParty(disconnectedNetId);
+
             List<PartyInfo> updatedParties = _service.HandlePlayerDisconnect(disconnectedNetId);
 
             // SyncList를 갱신하여 변경 사항을 클라이언트에 동기화
             SyncUpdatedParties(updatedParties);
+
+            // 파티 비활성화 후 나머지 멤버를 강제 퇴실한다 (클라이언트가 비활성 파티 목록을 먼저 수신)
+            if (leaderParty._PartyId != 0)
+            {
+                KickPartyMembers(leaderParty);
+            }
         }
 
         #endregion
@@ -289,7 +321,7 @@ namespace BeatDodger.Lobby
         }
 
         [Command(requiresAuthority = false)]
-        private void CmdCreateParty(string roomName, int difficulty, NetworkConnectionToClient sender = null)
+        private void CmdCreateParty(string roomName, string password, int songId, string songName, NetworkConnectionToClient sender = null)
         {
             if (_service == null)
             {
@@ -302,8 +334,26 @@ namespace BeatDodger.Lobby
                 return;
             }
 
+            if (string.IsNullOrWhiteSpace(roomName) || roomName.Length > PartyConstants.MAX_ROOM_NAME_LENGTH)
+            {
+                Debug.LogWarning($"[PartyNetworkBridge] [Server] CmdCreateParty: 방 이름 길이 위반 | len={roomName?.Length}");
+                return;
+            }
+
+            if (password != null && password.Length > PartyConstants.MAX_PASSWORD_LENGTH)
+            {
+                Debug.LogWarning($"[PartyNetworkBridge] [Server] CmdCreateParty: 비밀번호 길이 위반");
+                return;
+            }
+
+            if (songName != null && songName.Length > PartyConstants.MAX_SONG_NAME_LENGTH)
+            {
+                Debug.LogWarning($"[PartyNetworkBridge] [Server] CmdCreateParty: 곡 이름 길이 위반");
+                return;
+            }
+
             uint leaderNetId = sender.identity.netId;
-            PartyInfo? created = _service.CreateParty(roomName, difficulty, leaderNetId);
+            PartyInfo? created = _service.CreateParty(roomName, password, songId, songName ?? string.Empty, leaderNetId);
 
             if (created.HasValue)
             {
@@ -317,7 +367,7 @@ namespace BeatDodger.Lobby
         }
 
         [Command(requiresAuthority = false)]
-        private void CmdJoinParty(int targetPartyId, NetworkConnectionToClient sender = null)
+        private void CmdJoinParty(int targetPartyId, string password, NetworkConnectionToClient sender = null)
         {
             if (_service == null)
             {
@@ -330,11 +380,18 @@ namespace BeatDodger.Lobby
                 return;
             }
 
+            if (password != null && password.Length > PartyConstants.MAX_PASSWORD_LENGTH)
+            {
+                Debug.LogWarning($"[PartyNetworkBridge] [Server] CmdJoinParty: 비밀번호 길이 위반");
+                return;
+            }
+
             uint joinerNetId = sender.identity.netId;
-            PartyInfo? updated = _service.JoinParty(targetPartyId, joinerNetId);
+            PartyInfo? updated = _service.JoinParty(targetPartyId, password, joinerNetId);
 
             if (!updated.HasValue)
             {
+                TargetNotifyJoinFailed(sender);
                 return;
             }
 
@@ -384,6 +441,13 @@ namespace BeatDodger.Lobby
                     break;
                 }
             }
+
+            // 모든 플레이어가 악기를 선택(=준비 완료)하면 자동으로 매치를 시작한다
+            if (_service.CanStartMatch(partyId, out PartyInfo readyParty))
+            {
+                Debug.Log($"[PartyNetworkBridge] [Server] 전원 악기 선택 완료 — 자동 매치 시작 | PartyId: {partyId}");
+                StartMatchServerSide(readyParty);
+            }
         }
 
         [Command(requiresAuthority = false)]
@@ -406,9 +470,16 @@ namespace BeatDodger.Lobby
             }
 
             uint netId = sender.identity.netId;
+            PartyInfo leaderParty = SnapshotLeaderParty(netId);
             List<PartyInfo> updatedParties = _service.HandlePlayerDisconnect(netId);
             SyncUpdatedParties(updatedParties);
             lobbyPlayer.SetCurrentPartyId(0);
+
+            // 파티 비활성화 후 나머지 멤버를 강제 퇴실한다 (클라이언트가 비활성 파티 목록을 먼저 수신)
+            if (leaderParty._PartyId != 0)
+            {
+                KickPartyMembers(leaderParty);
+            }
         }
 
         [Command(requiresAuthority = false)]
@@ -438,6 +509,50 @@ namespace BeatDodger.Lobby
 
             uint netId = sender.identity.netId;
             PartyInfo? updated = _service.SetReady(partyId, netId, ready);
+
+            if (!updated.HasValue)
+            {
+                return;
+            }
+
+            for (int i = 0; i < _partyList.Count; i++)
+            {
+                if (_partyList[i]._PartyId == partyId)
+                {
+                    _partyList[i] = updated.Value;
+                    break;
+                }
+            }
+        }
+
+        [Command(requiresAuthority = false)]
+        private void CmdUpdateSong(int partyId, int songId, string songName, int difficulty, string tags, NetworkConnectionToClient sender = null)
+        {
+            if (_service == null)
+            {
+                return;
+            }
+
+            if (sender == null || sender.identity == null)
+            {
+                Debug.LogWarning("[PartyNetworkBridge] [Server] CmdUpdateSong: sender 또는 identity 가 없습니다.");
+                return;
+            }
+
+            if (songName != null && songName.Length > PartyConstants.MAX_SONG_NAME_LENGTH)
+            {
+                Debug.LogWarning($"[PartyNetworkBridge] [Server] CmdUpdateSong: 곡 이름 길이 위반");
+                return;
+            }
+
+            if (tags != null && tags.Length > PartyConstants.MAX_SONG_TAGS_LENGTH)
+            {
+                Debug.LogWarning($"[PartyNetworkBridge] [Server] CmdUpdateSong: 곡 태그 길이 위반");
+                return;
+            }
+
+            uint netId = sender.identity.netId;
+            PartyInfo? updated = _service.UpdateSong(partyId, songId, songName ?? string.Empty, difficulty, tags ?? string.Empty, netId);
 
             if (!updated.HasValue)
             {
@@ -523,6 +638,38 @@ namespace BeatDodger.Lobby
                 return;
             }
 
+            // 재진입 방지: SyncList 상 이미 비활성화된 파티는 무시 (CmdSelectInstrument 중복 호출 대비)
+            bool alreadyInactive = true;
+            for (int check = 0; check < _partyList.Count; check++)
+            {
+                if (_partyList[check]._PartyId == party._PartyId)
+                {
+                    alreadyInactive = !_partyList[check]._IsActive;
+                    break;
+                }
+            }
+
+            if (alreadyInactive)
+            {
+                Debug.LogWarning($"[PartyNetworkBridge] [Server] StartMatchServerSide: 이미 비활성화된 파티 | PartyId: {party._PartyId}");
+                return;
+            }
+
+            // 매치 시작 전 즉시 비활성화하여 후속 Cmd의 중복 시작 차단
+            for (int i = 0; i < _partyList.Count; i++)
+            {
+                if (_partyList[i]._PartyId == party._PartyId)
+                {
+                    PartyInfo deactivated = _partyList[i];
+                    deactivated._IsActive = false;
+                    _partyList[i] = deactivated;
+                    break;
+                }
+            }
+
+            // 서버 저장소의 비밀번호 항목 즉시 정리
+            _repository.RemovePasswordEntry(party._PartyId);
+
             // 슬롯 netId → NetworkConnectionToClient 변환
             List<NetworkConnectionToClient> participants = new List<NetworkConnectionToClient>();
             for (int slot = 0; slot < PartyConstants.MAX_PARTY_MEMBERS; slot++)
@@ -551,25 +698,58 @@ namespace BeatDodger.Lobby
 
             Debug.Log($"[PartyNetworkBridge] [Server] 매치 생성 완료 | MatchId: {matchId} | PartyId: {party._PartyId} | 방 이름: {party._RoomName}");
 
-            // 파티 비활성화 (인게임 전환 후 방은 비활성 상태로 전환)
-            for (int i = 0; i < _partyList.Count; i++)
-            {
-                if (_partyList[i]._PartyId == party._PartyId)
-                {
-                    PartyInfo deactivated = _partyList[i];
-                    deactivated._IsActive = false;
-                    _partyList[i] = deactivated;
-                    break;
-                }
-            }
-
             // 4명 전원에게 EnterGameMessage 전송
             EnterGameMessage enterMsg = new EnterGameMessage
             {
                 MatchId = matchId,
-                Difficulty = party._Difficulty
+                Difficulty = party._Difficulty,
+                SongId = party._SongId,
+                SongName = party._SongName
             };
             _sessionCoordinator.SendToMatch(matchId, enterMsg);
+        }
+
+        [TargetRpc]
+        private void TargetNotifyJoinFailed(NetworkConnectionToClient target)
+        {
+            OnJoinFailed?.Invoke();
+        }
+
+        // 서비스 호출로 파티가 비활성화되기 전에 멤버 스냅샷을 캡처한다
+        [Server]
+        private PartyInfo SnapshotLeaderParty(uint leaderNetId)
+        {
+            for (int i = 0; i < _partyList.Count; i++)
+            {
+                PartyInfo p = _partyList[i];
+                if (p._IsActive && p._Slot0NetId == leaderNetId)
+                {
+                    return p;
+                }
+            }
+            return default;
+        }
+
+        // SyncList 갱신(비활성화) 후에 멤버들의 파티 ID를 초기화한다
+        [Server]
+        private void KickPartyMembers(PartyInfo leaderParty)
+        {
+            for (int slot = 1; slot < PartyConstants.MAX_PARTY_MEMBERS; slot++)
+            {
+                uint memberNetId = leaderParty.GetSlot(slot);
+                if (memberNetId == 0)
+                {
+                    continue;
+                }
+
+                if (NetworkServer.spawned.TryGetValue(memberNetId, out NetworkIdentity memberIdentity) &&
+                    memberIdentity != null &&
+                    memberIdentity.TryGetComponent(out LobbyPlayer memberPlayer))
+                {
+                    memberPlayer.SetCurrentPartyId(0);
+                    Debug.Log($"[PartyNetworkBridge] [Server] 방장 퇴장 — 멤버 강제 퇴실 | MemberNetId: {memberNetId} | PartyId: {leaderParty._PartyId}");
+                }
+            }
         }
 
         private void SyncUpdatedParties(List<PartyInfo> updatedParties)
