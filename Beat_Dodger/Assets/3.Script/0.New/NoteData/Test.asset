@@ -93,16 +93,24 @@ MonoBehaviour:
     span: 1
     type: 1
   - time: 9.5
+    lane: 1
+    span: 1
+    type: 0
+  - time: 9.5
     lane: 0
-    span: 2
+    span: 1
     type: 0
   - time: 10
     lane: 3
     span: 1
     type: 2
   - time: 10.5
+    lane: 2
+    span: 1
+    type: 2
+  - time: 10.5
     lane: 1
-    span: 2
+    span: 1
     type: 2
   - time: 11
     lane: 0
@@ -117,16 +125,24 @@ MonoBehaviour:
     span: 1
     type: 1
   - time: 12.5
+    lane: 3
+    span: 1
+    type: 1
+  - time: 12.5
     lane: 2
-    span: 2
+    span: 1
     type: 1
   - time: 13
     lane: 0
     span: 1
     type: 0
   - time: 13.5
+    lane: 3
+    span: 1
+    type: 1
+  - time: 13.5
     lane: 2
-    span: 2
+    span: 1
     type: 1
   - time: 14
     lane: 1
@@ -169,8 +185,12 @@ MonoBehaviour:
     span: 1
     type: 1
   - time: 19
+    lane: 1
+    span: 1
+    type: 0
+  - time: 19
     lane: 0
-    span: 2
+    span: 1
     type: 0
   - time: 19.5
     lane: 2
@@ -261,12 +281,20 @@ MonoBehaviour:
     span: 1
     type: 0
   - time: 31
+    lane: 3
+    span: 1
+    type: 0
+  - time: 31
     lane: 2
-    span: 2
+    span: 1
     type: 0
   - time: 31.5
+    lane: 1
+    span: 1
+    type: 1
+  - time: 31.5
     lane: 0
-    span: 2
+    span: 1
     type: 1
   - time: 32
     lane: 2
@@ -289,8 +317,12 @@ MonoBehaviour:
     span: 1
     type: 0
   - time: 34.5
+    lane: 2
+    span: 1
+    type: 2
+  - time: 34.5
     lane: 1
-    span: 2
+    span: 1
     type: 2
   - time: 35
     lane: 3
@@ -298,15 +330,23 @@ MonoBehaviour:
     type: 0
   - time: 35.5
     lane: 1
-    span: 2
+    span: 1
+    type: 2
+  - time: 35.5
+    lane: 2
+    span: 1
     type: 2
   - time: 36
     lane: 0
     span: 1
     type: 0
   - time: 36.5
+    lane: 3
+    span: 1
+    type: 0
+  - time: 36.5
     lane: 2
-    span: 2
+    span: 1
     type: 0
   - time: 37
     lane: 0
@@ -314,31 +354,51 @@ MonoBehaviour:
     type: 2
   - time: 37.5
     lane: 2
-    span: 2
+    span: 1
+    type: 0
+  - time: 37.5
+    lane: 3
+    span: 1
     type: 0
   - time: 38
     lane: 0
     span: 1
     type: 0
   - time: 38.5
+    lane: 2
+    span: 1
+    type: 2
+  - time: 38.5
     lane: 1
-    span: 2
+    span: 1
     type: 2
   - time: 39
+    lane: 1
+    span: 1
+    type: 0
+  - time: 39
     lane: 0
-    span: 2
+    span: 1
+    type: 0
+  - time: 39.5
+    lane: 3
+    span: 1
     type: 0
   - time: 39.5
     lane: 2
-    span: 2
+    span: 1
     type: 0
   - time: 40
     lane: 0
     span: 1
     type: 0
   - time: 40.5
+    lane: 3
+    span: 1
+    type: 0
+  - time: 40.5
     lane: 2
-    span: 2
+    span: 1
     type: 0
   - time: 41
     lane: 1
@@ -353,8 +413,12 @@ MonoBehaviour:
     span: 1
     type: 1
   - time: 42.5
+    lane: 2
+    span: 1
+    type: 1
+  - time: 42.5
     lane: 1
-    span: 2
+    span: 1
     type: 1
   - time: 43
     lane: 3
@@ -369,20 +433,32 @@ MonoBehaviour:
     span: 1
     type: 2
   - time: 44.5
+    lane: 3
+    span: 1
+    type: 2
+  - time: 44.5
     lane: 2
-    span: 2
+    span: 1
     type: 2
   - time: 45
     lane: 0
     span: 1
     type: 2
   - time: 45.5
+    lane: 3
+    span: 1
+    type: 0
+  - time: 45.5
     lane: 2
-    span: 2
+    span: 1
     type: 0
   - time: 46
     lane: 0
-    span: 2
+    span: 1
+    type: 2
+  - time: 46
+    lane: 1
+    span: 1
     type: 2
   - time: 46.5
     lane: 1
@@ -429,8 +505,12 @@ MonoBehaviour:
     span: 1
     type: 1
   - time: 52
+    lane: 1
+    span: 1
+    type: 0
+  - time: 52
     lane: 0
-    span: 2
+    span: 1
     type: 0
   - time: 52.5
     lane: 3
@@ -457,20 +537,32 @@ MonoBehaviour:
     span: 1
     type: 0
   - time: 55.5
+    lane: 3
+    span: 1
+    type: 0
+  - time: 55.5
     lane: 2
-    span: 2
+    span: 1
     type: 0
   - time: 56
     lane: 0
     span: 1
     type: 2
   - time: 56.5
+    lane: 3
+    span: 1
+    type: 2
+  - time: 56.5
     lane: 2
-    span: 2
+    span: 1
     type: 2
   - time: 57
     lane: 0
-    span: 2
+    span: 1
+    type: 0
+  - time: 57
+    lane: 1
+    span: 1
     type: 0
   - time: 57.5
     lane: 3
@@ -521,8 +613,12 @@ MonoBehaviour:
     span: 1
     type: 2
   - time: 63.5
+    lane: 3
+    span: 1
+    type: 1
+  - time: 63.5
     lane: 2
-    span: 2
+    span: 1
     type: 1
   - time: 64
     lane: 1
@@ -545,8 +641,12 @@ MonoBehaviour:
     span: 1
     type: 1
   - time: 66.5
+    lane: 1
+    span: 1
+    type: 1
+  - time: 66.5
     lane: 0
-    span: 2
+    span: 1
     type: 1
   - time: 67
     lane: 3
@@ -565,8 +665,12 @@ MonoBehaviour:
     span: 1
     type: 0
   - time: 69
+    lane: 3
+    span: 1
+    type: 2
+  - time: 69
     lane: 2
-    span: 2
+    span: 1
     type: 2
   - time: 69.5
     lane: 0
@@ -617,20 +721,32 @@ MonoBehaviour:
     span: 1
     type: 0
   - time: 75.5
+    lane: 2
+    span: 1
+    type: 1
+  - time: 75.5
     lane: 1
-    span: 2
+    span: 1
     type: 1
   - time: 76
     lane: 3
     span: 1
     type: 1
   - time: 76.5
+    lane: 1
+    span: 1
+    type: 2
+  - time: 76.5
     lane: 0
-    span: 2
+    span: 1
     type: 2
   - time: 77
     lane: 2
-    span: 2
+    span: 1
+    type: 1
+  - time: 77
+    lane: 3
+    span: 1
     type: 1
   - time: 77.5
     lane: 0
@@ -753,8 +869,12 @@ MonoBehaviour:
     span: 1
     type: 1
   - time: 93
+    lane: 3
+    span: 1
+    type: 1
+  - time: 93
     lane: 2
-    span: 2
+    span: 1
     type: 1
   - time: 93.5
     lane: 0
@@ -781,8 +901,12 @@ MonoBehaviour:
     span: 1
     type: 0
   - time: 96.5
+    lane: 1
+    span: 1
+    type: 0
+  - time: 96.5
     lane: 0
-    span: 2
+    span: 1
     type: 0
   - time: 97
     lane: 2
@@ -797,8 +921,20 @@ MonoBehaviour:
     span: 1
     type: 0
   - time: 98.5
+    lane: 3
+    span: 1
+    type: 0
+  - time: 98.5
+    lane: 1
+    span: 1
+    type: 0
+  - time: 98.5
     lane: 0
-    span: 4
+    span: 1
+    type: 0
+  - time: 98.5
+    lane: 2
+    span: 1
     type: 0
   - time: 99
     lane: 2
@@ -813,8 +949,12 @@ MonoBehaviour:
     span: 1
     type: 1
   - time: 100.5
+    lane: 1
+    span: 1
+    type: 0
+  - time: 100.5
     lane: 0
-    span: 2
+    span: 1
     type: 0
   - time: 101
     lane: 2
@@ -845,8 +985,12 @@ MonoBehaviour:
     span: 1
     type: 0
   - time: 104.5
+    lane: 2
+    span: 1
+    type: 0
+  - time: 104.5
     lane: 1
-    span: 2
+    span: 1
     type: 0
   - time: 105
     lane: 3
@@ -861,20 +1005,32 @@ MonoBehaviour:
     span: 1
     type: 1
   - time: 106.5
+    lane: 3
+    span: 1
+    type: 2
+  - time: 106.5
     lane: 2
-    span: 2
+    span: 1
     type: 2
   - time: 107
     lane: 0
     span: 1
     type: 1
   - time: 107.5
+    lane: 3
+    span: 1
+    type: 2
+  - time: 107.5
     lane: 2
-    span: 2
+    span: 1
     type: 2
   - time: 108
+    lane: 1
+    span: 1
+    type: 0
+  - time: 108
     lane: 0
-    span: 2
+    span: 1
     type: 0
   - time: 108.5
     lane: 2
@@ -949,8 +1105,12 @@ MonoBehaviour:
     span: 1
     type: 1
   - time: 117.5
+    lane: 1
+    span: 1
+    type: 2
+  - time: 117.5
     lane: 0
-    span: 2
+    span: 1
     type: 2
   - time: 118
     lane: 2

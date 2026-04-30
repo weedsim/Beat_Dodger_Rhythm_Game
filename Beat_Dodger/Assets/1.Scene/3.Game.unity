@@ -1289,6 +1289,37 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 439370010}
   m_Mesh: {fileID: 10210, guid: 0000000000000000e000000000000000, type: 0}
+--- !u!1 &470367132
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 470367133}
+  m_Layer: 0
+  m_Name: PlayerLaserTransform
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &470367133
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 470367132}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 2, z: -4}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1001 &483976816
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -1845,15 +1876,33 @@ MonoBehaviour:
   bpm: 120
   beatsToArrive: 8
   startDelay: 2
-  gaugePerHit: 10
+  gaugePerHit: 100
   gaugeLossOnMiss: 5
   feverGaugeController: {fileID: 1596363137}
   backgroundBossAnimator: {fileID: 823676277}
   enterAnimDuration: 2
   mashingDuration: 5
   exitAnimDuration: 2
-  requiredMashCount: 50
+  requiredMashCount: 10
   feverBossExplosion: {fileID: 552793109724768, guid: 8e300af2a1e0c864d8f5f994673d1ac4, type: 3}
+  firstSuccessEffect: {fileID: 3957314820288950082, guid: 9700babc57d491748a4883f7deab0970, type: 3}
+  secondSuccessEffect: {fileID: 552793109724768, guid: 8e300af2a1e0c864d8f5f994673d1ac4, type: 3}
+  laserDuelRequiredMashCount: 80
+  laserDuelDuration: 8
+  bossPushSpeed: 5
+  playerLaserEffect: {fileID: 1061391445118465773, guid: 73a046238033f034f96b36756bda942c, type: 3}
+  bossLaserEffect: {fileID: 1061391445118465773, guid: e3077d377dbf3ca4bb3536fc63d507af, type: 3}
+  laserClashEffect: {fileID: 6806643204089527945, guid: 5fb29a9b22fb60641b124b1f02a8c295, type: 3}
+  playerLaserSpawnPoint: {fileID: 470367133}
+  bossLaserSpawnPoint: {fileID: 1644168001}
+  laserPrefabAxis: {x: 0, y: 1, z: 0}
+  stretchLasers: 1
+  playerLaserMultiplier: 0.04
+  bossLaserMultiplier: 0.04
+  playerLaserHideThreshold: 0.1
+  bossLaserHideThreshold: 0.8
+  laserDuelCameraTarget: {fileID: 710121905}
+  cameraTransitionDuration: 1
   feverEnableObjects:
   - {fileID: 155566228}
   feverDisableObjects:
@@ -2626,6 +2675,7 @@ Transform:
   - {fileID: 1987420504}
   - {fileID: 1707022806}
   - {fileID: 1182672398}
+  - {fileID: 710121905}
   - {fileID: 1090484335}
   - {fileID: 2039764094}
   - {fileID: 1042687312}
@@ -2637,6 +2687,37 @@ Transform:
   m_CorrespondingSourceObject: {fileID: -8679921383154817045, guid: 447800a4e4ccf72439c9362f149bb629, type: 3}
   m_PrefabInstance: {fileID: 1222671418}
   m_PrefabAsset: {fileID: 0}
+--- !u!1 &710121904
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 710121905}
+  m_Layer: 0
+  m_Name: CameraPoint
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &710121905
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 710121904}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0.034605604, y: 0.608182, z: 0.026553808, w: 0.7925983}
+  m_LocalPosition: {x: -16.4, y: 0, z: 20.5}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 686621237}
+  m_LocalEulerAnglesHint: {x: -5, y: 75, z: 0}
 --- !u!4 &775479001 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: -8679921383154817045, guid: 447800a4e4ccf72439c9362f149bb629, type: 3}
@@ -6384,6 +6465,37 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1615980696}
   m_Mesh: {fileID: 10210, guid: 0000000000000000e000000000000000, type: 0}
+--- !u!1 &1644168000
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1644168001}
+  m_Layer: 0
+  m_Name: BossLaserTransform
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1644168001
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1644168000}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 7.85, z: 18}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1680011690
 GameObject:
   m_ObjectHideFlags: 0
@@ -6434,7 +6546,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Image
   m_Material: {fileID: 0}
-  m_Color: {r: 1, g: 0.92156863, b: 0.015686275, a: 1}
+  m_Color: {r: 0, g: 1, b: 1, a: 1}
   m_RaycastTarget: 1
   m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
   m_Maskable: 1
@@ -9014,3 +9126,5 @@ SceneRoots:
   - {fileID: 1055035438}
   - {fileID: 1846597860}
   - {fileID: 483976816}
+  - {fileID: 1644168001}
+  - {fileID: 470367133}

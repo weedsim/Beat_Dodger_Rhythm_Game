@@ -28,6 +28,38 @@ public class NewRhythmManager : MonoBehaviour
     [SerializeField] private int requiredMashCount = 50;
     [SerializeField] private GameObject feverBossExplosion;
     
+    [Header("Fever Success Effects")]
+    [SerializeField] private GameObject firstSuccessEffect;
+    [SerializeField] private GameObject secondSuccessEffect;
+    private int feverSuccessCount = 0;
+    
+    [Header("Laser Duel Settings")]
+    [SerializeField] private int laserDuelRequiredMashCount = 80;
+    [SerializeField] private float laserDuelDuration = 8.0f;
+    [SerializeField] private float bossPushSpeed = 10f; // 보스가 초당 밀어내는 연타치
+    [SerializeField] private GameObject playerLaserEffect;
+    [SerializeField] private GameObject bossLaserEffect;
+    [SerializeField] private GameObject laserClashEffect;
+    [SerializeField] private Transform playerLaserSpawnPoint;
+    [SerializeField] private Transform bossLaserSpawnPoint;
+    
+    [Tooltip("레이저 프리팹이 향하는 기본 축 (위쪽=Y, 앞쪽=Z)")]
+    [SerializeField] private Vector3 laserPrefabAxis = Vector3.up;
+    [Tooltip("충돌 지점까지 레이저 길이를 스케일링할지 여부")]
+    [SerializeField] private bool stretchLasers = true;
+    [Tooltip("플레이어 레이저 길이 보정값 (프리팹 형태/크기에 맞춰 조절)")]
+    [SerializeField] private float playerLaserMultiplier = 1.0f;
+    [Tooltip("보스 레이저 길이 보정값 (프리팹 형태/크기에 맞춰 조절)")]
+    [SerializeField] private float bossLaserMultiplier = 1.0f;
+    [Tooltip("플레이어가 밀렸을 때 플레이어 레이저를 숨길 비율 (0.0~1.0, 예: 0.05)")]
+    [Range(0f, 1f)] [SerializeField] private float playerLaserHideThreshold = 0.05f;
+    [Tooltip("보스가 밀렸을 때 보스 레이저를 숨길 비율 (0.0~1.0, 예: 0.95)")]
+    [Range(0f, 1f)] [SerializeField] private float bossLaserHideThreshold = 0.95f;
+    [Tooltip("레이저 격돌 시 카메라가 이동할 목표 위치/회전")]
+    [SerializeField] private Transform laserDuelCameraTarget;
+    [Tooltip("카메라 이동에 걸리는 시간")]
+    [SerializeField] private float cameraTransitionDuration = 1.0f;
+    
     [Header("Fever Toggle Objects")]
     [Tooltip("피버 모드 진입 시 켜질 오브젝트들 (피버 종료 시 다시 꺼짐)")]
     [SerializeField] private List<GameObject> feverEnableObjects = new List<GameObject>();
@@ -47,6 +79,7 @@ public class NewRhythmManager : MonoBehaviour
     public enum FeverState { None, EnterAnimation, Mashing, ExitAnimation }
     private FeverState currentFeverState = FeverState.None;
     private int currentMashCount;
+    private float currentMashFloat; // float based mash count for laser duel
     private float currentFeverGauge;
     private bool isWaitingToResume;
     private Coroutine randomAttackCoroutine;
@@ -243,7 +276,7 @@ public class NewRhythmManager : MonoBehaviour
         {
             // Mashing 단계에서 남은 시간을 UI에 표시하거나 연출을 업데이트하는 로직이 필요하다면 여기에 추가
         }
-        else if (spawnMode == SpawnMode.Random)
+        else if (spawnMode == SpawnMode.Random && !isWaitingToResume)
         {
             if (currentTime >= nextBeatTime)
             {
@@ -290,7 +323,7 @@ public class NewRhythmManager : MonoBehaviour
         if (IsFeverTime) return; // 피버 연출 중에는 노트 스폰 중지
 
         // 2. Note Spawning Logic
-        if (nextNoteIndex < loadedChart.notes.Count)
+        while (nextNoteIndex < loadedChart.notes.Count)
         {
             NoteData nextNote = loadedChart.notes[nextNoteIndex];
             
@@ -298,6 +331,10 @@ public class NewRhythmManager : MonoBehaviour
             {
                 SpawnIndividualNote(nextNote.lane, nextNote.span, songStartTime + nextNote.time, nextNote.type);
                 nextNoteIndex++;
+            }
+            else
+            {
+                break;
             }
         }
     }
@@ -318,6 +355,7 @@ public class NewRhythmManager : MonoBehaviour
         if (currentFeverState != FeverState.Mashing) return;
 
         currentMashCount++;
+        currentMashFloat += 1f; // For float-based logic
         SpawnHitEffect(Judgment.Perfect, laneIndex);
         
         // 연타 피드백 (UI)
@@ -327,25 +365,124 @@ public class NewRhythmManager : MonoBehaviour
 
     private System.Collections.IEnumerator FeverSequenceCoroutine()
     {
-        // 1. Enter Animation (보스 쓰러짐)
+        bool isLaserDuel = feverSuccessCount >= 2;
+
+        Vector3 originalCamPos = Camera.main != null ? Camera.main.transform.position : Vector3.zero;
+        Quaternion originalCamRot = Camera.main != null ? Camera.main.transform.rotation : Quaternion.identity;
+        
+        if (isLaserDuel && laserDuelCameraTarget != null && Camera.main != null)
+        {
+            StartCoroutine(MoveCameraCoroutine(laserDuelCameraTarget.position, laserDuelCameraTarget.rotation, cameraTransitionDuration));
+        }
+
+        // 1. Enter Animation (보스 쓰러짐 또는 레이저 준비)
         currentFeverState = FeverState.EnterAnimation;
-        if (backgroundBossAnimator != null) backgroundBossAnimator.SetTrigger("FallDown"); // TODO: 실제 파라미터명에 맞게 수정 필요
+        if (backgroundBossAnimator != null) backgroundBossAnimator.SetTrigger(isLaserDuel ? "LaserReady" : "FallDown"); // TODO: 실제 파라미터명에 맞게 수정 필요
         yield return new WaitForSeconds(enterAnimDuration);
 
         // 2. Mashing Phase (제한시간 연타)
         currentFeverState = FeverState.Mashing;
-        currentMashCount = 0;
+        
+        float currentTargetMashCount = isLaserDuel ? laserDuelRequiredMashCount : requiredMashCount;
+        float currentPhaseDuration = isLaserDuel ? laserDuelDuration : mashingDuration;
+        
+        currentMashCount = isLaserDuel ? Mathf.RoundToInt(currentTargetMashCount * 0.5f) : 0;
+        currentMashFloat = currentMashCount;
         
         // 제한 시간 동안 게이지 감소 연출 시작
-        if (feverGaugeController != null) feverGaugeController.StartCountdown(mashingDuration);
+        if (feverGaugeController != null) feverGaugeController.StartCountdown(currentPhaseDuration);
         
-        float elapsedMashingTime = 0f;
-        while (elapsedMashingTime < mashingDuration)
+        GameObject pLaser = null;
+        GameObject bLaser = null;
+        GameObject clash = null;
+        
+        if (isLaserDuel)
         {
-            if (currentMashCount >= requiredMashCount)
+            if (playerLaserEffect != null && playerLaserSpawnPoint != null)
+                pLaser = Instantiate(playerLaserEffect, playerLaserSpawnPoint.position, playerLaserSpawnPoint.rotation);
+            if (bossLaserEffect != null && bossLaserSpawnPoint != null)
+                bLaser = Instantiate(bossLaserEffect, bossLaserSpawnPoint.position, bossLaserSpawnPoint.rotation);
+            if (laserClashEffect != null)
+                clash = Instantiate(laserClashEffect, Vector3.zero, Quaternion.identity);
+        }
+
+        float elapsedMashingTime = 0f;
+        while (elapsedMashingTime < currentPhaseDuration)
+        {
+            if (isLaserDuel)
+            {
+                currentMashFloat -= bossPushSpeed * Time.deltaTime;
+                currentMashFloat = Mathf.Clamp(currentMashFloat, 0f, currentTargetMashCount);
+                currentMashCount = Mathf.RoundToInt(currentMashFloat);
+                
+                if (playerLaserSpawnPoint != null && bossLaserSpawnPoint != null)
+                {
+                    float progressRatio = currentMashFloat / currentTargetMashCount;
+                    Vector3 clashPos = Vector3.Lerp(playerLaserSpawnPoint.position, bossLaserSpawnPoint.position, progressRatio);
+                    
+                    if (clash != null)
+                    {
+                        clash.transform.position = clashPos;
+                    }
+                    
+                    // 레이저 방향 및 길이 업데이트
+                    if (pLaser != null)
+                    {
+                        bool hidePlayerLaser = progressRatio <= playerLaserHideThreshold;
+                        if (pLaser.activeSelf == hidePlayerLaser) pLaser.SetActive(!hidePlayerLaser);
+                        
+                        if (!hidePlayerLaser)
+                        {
+                            Vector3 pDir = clashPos - playerLaserSpawnPoint.position;
+                            if (pDir != Vector3.zero)
+                            {
+                                pLaser.transform.position = playerLaserSpawnPoint.position;
+                                pLaser.transform.rotation = Quaternion.FromToRotation(laserPrefabAxis, pDir);
+                                if (stretchLasers)
+                                {
+                                    Vector3 scale = pLaser.transform.localScale;
+                                    float targetLength = pDir.magnitude * playerLaserMultiplier;
+                                    if (laserPrefabAxis == Vector3.up) scale.y = targetLength;
+                                    else if (laserPrefabAxis == Vector3.forward) scale.z = targetLength;
+                                    else if (laserPrefabAxis == Vector3.right) scale.x = targetLength;
+                                    pLaser.transform.localScale = scale;
+                                }
+                            }
+                        }
+                    }
+                    
+                    if (bLaser != null)
+                    {
+                        bool hideBossLaser = progressRatio >= bossLaserHideThreshold;
+                        if (bLaser.activeSelf == hideBossLaser) bLaser.SetActive(!hideBossLaser);
+                        
+                        if (!hideBossLaser)
+                        {
+                            Vector3 bDir = clashPos - bossLaserSpawnPoint.position;
+                            if (bDir != Vector3.zero)
+                            {
+                                bLaser.transform.position = bossLaserSpawnPoint.position;
+                                bLaser.transform.rotation = Quaternion.FromToRotation(laserPrefabAxis, bDir);
+                                if (stretchLasers)
+                                {
+                                    Vector3 scale = bLaser.transform.localScale;
+                                    float targetLength = bDir.magnitude * bossLaserMultiplier;
+                                    if (laserPrefabAxis == Vector3.up) scale.y = targetLength;
+                                    else if (laserPrefabAxis == Vector3.forward) scale.z = targetLength;
+                                    else if (laserPrefabAxis == Vector3.right) scale.x = targetLength;
+                                    bLaser.transform.localScale = scale;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            
+            if (currentMashCount >= currentTargetMashCount)
             {
                 break; // 목표 달성 시 즉시 루프 탈출 (조기 종료)
             }
+            
             elapsedMashingTime += Time.deltaTime;
             yield return null;
         }
@@ -353,14 +490,43 @@ public class NewRhythmManager : MonoBehaviour
         // 3. Exit Animation (결과 판정 및 대미지)
         currentFeverState = FeverState.ExitAnimation;
         
-        // 연타 판정 종료 직후 타머(게이지 감소) 강제 중단 및 초기화
-        if (feverGaugeController != null) feverGaugeController.ResetGauge();
-
-        if (currentMashCount >= requiredMashCount)
+        if (isLaserDuel && laserDuelCameraTarget != null && Camera.main != null)
         {
-            Debug.Log("Fever Success! Boss Takes Damage!");
-            if (backgroundBossAnimator != null) backgroundBossAnimator.SetTrigger("TakeDamage");
-            if (feverBossExplosion != null) Instantiate(feverBossExplosion, Vector3.zero, Quaternion.identity); // TODO: 보스 위치 지정 필요
+            StartCoroutine(MoveCameraCoroutine(originalCamPos, originalCamRot, cameraTransitionDuration));
+        }
+        
+        // 연타 판정 종료 직후 타이머(게이지 감소) 강제 중단 및 초기화
+        if (feverGaugeController != null) feverGaugeController.ResetGauge();
+        
+        if (pLaser != null) Destroy(pLaser);
+        if (bLaser != null) Destroy(bLaser);
+        if (clash != null) Destroy(clash);
+
+        if (currentMashCount >= currentTargetMashCount)
+        {
+            feverSuccessCount++;
+            Debug.Log($"Fever Success! Count: {feverSuccessCount}. Boss Takes Damage!");
+            
+            Vector3 spawnPosition = Vector3.zero;
+            if (backgroundBossAnimator != null)
+            {
+                backgroundBossAnimator.SetTrigger("TakeDamage");
+                spawnPosition = backgroundBossAnimator.transform.position;
+            }
+            
+            if (feverSuccessCount == 1)
+            {
+                if (firstSuccessEffect != null) Instantiate(firstSuccessEffect, spawnPosition, Quaternion.identity);
+            }
+            else if (feverSuccessCount == 2)
+            {
+                if (secondSuccessEffect != null) Instantiate(secondSuccessEffect, spawnPosition, Quaternion.identity);
+            }
+            else if (feverSuccessCount >= 3)
+            {
+                // 3번째 성공 이후
+                if (feverBossExplosion != null) Instantiate(feverBossExplosion, spawnPosition, Quaternion.identity);
+            }
         }
         else
         {
@@ -372,6 +538,37 @@ public class NewRhythmManager : MonoBehaviour
 
         // 4. Resume
         StartCoroutine(ResumeChartAfterFever());
+
+        // 일반 노트 리스폰 및 상태 복구
+        if (isLaserDuel)
+        {
+            feverSuccessCount = 0;
+            Debug.Log("Laser Duel Phase Ended, returning to regular note spawn");
+        }
+        
+        SetFeverState(false);
+    }
+
+    private System.Collections.IEnumerator MoveCameraCoroutine(Vector3 targetPos, Quaternion targetRot, float duration)
+    {
+        if (Camera.main == null) yield break;
+        
+        Transform camTransform = Camera.main.transform;
+        Vector3 startPos = camTransform.position;
+        Quaternion startRot = camTransform.rotation;
+        float elapsed = 0f;
+        
+        while (elapsed < duration)
+        {
+            elapsed += Time.deltaTime;
+            float t = Mathf.SmoothStep(0f, 1f, elapsed / duration);
+            camTransform.position = Vector3.Lerp(startPos, targetPos, t);
+            camTransform.rotation = Quaternion.Slerp(startRot, targetRot, t);
+            yield return null;
+        }
+        
+        camTransform.position = targetPos;
+        camTransform.rotation = targetRot;
     }
 
     private System.Collections.IEnumerator ResumeChartAfterFever()
@@ -671,7 +868,16 @@ public class NewRhythmManager : MonoBehaviour
             style.alignment = TextAnchor.MiddleCenter;
 
             Rect rect = new Rect(0, Screen.height * 0.3f, Screen.width, 100);
-            GUI.Label(rect, $"MASH: {currentMashCount} / {requiredMashCount}", style);
+            int displayTarget = (feverSuccessCount >= 2) ? laserDuelRequiredMashCount : requiredMashCount;
+            GUI.Label(rect, $"MASH: {currentMashCount} / {displayTarget}", style);
+        }
+
+        // 테스트 버튼: 레이저 격돌 바로 시작
+        if (GUI.Button(new Rect(10, 10, 200, 50), "Test Laser Duel"))
+        {
+            StopAllCoroutines();
+            feverSuccessCount = 2; // 3번째 피버 강제 지정
+            SetFeverState(true);
         }
     }
 }
