@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using TMPro;
 using Mirror;
+using BeatDodger.Lobby;
 
 public class LoginUIManager : MonoBehaviour
 {
@@ -79,7 +80,7 @@ public class LoginUIManager : MonoBehaviour
 
         if (myPlayer != null)
         {
-            myPlayer.CmdToggleReady();
+            //myPlayer.CmdToggleReady();
         }
         else
         {
