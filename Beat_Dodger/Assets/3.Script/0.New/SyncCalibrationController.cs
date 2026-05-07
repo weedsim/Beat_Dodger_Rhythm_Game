@@ -4,6 +4,7 @@ using System.Linq;
 using TMPro;
 using DG.Tweening;
 using UnityEngine.UI;
+using UnityEngine.Events;
 
 namespace BeatDodger.UI
 {
@@ -27,6 +28,8 @@ namespace BeatDodger.UI
         [SerializeField] private float bpm = 120f;
         [SerializeField] private int samplesNeeded = 10;
         [SerializeField] private float travelDuration = 1.0f;   // 공이 이동하는 시간 (초)
+        
+        public UnityEvent OnCalibrationComplete;
         
         private float _beatInterval;
         private double _nextHitTargetTime;
@@ -206,9 +209,10 @@ namespace BeatDodger.UI
             if (statusText != null)
             {
                 statusText.text = $"<color=#4DFF4D>CALIBRATION DONE!</color>\n" +
-                                 $"<size=40>Final Offset: {finalOffset * 1000f:F1}ms</size>\n" +
                                  "<size=25>Press 'RETURN' to go back.</size>";
             }
+
+            OnCalibrationComplete?.Invoke();
             
             Debug.Log($"[Sync] Horizontal Calibration Finished. Offset: {finalOffset * 1000f:F1}ms");
         }
