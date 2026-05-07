@@ -34,6 +34,7 @@ public class NoteEnemy : MonoBehaviour
     private Vector3 originalScale; // 프리팹 원래 스케일 저장
     private float cachedXPosition;
     private Vector3 cachedFinalScale;
+    private GameObject connectionEffectInstance;
 
     private void Awake()
     {
@@ -57,6 +58,13 @@ public class NoteEnemy : MonoBehaviour
         hitsRemaining = laneSpan * (type == NoteType.Double ? 2 : 1);
         hitLanesMask = 0; // Bitmask reset
         HasContributedToFever = false;
+
+        if (connectionEffectInstance != null)
+        {
+            connectionEffectInstance.SetActive(false); // 즉시 비활성화하여 1프레임 동안 파티클이 새는 현상 방지
+            Destroy(connectionEffectInstance);
+            connectionEffectInstance = null;
+        }
 
         // Cache positions and scales that don't change
         float centerLane = startLane + (laneSpan - 1) / 2f;
@@ -209,8 +217,46 @@ public class NoteEnemy : MonoBehaviour
         if (hitsRemaining <= 0) ReleaseToPool();
     }
 
+    public void AddConnectionEffect(GameObject prefab, Vector3 worldOffset, int span)
+    {
+        if (prefab == null) return;
+        
+        // SkinnedMeshRenderer의 메쉬 오브젝트 자체는 움직이지 않고 뼈대(Bone)가 움직이므로,
+        // rootBone을 찾아 부모로 설정해야 애니메이션(점프 등)을 정상적으로 따라갑니다.
+        Transform attachParent = transform;
+        SkinnedMeshRenderer smr = GetComponentInChildren<SkinnedMeshRenderer>();
+        
+        if (smr != null && smr.rootBone != null) attachParent = smr.rootBone;
+        else if (smr != null) attachParent = smr.transform;
+        else if (transform.childCount > 0) attachParent = transform.GetChild(0);
+
+        // 부모의 복잡한 스케일/회전에 영향받지 않도록 먼저 최상단(월드)에 생성
+        connectionEffectInstance = Instantiate(prefab);
+        
+        // 월드 기준 위치 및 회전 설정
+        connectionEffectInstance.transform.position = transform.position + worldOffset;
+        connectionEffectInstance.transform.rotation = Quaternion.Euler(0, 90, 0);
+
+        // 월드 기준 스케일 설정
+        Vector3 globalScale = connectionEffectInstance.transform.localScale;
+        if (span == 2) globalScale.z = 0.25f;
+        else if (span == 3) globalScale.z = 0.6f;
+        else if (span >= 4) globalScale.z = 0.75f;
+        connectionEffectInstance.transform.localScale = globalScale;
+        
+        // 설정이 끝난 후 부모에 종속 (worldPositionStays를 true로 하여 월드 좌표/회전/크기를 그대로 유지)
+        connectionEffectInstance.transform.SetParent(attachParent, true);
+    }
+
     public void ReleaseToPool()
     {
+        if (connectionEffectInstance != null)
+        {
+            connectionEffectInstance.SetActive(false);
+            Destroy(connectionEffectInstance);
+            connectionEffectInstance = null;
+        }
+
         if (pool != null) pool.Release(this);
         else Destroy(gameObject); // For non-pooled objects like the Boss
     }

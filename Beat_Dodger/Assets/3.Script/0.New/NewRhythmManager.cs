@@ -22,6 +22,7 @@ public class NewRhythmManager : MonoBehaviour
     
     [Header("Fever Phase Settings")]
     [SerializeField] private Animator backgroundBossAnimator; // 배경의 거대 보스 애니메이터
+    [SerializeField] private Animator[] playerAnimators; // 플레이어 애니메이터 배열
     [SerializeField] private float enterAnimDuration = 2.0f;
     [SerializeField] private float mashingDuration = 5.0f;
     [SerializeField] private float exitAnimDuration = 2.0f;
@@ -57,6 +58,8 @@ public class NewRhythmManager : MonoBehaviour
     [Range(0f, 1f)] [SerializeField] private float bossLaserHideThreshold = 0.95f;
     [Tooltip("레이저 격돌 시 카메라가 이동할 목표 위치/회전")]
     [SerializeField] private Transform laserDuelCameraTarget;
+    [Tooltip("레이저 격돌 성공 후 이동할 클리어 전용 카메라 목표 위치/회전")]
+    [SerializeField] private Transform laserDuelClearCameraTarget;
     [Tooltip("카메라 이동에 걸리는 시간")]
     [SerializeField] private float cameraTransitionDuration = 1.0f;
     
@@ -99,6 +102,8 @@ public class NewRhythmManager : MonoBehaviour
     [SerializeField] private GameObject normalPrefab;
     [SerializeField] private GameObject doublePrefab;
     [SerializeField] private GameObject dashPrefab;
+    [Tooltip("같이치기 노트 사이에 생성될 연결 이펙트 프리팹")]
+    [SerializeField] private GameObject chordConnectionEffect;
     [SerializeField] private LaneInputEffect[] inputEffects;
     [SerializeField] private GameObject hitEffectPerfect; // For Perfect & Great
     [SerializeField] private GameObject hitEffectGood;    // For Good
@@ -119,6 +124,10 @@ public class NewRhythmManager : MonoBehaviour
     private RhythmChart loadedChart;
     private int nextNoteIndex;
     private bool isSongPlaying;
+    public bool isGameCleared { get; private set; } = false;
+    
+    private Vector3[] playerInitialPositions;
+    private Quaternion[] playerInitialRotations;
 
     // Events (UI and System integration)
     public static event Action OnBeat;
@@ -256,6 +265,20 @@ public class NewRhythmManager : MonoBehaviour
 
     private void Start()
     {
+        if (playerAnimators != null)
+        {
+            playerInitialPositions = new Vector3[playerAnimators.Length];
+            playerInitialRotations = new Quaternion[playerAnimators.Length];
+            for (int i = 0; i < playerAnimators.Length; i++)
+            {
+                if (playerAnimators[i] != null)
+                {
+                    playerInitialPositions[i] = playerAnimators[i].transform.localPosition;
+                    playerInitialRotations[i] = playerAnimators[i].transform.localRotation;
+                }
+            }
+        }
+
         if (spawnMode == SpawnMode.Random)
         {
             StartSong();
@@ -276,7 +299,7 @@ public class NewRhythmManager : MonoBehaviour
         {
             // Mashing 단계에서 남은 시간을 UI에 표시하거나 연출을 업데이트하는 로직이 필요하다면 여기에 추가
         }
-        else if (spawnMode == SpawnMode.Random && !isWaitingToResume)
+        else if (spawnMode == SpawnMode.Random && !isWaitingToResume && !isGameCleared)
         {
             if (currentTime >= nextBeatTime)
             {
@@ -285,7 +308,7 @@ public class NewRhythmManager : MonoBehaviour
                 OnBeat?.Invoke();
             }
         }
-        else if (spawnMode == SpawnMode.Chart && isSongPlaying)
+        else if (spawnMode == SpawnMode.Chart && isSongPlaying && !isGameCleared)
         {
             // Use mainAudioSource.time for perfect sync with audio
             double relativeTime = mainAudioSource != null ? mainAudioSource.time : AudioSettings.dspTime - songStartTime;
@@ -377,7 +400,7 @@ public class NewRhythmManager : MonoBehaviour
 
         // 1. Enter Animation (보스 쓰러짐 또는 레이저 준비)
         currentFeverState = FeverState.EnterAnimation;
-        if (backgroundBossAnimator != null) backgroundBossAnimator.SetTrigger(isLaserDuel ? "LaserReady" : "FallDown"); // TODO: 실제 파라미터명에 맞게 수정 필요
+        if (backgroundBossAnimator != null) backgroundBossAnimator.SetTrigger(isLaserDuel ? "Attack01" : "FallDown");
         yield return new WaitForSeconds(enterAnimDuration);
 
         // 2. Mashing Phase (제한시간 연타)
@@ -403,7 +426,12 @@ public class NewRhythmManager : MonoBehaviour
             if (bossLaserEffect != null && bossLaserSpawnPoint != null)
                 bLaser = Instantiate(bossLaserEffect, bossLaserSpawnPoint.position, bossLaserSpawnPoint.rotation);
             if (laserClashEffect != null)
-                clash = Instantiate(laserClashEffect, Vector3.zero, Quaternion.identity);
+            {
+                clash = Instantiate(laserClashEffect, Vector3.zero, laserClashEffect.transform.rotation);
+                // 격돌 이펙트(SoundOrb 등)가 레이저 메시에 파묻히지 않도록 렌더링 순위를 최상단으로 강제
+                Renderer[] renderers = clash.GetComponentsInChildren<Renderer>();
+                foreach (var r in renderers) r.sortingOrder = 32000;
+            }
         }
 
         float elapsedMashingTime = 0f;
@@ -420,15 +448,19 @@ public class NewRhythmManager : MonoBehaviour
                     float progressRatio = currentMashFloat / currentTargetMashCount;
                     Vector3 clashPos = Vector3.Lerp(playerLaserSpawnPoint.position, bossLaserSpawnPoint.position, progressRatio);
                     
+                    bool hidePlayerLaser = progressRatio <= playerLaserHideThreshold;
+                    bool hideBossLaser = progressRatio >= bossLaserHideThreshold;
+                    bool hideClash = hidePlayerLaser || hideBossLaser;
+                    
                     if (clash != null)
                     {
+                        if (clash.activeSelf == hideClash) clash.SetActive(!hideClash);
                         clash.transform.position = clashPos;
                     }
                     
                     // 레이저 방향 및 길이 업데이트
                     if (pLaser != null)
                     {
-                        bool hidePlayerLaser = progressRatio <= playerLaserHideThreshold;
                         if (pLaser.activeSelf == hidePlayerLaser) pLaser.SetActive(!hidePlayerLaser);
                         
                         if (!hidePlayerLaser)
@@ -453,7 +485,6 @@ public class NewRhythmManager : MonoBehaviour
                     
                     if (bLaser != null)
                     {
-                        bool hideBossLaser = progressRatio >= bossLaserHideThreshold;
                         if (bLaser.activeSelf == hideBossLaser) bLaser.SetActive(!hideBossLaser);
                         
                         if (!hideBossLaser)
@@ -490,11 +521,6 @@ public class NewRhythmManager : MonoBehaviour
         // 3. Exit Animation (결과 판정 및 대미지)
         currentFeverState = FeverState.ExitAnimation;
         
-        if (isLaserDuel && laserDuelCameraTarget != null && Camera.main != null)
-        {
-            StartCoroutine(MoveCameraCoroutine(originalCamPos, originalCamRot, cameraTransitionDuration));
-        }
-        
         // 연타 판정 종료 직후 타이머(게이지 감소) 강제 중단 및 초기화
         if (feverGaugeController != null) feverGaugeController.ResetGauge();
         
@@ -502,7 +528,14 @@ public class NewRhythmManager : MonoBehaviour
         if (bLaser != null) Destroy(bLaser);
         if (clash != null) Destroy(clash);
 
-        if (currentMashCount >= currentTargetMashCount)
+        bool isSuccess = currentMashCount >= currentTargetMashCount;
+        
+        if (isLaserDuel && isSuccess)
+        {
+            isGameCleared = true;
+        }
+
+        if (isSuccess)
         {
             feverSuccessCount++;
             Debug.Log($"Fever Success! Count: {feverSuccessCount}. Boss Takes Damage!");
@@ -510,28 +543,70 @@ public class NewRhythmManager : MonoBehaviour
             Vector3 spawnPosition = Vector3.zero;
             if (backgroundBossAnimator != null)
             {
-                backgroundBossAnimator.SetTrigger("TakeDamage");
+                if (isLaserDuel) backgroundBossAnimator.SetTrigger("Die");
+                else backgroundBossAnimator.SetTrigger("TakeDamage");
+                
                 spawnPosition = backgroundBossAnimator.transform.position;
             }
             
             if (feverSuccessCount == 1)
             {
-                if (firstSuccessEffect != null) Instantiate(firstSuccessEffect, spawnPosition, Quaternion.identity);
+                if (firstSuccessEffect != null) Instantiate(firstSuccessEffect, spawnPosition, firstSuccessEffect.transform.rotation);
             }
             else if (feverSuccessCount == 2)
             {
-                if (secondSuccessEffect != null) Instantiate(secondSuccessEffect, spawnPosition, Quaternion.identity);
+                if (secondSuccessEffect != null) Instantiate(secondSuccessEffect, spawnPosition, secondSuccessEffect.transform.rotation);
             }
             else if (feverSuccessCount >= 3)
             {
                 // 3번째 성공 이후
-                if (feverBossExplosion != null) Instantiate(feverBossExplosion, spawnPosition, Quaternion.identity);
+                if (feverBossExplosion != null) Instantiate(feverBossExplosion, spawnPosition, feverBossExplosion.transform.rotation);
             }
         }
         else
         {
             Debug.Log("Fever Failed!");
-            if (backgroundBossAnimator != null) backgroundBossAnimator.SetTrigger("Recover");
+            if (backgroundBossAnimator != null)
+            {
+                if (isLaserDuel) backgroundBossAnimator.SetTrigger("Victory");
+                else backgroundBossAnimator.SetTrigger("Recover");
+            }
+        }
+        
+        // 카메라 위치 이동 (레이저 격돌 성공 시 클리어 타겟으로, 실패 시 원래 위치로)
+        if (isLaserDuel && Camera.main != null)
+        {
+            if (isSuccess && laserDuelClearCameraTarget != null)
+            {
+                yield return StartCoroutine(MoveCameraCoroutine(laserDuelClearCameraTarget.position, laserDuelClearCameraTarget.rotation, cameraTransitionDuration));
+            }
+            else if (laserDuelCameraTarget != null) // 성공하지 않았거나 클리어 타겟이 없으면 원상복구
+            {
+                yield return StartCoroutine(MoveCameraCoroutine(originalCamPos, originalCamRot, cameraTransitionDuration));
+            }
+        }
+
+        // 카메라 이동이 끝난 후 플레이어 애니메이션 재생
+        if (isSuccess)
+        {
+            if (playerAnimators != null && playerAnimators.Length > 0)
+            {
+                string triggerName = UnityEngine.Random.Range(0, 2) == 0 ? "Victory 1" : "Victory 2";
+                foreach (var anim in playerAnimators)
+                {
+                    if (anim != null) anim.SetTrigger(triggerName);
+                }
+            }
+        }
+        else
+        {
+            if (playerAnimators != null)
+            {
+                foreach (var anim in playerAnimators)
+                {
+                    if (anim != null) anim.SetTrigger("Hit");
+                }
+            }
         }
         
         yield return new WaitForSeconds(exitAnimDuration);
@@ -540,10 +615,10 @@ public class NewRhythmManager : MonoBehaviour
         StartCoroutine(ResumeChartAfterFever());
 
         // 일반 노트 리스폰 및 상태 복구
-        if (isLaserDuel)
+        // 레이저 전투에서 실패하더라도 다음 피버 발동 시 다시 레이저 전투를 재도전할 수 있도록 카운트를 초기화하지 않음
+        if (isLaserDuel && !isGameCleared)
         {
-            feverSuccessCount = 0;
-            Debug.Log("Laser Duel Phase Ended, returning to regular note spawn");
+            Debug.Log("Laser Duel Failed, returning to regular note spawn (Will retry laser duel on next fever)");
         }
         
         SetFeverState(false);
@@ -575,6 +650,25 @@ public class NewRhythmManager : MonoBehaviour
     {
         isWaitingToResume = true;
         currentFeverState = FeverState.None;
+        
+        // 게임 클리어가 아니라면(1, 2번째 피버 종료 시) 플레이어를 기본 상태(Idle/연주)로 강제 복구
+        if (!isGameCleared && playerAnimators != null)
+        {
+            for (int i = 0; i < playerAnimators.Length; i++)
+            {
+                if (playerAnimators[i] != null)
+                {
+                    playerAnimators[i].Rebind();
+                    
+                    // 루트 모션 등에 의해 변경된 트랜스폼을 원래 위치로 강제 초기화
+                    if (playerInitialPositions != null && i < playerInitialPositions.Length)
+                    {
+                        playerAnimators[i].transform.localPosition = playerInitialPositions[i];
+                        playerAnimators[i].transform.localRotation = playerInitialRotations[i];
+                    }
+                }
+            }
+        }
         
         // 피버 모드 토글 오브젝트 원상 복구
         if (feverEnableObjects != null) foreach (var obj in feverEnableObjects) if (obj != null) obj.SetActive(false);
@@ -623,23 +717,56 @@ public class NewRhythmManager : MonoBehaviour
     // Common logic for spawning individual or giant notes
     private void SpawnIndividualNote(int startLane, int span, double hitTime, NoteType type)
     {
+        if (span <= 1)
+        {
+            SpawnAndReturnIndividualNote(startLane, span, hitTime, type);
+            return;
+        }
+
+        int totalLanes = RhythmConfig.Instance.LaneCount;
+        NoteEnemy firstNote = null;
+
+        // 하나의 커다란 노트 대신, 스케일이 1인 개별 노트를 span 개수만큼 생성
+        for (int i = 0; i < span; i++)
+        {
+            NoteEnemy note = SpawnAndReturnIndividualNote(startLane + i, 1, hitTime, type);
+            if (i == 0) firstNote = note;
+        }
+
+        // 같이치기 노트들 사이에 이펙트를 첫 번째 노트의 자식으로 추가
+        if (chordConnectionEffect != null && firstNote != null)
+        {
+            float startX = (startLane - (totalLanes / 2f - 0.5f)) * RhythmConfig.Instance.LaneSpacing;
+            float endX = (startLane + span - 1 - (totalLanes / 2f - 0.5f)) * RhythmConfig.Instance.LaneSpacing;
+            
+            float centerX = (startX + endX) / 2f;
+            // 부모(노트)의 회전(Y=180 등)에 의해 좌우가 반전되는 것을 막기 위해 월드 좌표 오프셋으로 전달
+            Vector3 worldOffset = new Vector3(centerX - startX, 0, 0);
+            
+            firstNote.AddConnectionEffect(chordConnectionEffect, worldOffset, span);
+        }
+    }
+
+    private NoteEnemy SpawnAndReturnIndividualNote(int startLane, int span, double hitTime, NoteType type)
+    {
+        NoteEnemy enemy = null;
         if (notePools.TryGetValue(type, out var pool))
         {
-            NoteEnemy enemy = pool.Get();
+            enemy = pool.Get();
             enemy.Initialize(pool, startLane, span, hitTime, noteDuration, beatsToArrive, type);
         }
         else
         {
-            // Fallback to normal pool if specific pool not found
             if (notePools.TryGetValue(NoteType.Normal, out var normalPool))
             {
-                NoteEnemy enemy = normalPool.Get();
+                enemy = normalPool.Get();
                 enemy.Initialize(normalPool, startLane, span, hitTime, noteDuration, beatsToArrive, type);
             }
         }
+        return enemy;
     }
 
-    // 1. Chord Pattern (One giant note spanning multiple lanes)
+    // 1. Chord Pattern (Multiple normal notes spawning simultaneously)
     private void SpawnChordPattern()
     {
         int totalLanes = RhythmConfig.Instance.LaneCount;
@@ -742,6 +869,7 @@ public class NewRhythmManager : MonoBehaviour
             {
                 ResetCombo();
                 DecreaseFeverGauge();
+                PlayPlayerHitAnimation();
             }
         }
         else
@@ -805,6 +933,7 @@ public class NewRhythmManager : MonoBehaviour
 
         ResetCombo();
         DecreaseFeverGauge();
+        PlayPlayerHitAnimation();
         
         // For giant notes, show MISS only for lanes not hit
         for (int i = note.StartLane; i < note.StartLane + note.LaneSpan; i++)
@@ -817,6 +946,17 @@ public class NewRhythmManager : MonoBehaviour
 
         OnNoteHit?.Invoke(Judgment.Miss, currentCombo);
         Debug.Log("Missed!");
+    }
+
+    private void PlayPlayerHitAnimation()
+    {
+        if (playerAnimators != null)
+        {
+            foreach (var anim in playerAnimators)
+            {
+                if (anim != null) anim.SetTrigger("Hit");
+            }
+        }
     }
 
 
@@ -858,26 +998,15 @@ public class NewRhythmManager : MonoBehaviour
 
     private void OnGUI()
     {
-        // 테스트용: Mashing 페이즈일 때 화면 중앙 상단에 연타 횟수 출력
-        if (currentFeverState == FeverState.Mashing)
+        // 테스트용: 3번째 피버(레이저 격돌) 강제 진입
+        if (GUI.Button(new Rect(10, 10, 150, 50), "Trigger 3rd Fever"))
         {
-            GUIStyle style = new GUIStyle();
-            style.fontSize = 60;
-            style.fontStyle = FontStyle.Bold;
-            style.normal.textColor = Color.yellow;
-            style.alignment = TextAnchor.MiddleCenter;
-
-            Rect rect = new Rect(0, Screen.height * 0.3f, Screen.width, 100);
-            int displayTarget = (feverSuccessCount >= 2) ? laserDuelRequiredMashCount : requiredMashCount;
-            GUI.Label(rect, $"MASH: {currentMashCount} / {displayTarget}", style);
-        }
-
-        // 테스트 버튼: 레이저 격돌 바로 시작
-        if (GUI.Button(new Rect(10, 10, 200, 50), "Test Laser Duel"))
-        {
-            StopAllCoroutines();
-            feverSuccessCount = 2; // 3번째 피버 강제 지정
-            SetFeverState(true);
+            if (!IsFeverTime)
+            {
+                feverSuccessCount = 2; // 다음 피버가 무조건 레이저 전투(3번째)가 되도록 설정
+                currentFeverGauge = MaxFeverGauge;
+                SetFeverState(true);
+            }
         }
     }
 }
