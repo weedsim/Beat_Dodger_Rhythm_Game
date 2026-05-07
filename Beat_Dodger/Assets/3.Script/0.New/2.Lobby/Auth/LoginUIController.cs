@@ -1,6 +1,7 @@
 using UnityEngine;
 using UnityEngine.UI;
 using BeatDodger.Network;
+using TMPro;
 
 namespace BeatDodger.UI
 {
@@ -11,10 +12,15 @@ namespace BeatDodger.UI
     {
         #region Variables
 
-        [Header("UI References")]
-        [SerializeField] private InputField _idInputField;
-        [SerializeField] private InputField _passwordInputField;
-        [SerializeField] private Button _loginButton;
+        [Header("Login UI References")]
+        [SerializeField, Tooltip("Login UI 내 ID 입력칸")] private TMP_InputField _loginIdInputField;
+        [SerializeField, Tooltip("Login UI 내 PW 입력칸")] private TMP_InputField _loginPasswordInputField;
+        [SerializeField, Tooltip("Login Button")] private Button _loginButton;
+
+        [Header("Register UI References")]
+        [SerializeField, Tooltip("Register UI 내 ID 입력칸")] private TMP_InputField _registerIdInputField;
+        [SerializeField, Tooltip("Register UI 내 PW 입력칸")] private TMP_InputField _registerPasswordInputField;
+        [SerializeField, Tooltip("Register Button")] private Button _registerButton;
 
         [Header("Dependencies")]
         [SerializeField] private CustomNetworkManager _networkManager;
@@ -25,11 +31,15 @@ namespace BeatDodger.UI
 
         private void Awake()
         {
+#if !UNITY_SERVER
+            //_loginButton.onClick.AddListener(OnLoginButtonClicked);
+            //_registerButton.onClick.AddListener(OnLoginButtonClicked);
+#endif
         }
 
-        #endregion
+#endregion
 
-#region Public Methods (Client Side)
+        #region Public Methods (Client Side)
 
 #if !UNITY_SERVER
         /// <summary>
@@ -37,28 +47,54 @@ namespace BeatDodger.UI
         /// </summary>
         public void OnLoginButtonClicked()
         {
-            string userId = _idInputField != null ? _idInputField.text : string.Empty;
-            string password = _passwordInputField != null ? _passwordInputField.text : string.Empty;
+            string userId = _loginIdInputField != null ? _loginIdInputField.text : string.Empty;
+            string password = _loginPasswordInputField != null ? _loginPasswordInputField.text : string.Empty;
 
             if (string.IsNullOrEmpty(userId) || string.IsNullOrEmpty(password))
             {
-                Debug.LogWarning("[LoginUI] ID 또는 비밀번호가 입력되지 않았습니다.");
+                Debug.LogWarning("[LoginUIController] ID 또는 비밀번호가 입력되지 않았습니다.");
                 // TODO: 사용자에게 알림을 주는 Legacy UI 팝업 호출 필요
                 return;
             }
 
             if (_networkManager != null)
             {
-                Debug.Log($"[LoginUI] Requesting login for: {userId}");
+                Debug.Log($"[LoginUIController] Requesting login for: {userId}");
                 _networkManager.AttemptLogin(userId, password);
             }
             else
             {
-                Debug.LogError("[LoginUI] CustomNetworkManager reference is missing!");
+                Debug.LogError("[LoginUIController] CustomNetworkManager reference is missing!");
+            }
+        }
+
+        /// <summary>
+        /// 회원가입 버튼 클릭 시 호출되는 메서드
+        /// </summary>
+        public void OnRegisterButtonClicked()
+        {
+            string userId = _registerIdInputField != null ? _registerIdInputField.text : string.Empty;
+            string password = _registerPasswordInputField != null ? _registerPasswordInputField.text : string.Empty;
+
+            if (string.IsNullOrEmpty(userId) || string.IsNullOrEmpty(password))
+            {
+                Debug.LogWarning("[LoginUIController] ID 또는 비밀번호가 입력되지 않았습니다.");
+                // TODO: 사용자에게 알림을 주는 Legacy UI 팝업 호출 필요
+                return;
+            }
+
+            if (_networkManager != null)
+            {
+                Debug.Log("[LoginUIController] Requesting Register");
+                _networkManager.AttemptLogin(userId, password);
+            }
+            else
+            {
+                Debug.LogError("[LoginUIController] CustomNetworkManager reference is missing!");
             }
         }
 #endif
 
-#endregion
+        #endregion
     }
 }
