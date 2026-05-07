@@ -3,10 +3,17 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Pool;
 using UnityEngine.InputSystem;
+using Mirror;
 
-public class NewRhythmManager : MonoBehaviour
+public class NewRhythmManager : NetworkBehaviour
 {
     public static NewRhythmManager Instance { get; private set; }
+
+
+    [Header("Sync Settings")]
+    public double exactStartTime;
+    private HashSet<int> hitNoteIds = new HashSet<int>(); // 이미 맞춘 노트 명부
+    private int _globalNoteId = 0; // 번호표 기계
 
     [Header("Rhythm Settings")]
     [SerializeField] private float bpm = 120f;
@@ -994,6 +1001,11 @@ public class NewRhythmManager : MonoBehaviour
 
         UpdateFeverUI();
         OnFeverStateChanged?.Invoke(active);
+    }
+
+    public void TriggerLaneInput(int laneIndex)
+    {
+        ExecuteInput(laneIndex);
     }
 
     private void OnGUI()
