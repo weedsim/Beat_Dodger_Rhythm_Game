@@ -5,6 +5,8 @@ public enum NoteType { Normal, Dash, Double, Fever } // Dash: 돌진형, Double:
 
 public class NoteEnemy : MonoBehaviour
 {
+    public int myNoteId = -1;
+
     private const float StepStartThreshold = 0.5f;
 
     [SerializeField] private int startLane; // 시작 레인

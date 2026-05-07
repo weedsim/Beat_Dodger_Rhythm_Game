@@ -6,8 +6,7 @@ EditorBuildSettings:
   serializedVersion: 2
   m_Scenes:
   - enabled: 1
-    path: Assets/1.Scene/(Old)Game.unity
-    guid: 801277d33fcf77245bef9ba87aa613f3
-  m_configObjects:
-    com.unity.input.settings.actions: {fileID: -944628639613478452, guid: 5851fc80a98df764eb42faa3c23a54cf, type: 3}
+    path: Assets/1.Scene/3.Game_Hojae.unity
+    guid: 17a50fbb3e793dd4692844704988bdbd
+  m_configObjects: {}
   m_UseUCBPForAssetBundles: 0
