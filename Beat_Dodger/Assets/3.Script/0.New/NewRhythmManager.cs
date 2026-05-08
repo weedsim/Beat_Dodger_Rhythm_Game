@@ -9,11 +9,11 @@ public class NewRhythmManager : NetworkBehaviour
 {
     public static NewRhythmManager Instance { get; private set; }
 
-
-    [Header("Sync Settings")]
-    public double exactStartTime;
-    private HashSet<int> hitNoteIds = new HashSet<int>(); // 이미 맞춘 노트 명부
-    private int _globalNoteId = 0; // 번호표 기계
+    [Header("Multiplayer Sync")]
+    [SyncVar(hook = nameof(OnFeverStateChangedHook))]
+    public bool isFeverTime = false;
+    public double exactStartTime; // 서버에서 정해줄 절대 시작 시간
+    public bool isGameStart = false; // 게임 시작 여부
 
     [Header("Rhythm Settings")]
     [SerializeField] private float bpm = 120f;
@@ -21,7 +21,7 @@ public class NewRhythmManager : NetworkBehaviour
     [SerializeField] private int beatsToArrive = 4;
     [SerializeField] private float startDelay = 2.0f; // Seconds to wait before music starts
     public int BeatsToArrive => beatsToArrive;
-
+    
     [Header("Fever Settings")]
     [SerializeField] private float gaugePerHit = 10f;
     [SerializeField] private float gaugeLossOnMiss = 5f;
@@ -35,7 +35,11 @@ public class NewRhythmManager : NetworkBehaviour
     [SerializeField] private float exitAnimDuration = 2.0f;
     [SerializeField] private int requiredMashCount = 50;
     [SerializeField] private GameObject feverBossExplosion;
-    
+   
+    [Header("Chart Settings")]
+    [SerializeField] private RhythmChart currentChart; // 채보 파일
+    private int currentNoteIndex = 0; // 현재 읽고 있는 노트 번호
+
     [Header("Fever Success Effects")]
     [SerializeField] private GameObject firstSuccessEffect;
     [SerializeField] private GameObject secondSuccessEffect;
@@ -80,6 +84,7 @@ public class NewRhythmManager : NetworkBehaviour
     [SerializeField] private float minAttackInterval = 4.0f;
     [SerializeField] private float maxAttackInterval = 8.0f;
     
+
     public enum SpawnMode { Random, Chart }
     [Header("Spawn Mode")]
     [SerializeField] private SpawnMode spawnMode = SpawnMode.Random;
@@ -88,6 +93,8 @@ public class NewRhythmManager : NetworkBehaviour
 
     public enum FeverState { None, EnterAnimation, Mashing, ExitAnimation }
     private FeverState currentFeverState = FeverState.None;
+
+    public int myLaneIndex = 0;
     private int currentMashCount;
     private float currentMashFloat; // float based mash count for laser duel
     private float currentFeverGauge;
@@ -140,6 +147,9 @@ public class NewRhythmManager : NetworkBehaviour
     public static event Action OnBeat;
     public event Action<Judgment, int> OnNoteHit; 
     public static event Action<bool> OnFeverStateChanged;
+    private HashSet<int> hitNoteIds = new HashSet<int>();
+    [Header("Multiplayer ID")]
+    private int _globalNoteId = 0;
 
     private void Awake()
     {
@@ -298,6 +308,32 @@ public class NewRhythmManager : NetworkBehaviour
 
     private void Update()
     {
+        if (Input.GetKeyDown(KeyCode.Return) && !isGameStart)
+        {
+            CmdRequestGameStart();
+        }
+        if (isServer && Input.GetKeyDown(KeyCode.Return) && !isGameStart)
+        {
+            double startTime = AudioSettings.dspTime + 3.0;
+            RpcStartMultiGame(startTime);
+        }
+
+        if (!isGameStart || currentChart == null) return;
+
+        // 2. [데드레커닝] 서버 시각에 맞춰 각자 로컬에서 노트 생성
+        if (currentNoteIndex < currentChart.notes.Count)
+        {
+            NoteData nextNote = currentChart.notes[currentNoteIndex];
+            double targetHitTime = exactStartTime + nextNote.time;
+
+            // 노트가 화면에 나타나야 할 타이밍 계산
+            if (AudioSettings.dspTime >= targetHitTime - noteDuration)
+            {
+                SpawnIndividualNote(nextNote.lane, nextNote.span, targetHitTime, nextNote.type);
+                currentNoteIndex++;
+            }
+        }
+
         if (Time.timeScale == 0) return;
 
         double currentTime = AudioSettings.dspTime;
@@ -757,6 +793,7 @@ public class NewRhythmManager : NetworkBehaviour
     private NoteEnemy SpawnAndReturnIndividualNote(int startLane, int span, double hitTime, NoteType type)
     {
         NoteEnemy enemy = null;
+
         if (notePools.TryGetValue(type, out var pool))
         {
             enemy = pool.Get();
@@ -769,6 +806,12 @@ public class NewRhythmManager : NetworkBehaviour
                 enemy = normalPool.Get();
                 enemy.Initialize(normalPool, startLane, span, hitTime, noteDuration, beatsToArrive, type);
             }
+        }
+
+        if (enemy != null)
+        {
+            enemy.myNoteId = _globalNoteId++; // 1. 모든 클라이언트가 동일한 순서로 ID 부여
+            activeNotes.Add(enemy);           // 2. 관리 리스트에 추가 (나중에 서버가 지우라고 할 때 찾기 위함)
         }
         return enemy;
     }
@@ -804,6 +847,7 @@ public class NewRhythmManager : NetworkBehaviour
     public void OnInputLane2(InputAction.CallbackContext context) { if (context.performed) ExecuteInput(2); }
     public void OnInputLane3(InputAction.CallbackContext context) { if (context.performed) ExecuteInput(3); }
 
+    
     private void ExecuteInput(int laneIndex)
     {
         if (laneIndex >= 0 && laneIndex < inputEffects.Length)
@@ -814,25 +858,23 @@ public class NewRhythmManager : NetworkBehaviour
 
     private void ProcessHitInput(int laneIndex)
     {
-        if (IsFeverTime)
+        if (isFeverTime) // 변수명 대소문자 확인 (isFeverTime)
         {
             HandleFeverAttack(laneIndex);
             return;
         }
 
+        // 1. [수정] GetNearestNote 함수 호출 대신 null로 초기화
         NoteEnemy closestNote = null;
         double minTimeOffset = double.MaxValue;
 
-        // Find the closest note (exact hit timing)
+        // 2. 가장 가까운 노트 찾기 (주인님의 기존 로직)
         foreach (var note in activeNotes)
         {
-            // Check if note occupies the lane and hasn't been hit in this lane yet
             if (!note.IsOccupyingLane(laneIndex) || note.IsLaneAlreadyHit(laneIndex)) continue;
 
-            // Apply Global Sync Offset (dspTime - targetTime - offset)
             double timeOffset = Math.Abs(AudioSettings.dspTime - note.TargetHitTime - RhythmConfig.Instance.GlobalSyncOffset);
-            
-            // Expand judgment window for Double Tap notes if hit once
+
             float thresholdMultiplier = (note.Type == NoteType.Double && note.HitsRemaining < 2) ? 2.0f : 1.0f;
             float maxThreshold = RhythmConfig.Instance.GoodThreshold * thresholdMultiplier;
 
@@ -843,17 +885,22 @@ public class NewRhythmManager : NetworkBehaviour
             }
         }
 
+        // 3. [수정] 찾은 노트 처리 (중복된 if문들을 하나로 통합)
         if (closestNote != null)
         {
-            // Record hit for this lane
             closestNote.MarkLaneHit(laneIndex);
 
-            // Determine judgment rank with multiplier
             float thresholdMultiplier = (closestNote.Type == NoteType.Double && closestNote.HitsRemaining < 2) ? 2.0f : 1.0f;
             Judgment result = EvaluateJudgment(minTimeOffset, thresholdMultiplier);
-            
+
             ApplyHitResult(result, laneIndex, closestNote);
             closestNote.OnHit();
+
+            // 서버에 타격 보고 (멀티플레이 핵심)
+            CmdRequestHitNote(laneIndex, closestNote.myNoteId);
+
+            // 로컬 추가 처리 (만약 HandleLocalHit 함수가 없다면 이 줄은 지우셔도 됩니다)
+            // HandleLocalHit(closestNote); 
         }
     }
 
@@ -965,10 +1012,7 @@ public class NewRhythmManager : NetworkBehaviour
             }
         }
     }
-
-
-
-    private void ResetCombo()
+            private void ResetCombo()
     {
         currentCombo = 0;
     }
@@ -1020,5 +1064,70 @@ public class NewRhythmManager : NetworkBehaviour
                 SetFeverState(true);
             }
         }
+    }
+
+    [ClientRpc]
+    private void RpcStartMultiGame(double startTime)
+    {
+        isGameStart = true;
+        exactStartTime = startTime;
+        currentNoteIndex = 0;
+
+        // 리듬 타이밍 계산
+        if (currentChart != null) bpm = currentChart.bpm;
+        secondsPerBeat = 60f / bpm;
+        noteDuration = beatsToArrive * secondsPerBeat;
+
+        // 음악 예약 재생 (시간 오차 극복의 핵심)
+        AudioSource audio = GetComponent<AudioSource>();
+        if (audio != null)
+        {
+            if (currentChart != null && currentChart.musicClip != null)
+                audio.clip = currentChart.musicClip;
+            audio.PlayScheduled(exactStartTime);
+        }
+    }
+    private void OnFeverStateChangedHook(bool oldState, bool newState)
+    {
+        if (backgroundBossAnimator != null) backgroundBossAnimator.SetBool("IsFever", newState);
+        foreach (var obj in feverEnableObjects) obj.SetActive(newState);
+    }
+    public void OnInputSpacebar(InputAction.CallbackContext context)
+    {
+        // 내 컴퓨터에서 내 레인만 칩니다!
+        if (context.performed) ExecuteInput(myLaneIndex);
+    }
+
+    [Command(requiresAuthority = false)] // 내 아바타가 아니어도 보낼 수 있게 허락
+    private void CmdRequestHitNote(int laneIndex, int noteId)
+    {
+        if (hitNoteIds.Contains(noteId)) return; // 이미 처리된 노트면 무시
+        hitNoteIds.Add(noteId); // 명부에 등록
+
+        // 모두에게 이 노트가 사라졌음을 방송
+        RpcNotifyHitNote(noteId);
+    }
+
+    [ClientRpc]
+    private void RpcNotifyHitNote(int noteId)
+    {
+        // 내 화면에서는 내가 쳐서 이미 지워졌으니, 다른 사람 화면의 노트를 찾아 지움
+        NoteEnemy targetNote = activeNotes.Find(n => n.myNoteId == noteId);
+        if (targetNote != null)
+        {
+            targetNote.ReleaseToPool(); // 주인님의 풀링 반환 함수
+            activeNotes.Remove(targetNote);
+        }
+    }
+    [Command(requiresAuthority = false)]
+    private void CmdRequestGameStart()
+    {
+        if (isGameStart) return; // 이미 시작했으면 무시
+
+        // AWS 서버가 현재 자기 시간 기준으로 3초 뒤를 계산합니다.
+        double startTime = AudioSettings.dspTime + 3.0;
+
+        // AWS 서버가 모든 클라이언트에게 "시작해!" 라고 방송합니다.
+        RpcStartMultiGame(startTime);
     }
 }
