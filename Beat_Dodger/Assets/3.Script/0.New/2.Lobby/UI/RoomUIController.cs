@@ -4,7 +4,6 @@ using BeatDodger.Lobby;
 using Mirror;
 using UnityEngine;
 using UnityEngine.UI;
-using TMPro;
 
 namespace BeatDodger.UI
 {
@@ -25,7 +24,7 @@ namespace BeatDodger.UI
 
         [Header("Member Slots")]
         [SerializeField, Tooltip("멤버 이름 텍스트 (4개, Slot0~3 순서)")]
-        private TMP_Text[] _memberNameTexts;
+        private Text[] _memberNameTexts;
 
         [SerializeField, Tooltip("멤버 악기 이미지 (4개, Slot0~3 순서)")]
         private Image[] _memberInstrumentImages;
@@ -58,13 +57,13 @@ namespace BeatDodger.UI
 
         [Header("Song Info Display (All Clients)")]
         [SerializeField, Tooltip("선택된 곡 이름 텍스트 — 방 안 전체 클라이언트에 표시")]
-        private TMP_Text _songInfoNameText;
+        private Text _songInfoNameText;
 
         [SerializeField, Tooltip("선택된 곡 난이도 텍스트 — 방 안 전체 클라이언트에 표시")]
-        private TMP_Text _songInfoDifficultyText;
+        private Text _songInfoDifficultyText;
 
         [SerializeField, Tooltip("선택된 곡 해시태그 분위기 텍스트 — 방 안 전체 클라이언트에 표시")]
-        private TMP_Text _songInfoTagsText;
+        private Text _songInfoTagsText;
 
         [SerializeField, Tooltip("선택된 곡 썸네일 이미지 — 방 안 전체 클라이언트에 표시. SongId로 로컬 조회")]
         private Image _songInfoThumbnailImage;

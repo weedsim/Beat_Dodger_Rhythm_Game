@@ -184,6 +184,26 @@ namespace BeatDodger.Managers
         }
 
         /// <summary>
+        /// 연결로부터 UserId를 반환한다.
+        /// </summary>
+        public string GetUserIdByConnection(NetworkConnectionToClient conn)
+        {
+            return _playerSessions.TryGetValue(conn, out PlayerSessionInfo session)
+                ? session.UserId
+                : string.Empty;
+        }
+
+        /// <summary>
+        /// 연결로부터 UserName을 반환한다.
+        /// </summary>
+        public string GetUserNameByConnection(NetworkConnectionToClient conn)
+        {
+            return _playerSessions.TryGetValue(conn, out PlayerSessionInfo session)
+                ? session.UserName
+                : string.Empty;
+        }
+
+        /// <summary>
         /// 특정 플레이어들을 모아 새로운 인게임 매치를 생성한다.
         /// </summary>
         /// <param name="players">매치에 참여시킬 플레이어 리스트</param>

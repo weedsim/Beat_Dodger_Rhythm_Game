@@ -13,15 +13,16 @@ namespace BeatDodger.Core
     }
 
     /// <summary>
-    /// DB에서 로드한 사용자 기본 정보
+    /// DB에서 로드한 사용자 기본 정보 및 환경 설정
     /// </summary>
     [System.Serializable]
     public struct UserData
     {
         public string _UserId;
         public string _UserName;
-        public int _Level;
-        public int _Experience;
-        public int _Currency;
+        public float _Volume;
+        public float _Sync;
+        public string _InputKey;
+        public int _FrameRate;
     }
 }

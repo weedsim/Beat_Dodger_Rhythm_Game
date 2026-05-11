@@ -19,8 +19,29 @@ namespace BeatDodger.Network
         public bool Success;
         public string UserId;
         public string UserName;
-        public int Level;
-        public int Currency;
+        public float Volume;
+        public float Sync;
+        public string InputKey;
+        public int FrameRate;
+    }
+
+    /// <summary>
+    /// 클라이언트가 서버에 회원가입을 요청할 때 보내는 메시지
+    /// </summary>
+    public struct RegisterRequestMessage : NetworkMessage
+    {
+        public string UserId;
+        public string Password;
+        public string TempNickName;
+    }
+
+    /// <summary>
+    /// 서버가 클라이언트에게 회원가입 결과를 응답하는 메시지
+    /// </summary>
+    public struct RegisterResponseMessage : NetworkMessage
+    {
+        public bool Success;
+        public string Message;
     }
 
     /// <summary>

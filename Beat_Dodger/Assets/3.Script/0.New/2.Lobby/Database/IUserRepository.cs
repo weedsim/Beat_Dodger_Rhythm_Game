@@ -9,17 +9,15 @@ namespace BeatDodger.Database
     public interface IUserRepository
     {
         /// <summary>
-        /// DB에서 사용자 데이터를 비동기적으로 로드한다.
+        /// DB에서 userId와 password로 인증하고 사용자 데이터를 반환한다.
+        /// 인증 실패 시 빈 UserData(UserId == null)를 반환한다.
         /// </summary>
-        /// <param name="userId">조회할 사용자 ID</param>
-        /// <returns>로드된 UserData 구조체. 존재하지 않으면 기본값(빈 _UserId).</returns>
-        Task<UserData> LoadUserDataAsync(string userId);
+        Task<UserData> AuthenticateAsync(string userId, string password);
 
         /// <summary>
-        /// 사용자 데이터를 DB에 비동기적으로 저장한다.
+        /// 새 사용자를 DB에 등록한다.
+        /// 아이디 중복 시 false를 반환한다.
         /// </summary>
-        /// <param name="data">저장할 데이터</param>
-        /// <returns>저장 성공 여부</returns>
-        Task<bool> SaveUserDataAsync(UserData data);
+        Task<bool> RegisterUserAsync(string userId, string password, string userName);
     }
 }
