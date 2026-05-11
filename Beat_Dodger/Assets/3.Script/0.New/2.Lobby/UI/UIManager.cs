@@ -1,5 +1,4 @@
 using UnityEngine;
-using UnityEngine.UI;
 
 namespace BeatDodger.UI
 {
@@ -22,7 +21,17 @@ namespace BeatDodger.UI
 
         #region Properties
 
-        public static UIManager Instance => _instance;
+        public static UIManager Instance
+        {
+            get
+            {
+                if(_instance == null)
+                {
+                    _instance = FindAnyObjectByType<UIManager>();
+                }
+                return _instance;
+            }
+        }
 
         #endregion
 

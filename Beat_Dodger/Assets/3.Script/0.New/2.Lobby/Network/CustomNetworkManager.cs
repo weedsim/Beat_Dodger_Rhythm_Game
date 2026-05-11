@@ -73,7 +73,11 @@ namespace BeatDodger.Network
 
             if (_uiManager == null)
             {
-                Debug.LogError("[CustomNetworkManager] [Client] UIManager reference is missing!");
+                _uiManager = UIManager.Instance;
+                if(_uiManager == null)
+                {
+                    Debug.LogError("[CustomNetworkManager] [Client] UIManager reference is missing!");
+                }
             }
 
             if (_clientPlayerManager != null)

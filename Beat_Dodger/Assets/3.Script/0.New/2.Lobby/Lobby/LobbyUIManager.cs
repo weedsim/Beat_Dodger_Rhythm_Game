@@ -3,6 +3,7 @@ using Mirror;
 using UnityEngine;
 using UnityEngine.UI;
 using BeatDodger.UI;
+using TMPro;
 
 namespace BeatDodger.Lobby
 {
@@ -30,9 +31,9 @@ namespace BeatDodger.Lobby
         [SerializeField, Tooltip("방 생성 정보 입력 패널 (방 만들기 버튼 클릭 시 표시)")]
         private GameObject _createRoomPanel;
         [SerializeField, Tooltip("방 생성 패널 — 방 이름 입력 InputField")]
-        private InputField _createRoomNameInputField;
+        private TMP_InputField _createRoomNameInputField;
         [SerializeField, Tooltip("방 생성 패널 — 비밀번호 입력 InputField (빈 값이면 공개방)")]
-        private InputField _createRoomPasswordInputField;
+        private TMP_InputField _createRoomPasswordInputField;
         [SerializeField, Tooltip("방 생성 패널 — 생성 확인 버튼")]
         private Button _confirmCreateButton;
         [SerializeField, Tooltip("방 생성 패널 — 취소 버튼")]
@@ -42,11 +43,11 @@ namespace BeatDodger.Lobby
         [SerializeField, Tooltip("비밀번호 입력 패널 (비공개 방 입장 시 표시)")]
         private GameObject _passwordJoinPanel;
         [SerializeField, Tooltip("비밀번호 입력 패널 — 비밀번호 InputField")]
-        private InputField _joinPasswordInputField;
+        private TMP_InputField _joinPasswordInputField;
         [SerializeField, Tooltip("비밀번호 입력 패널 — 클릭한 방 이름을 표시하는 Text")]
-        private Text _joinRoomNameText;
+        private TextMeshProUGUI _joinRoomNameText;
         [SerializeField, Tooltip("비밀번호 입력 로그 - 비밀번호 입력에 대한 Log Text")]
-        private Text _passwordLog;
+        private TextMeshProUGUI _passwordLog;
         [SerializeField, Tooltip("비밀번호 입력 패널 — 입장 확인 버튼")]
         private Button _confirmJoinButton;
         [SerializeField, Tooltip("비밀번호 입력 패널 — 취소 버튼")]
@@ -64,13 +65,13 @@ namespace BeatDodger.Lobby
         [SerializeField, Range(0f, 60f), Tooltip("새로고침 버튼 재사용 대기 시간 (초)")]
         private float _refreshCooldown = 5f;
         [SerializeField, Tooltip("방 목록 항목별 — 곡 이름 Text (항목 수만큼)")]
-        private Text[] _partySongNameTextCache;
+        private TextMeshProUGUI[] _partySongNameTextCache;
         [SerializeField, Tooltip("방 목록 항목별 — 방 이름 Text (항목 수만큼)")]
-        private Text[] _partyRoomNameTextCache;
+        private TextMeshProUGUI[] _partyRoomNameTextCache;
         [SerializeField, Tooltip("방 목록 항목별 — 비밀번호 유무 Image (항목 수만큼)")]
         private Image[] _partyPasswordImageCache;
         [SerializeField, Tooltip("방 목록 항목별 — 현재/최대 인원 Text e.g. \"1/4\" (항목 수만큼)")]
-        private Text[] _partyMemberCountTextCache;
+        private TextMeshProUGUI[] _partyMemberCountTextCache;
         [SerializeField, Tooltip("캐싱된 파티 참가 버튼들 (클릭 시 비밀번호 확인 후 RequestJoinParty 호출)")]
         private Button[] _partyButtonCache;
 

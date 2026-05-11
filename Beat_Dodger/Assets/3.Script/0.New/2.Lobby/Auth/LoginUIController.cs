@@ -1,6 +1,7 @@
 using UnityEngine;
 using UnityEngine.UI;
 using BeatDodger.Network;
+using TMPro;
 
 namespace BeatDodger.UI
 {
@@ -12,8 +13,8 @@ namespace BeatDodger.UI
         #region Variables
 
         [Header("UI References")]
-        [SerializeField] private InputField _idInputField;
-        [SerializeField] private InputField _passwordInputField;
+        [SerializeField] private TMP_InputField _idInputField;
+        [SerializeField] private TMP_InputField _passwordInputField;
         [SerializeField] private Button _loginButton;
         [SerializeField] private Button _goToRegisterButton;
 

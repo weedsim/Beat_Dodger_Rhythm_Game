@@ -1,6 +1,7 @@
 using UnityEngine;
 using UnityEngine.UI;
 using BeatDodger.Network;
+using TMPro;
 
 namespace BeatDodger.UI
 {
@@ -12,8 +13,8 @@ namespace BeatDodger.UI
         #region Variables
 
         [Header("UI References")]
-        [SerializeField, Tooltip("회원 가입 UI 내 ID 입력")] private InputField _idInputField;
-        [SerializeField, Tooltip("회원 가입 UI 내 PW 입력")] private InputField _passwordInputField;
+        [SerializeField, Tooltip("회원 가입 UI 내 ID 입력")] private TMP_InputField _idInputField;
+        [SerializeField, Tooltip("회원 가입 UI 내 PW 입력")] private TMP_InputField _passwordInputField;
         [SerializeField, Tooltip("회원 가입 버튼")] private Button _registerButton;
         [SerializeField, Tooltip("회원 가입 패널에서 로그인 패널로 넘어가는 버튼")] private Button _backToLoginButton;
 

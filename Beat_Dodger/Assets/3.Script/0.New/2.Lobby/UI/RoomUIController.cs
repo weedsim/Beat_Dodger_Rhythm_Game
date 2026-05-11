@@ -4,6 +4,7 @@ using BeatDodger.Lobby;
 using Mirror;
 using UnityEngine;
 using UnityEngine.UI;
+using TMPro;
 
 namespace BeatDodger.UI
 {
@@ -24,7 +25,7 @@ namespace BeatDodger.UI
 
         [Header("Member Slots")]
         [SerializeField, Tooltip("멤버 이름 텍스트 (4개, Slot0~3 순서)")]
-        private Text[] _memberNameTexts;
+        private TextMeshProUGUI[] _memberNameTexts;
 
         [SerializeField, Tooltip("멤버 악기 이미지 (4개, Slot0~3 순서)")]
         private Image[] _memberInstrumentImages;
@@ -57,13 +58,13 @@ namespace BeatDodger.UI
 
         [Header("Song Info Display (All Clients)")]
         [SerializeField, Tooltip("선택된 곡 이름 텍스트 — 방 안 전체 클라이언트에 표시")]
-        private Text _songInfoNameText;
+        private TextMeshProUGUI _songInfoNameText;
 
         [SerializeField, Tooltip("선택된 곡 난이도 텍스트 — 방 안 전체 클라이언트에 표시")]
-        private Text _songInfoDifficultyText;
+        private TextMeshProUGUI _songInfoDifficultyText;
 
         [SerializeField, Tooltip("선택된 곡 해시태그 분위기 텍스트 — 방 안 전체 클라이언트에 표시")]
-        private Text _songInfoTagsText;
+        private TextMeshProUGUI _songInfoTagsText;
 
         [SerializeField, Tooltip("선택된 곡 썸네일 이미지 — 방 안 전체 클라이언트에 표시. SongId로 로컬 조회")]
         private Image _songInfoThumbnailImage;
@@ -494,7 +495,7 @@ namespace BeatDodger.UI
                 GameObject go = Instantiate(_songButtonPrefab, _songScrollContent);
                 Button btn = go.GetComponent<Button>();
 
-                Text label = go.GetComponentInChildren<Text>();
+                TextMeshProUGUI label = go.GetComponentInChildren<TextMeshProUGUI>();
                 if (label != null)
                 {
                     label.text = _songList[i]._Name;
