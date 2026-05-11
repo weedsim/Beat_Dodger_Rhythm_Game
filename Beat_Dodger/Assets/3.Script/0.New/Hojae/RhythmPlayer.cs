@@ -3,50 +3,85 @@ using Mirror;
 
 public class RhythmPlayer : NetworkBehaviour
 {
-    [SyncVar] public int myLaneIndex = -1; // 내가 배정받은 레인 번호 (초기값 -1)
-
-    // 서버에서만 관리하는 '번호표 기계' (다음 접속자는 몇 번 레인?)
+    [SyncVar] public int myLaneIndex = -1;
     private static int nextLaneToAssign = 0;
 
-    // 1. 플레이어가 방에 접속하면 서버가 번호표(레인)를 쥐어줍니다!
     public override void OnStartServer()
     {
         myLaneIndex = nextLaneToAssign;
         nextLaneToAssign++;
-
-        // 만약 4명이 다 찼는데 또 들어오면 다시 0번부터 (예외 처리)
         if (nextLaneToAssign > 3) nextLaneToAssign = 0;
+    }
+
+    public override void OnStartLocalPlayer()
+    {
+        // 내 레인 번호를 RhythmManager에 알려주기
+        if (NewRhythmManager.Instance != null)
+            NewRhythmManager.Instance.myLaneIndex = myLaneIndex;
     }
 
     private void Update()
     {
-        // 내 컴퓨터의 내 아바타가 아니면 조작 불가!
         if (!isLocalPlayer) return;
 
-        // 2. 내가 스페이스바를 쾅 쳤다!!
+        // 스페이스바 - 노트 타격
         if (Input.GetKeyDown(KeyCode.Space))
-        {
-            // 서버 대장님한테 "저 스페이스바 쳤어요!" 라고 귓속말(Command)을 보냅니다.
             CmdPressMyLane(myLaneIndex);
-        }
+
+        // 엔터 - 게임 시작
+        if (Input.GetKeyDown(KeyCode.Return))
+            CmdRequestGameStart();
     }
 
-    //  [Command]: 클라이언트 -> 서버로 쏘는 명령
     [Command]
     private void CmdPressMyLane(int lane)
     {
-        // 서버가 명령을 받으면, "모든 사람 화면에 n번 레인 이펙트 터트려라!" 라고 방송합니다.
         RpcPressMyLane(lane);
     }
 
-    //  [ClientRpc]: 서버 -> 모든 클라이언트로 쏘는 방송
     [ClientRpc]
     private void RpcPressMyLane(int lane)
     {
-        // 3. 드디어 대장님(Manager)의 통로를 열어 내 레인을 타격합니다!!
+        if (NewRhythmManager.Instance != null)
+            NewRhythmManager.Instance.TriggerLaneInput(lane);
+    }
+
+    [Command]
+    private void CmdRequestGameStart()
+    {
+        if (NewRhythmManager.Instance != null &&
+            !NewRhythmManager.Instance.isGameStart)
+        {
+            double startTime = AudioSettings.dspTime + 3.0;
+            RpcStartGame(startTime);
+        }
+    }
+
+    [ClientRpc]
+    private void RpcStartGame(double startTime)
+    {
         if (NewRhythmManager.Instance != null)
         {
-            NewRhythmManager.Instance.TriggerLaneInput(lane);
+            NewRhythmManager.Instance.isGameStart = true;
+            NewRhythmManager.Instance.exactStartTime = startTime;
+        }
+    }
+    [Command]
+    public void CmdHitNote(int laneIndex, int noteId)
+    {
+        RpcNotifyHitNote(noteId);
+    }
+
+    [ClientRpc]
+    private void RpcNotifyHitNote(int noteId)
+    {
+        if (NewRhythmManager.Instance == null) return;
+        NoteEnemy targetNote = NewRhythmManager.Instance.activeNotes
+            .Find(n => n.myNoteId == noteId);
+        if (targetNote != null)
+        {
+            targetNote.ReleaseToPool();
+            NewRhythmManager.Instance.activeNotes.Remove(targetNote);
         }
     }
 }

@@ -1,0 +1,392 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!1 &7381456697422392772
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 441710828165939471}
+  - component: {fileID: 706952156725129677}
+  - component: {fileID: 2471400570231873222}
+  - component: {fileID: 805341972282752176}
+  - component: {fileID: 559256109947696680}
+  - component: {fileID: 7609682848732934660}
+  - component: {fileID: 4344292345502965768}
+  - component: {fileID: 3980148709060254488}
+  m_Layer: 0
+  m_Name: RhythmManager
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &441710828165939471
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7381456697422392772}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 0, y: -5, z: 20}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &706952156725129677
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7381456697422392772}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6282ebc8de1907c4fac95cb17f2fe6aa, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::NewRhythmManager
+  syncDirection: 0
+  syncMode: 0
+  syncInterval: 0
+  isFeverTime: 0
+  exactStartTime: 0
+  isGameStart: 0
+  bpm: 120
+  beatsToArrive: 8
+  startDelay: 2
+  gaugePerHit: 100
+  gaugeLossOnMiss: 5
+  feverGaugeController: {fileID: 0}
+  backgroundBossAnimator: {fileID: 0}
+  playerAnimators:
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+  enterAnimDuration: 2
+  mashingDuration: 5
+  exitAnimDuration: 2
+  requiredMashCount: 10
+  feverBossExplosion: {fileID: 552793109724768, guid: 8e300af2a1e0c864d8f5f994673d1ac4, type: 3}
+  currentChart: {fileID: 11400000, guid: 01895c86a0c3fc84ab4d70bd17945c76, type: 2}
+  firstSuccessEffect: {fileID: 3957314820288950082, guid: 9700babc57d491748a4883f7deab0970, type: 3}
+  secondSuccessEffect: {fileID: 552793109724768, guid: 8e300af2a1e0c864d8f5f994673d1ac4, type: 3}
+  laserDuelRequiredMashCount: 80
+  laserDuelDuration: 8
+  bossPushSpeed: 5
+  playerLaserEffect: {fileID: 1061391445118465773, guid: 73a046238033f034f96b36756bda942c, type: 3}
+  bossLaserEffect: {fileID: 1061391445118465773, guid: e3077d377dbf3ca4bb3536fc63d507af, type: 3}
+  laserClashEffect: {fileID: 6634704633313807402, guid: a7ad42b98d25e304996e15d997f42cc9, type: 3}
+  playerLaserSpawnPoint: {fileID: 0}
+  bossLaserSpawnPoint: {fileID: 0}
+  laserPrefabAxis: {x: 0, y: 1, z: 0}
+  stretchLasers: 1
+  playerLaserMultiplier: 0.04
+  bossLaserMultiplier: 0.04
+  playerLaserHideThreshold: 0.1
+  bossLaserHideThreshold: 0.8
+  laserDuelCameraTarget: {fileID: 0}
+  laserDuelClearCameraTarget: {fileID: 0}
+  cameraTransitionDuration: 1
+  feverEnableObjects:
+  - {fileID: 0}
+  - {fileID: 0}
+  feverDisableObjects:
+  - {fileID: 0}
+  minAttackInterval: 2
+  maxAttackInterval: 4
+  spawnMode: 1
+  chartAsset: {fileID: 11400000, guid: 01895c86a0c3fc84ab4d70bd17945c76, type: 2}
+  mainAudioSource: {fileID: 4344292345502965768}
+  myLaneIndex: 0
+  normalPrefab: {fileID: 1931298151966786, guid: 928a1377c1cd4515b208fef3a396b8ea, type: 3}
+  doublePrefab: {fileID: 1524411113276028, guid: e2aafa8770d34a9591b41bedf4e318ba, type: 3}
+  dashPrefab: {fileID: 2391359435489877134, guid: 75f057b43e0a449dae5f6549f5107474, type: 3}
+  chordConnectionEffect: {fileID: 6027111821579510331, guid: a109cdd071dfc4b4da63dfd7102b2d2c, type: 3}
+  inputEffects:
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+  hitEffectPerfect: {fileID: 8691277734526123147, guid: 4d5e6bdc64286234ca20c9c5e1f4b995, type: 3}
+  hitEffectGood: {fileID: 4529715978451822210, guid: 1a2e438dbe61ce5409dac7de711ea257, type: 3}
+--- !u!114 &2471400570231873222
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7381456697422392772}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e8ddfedde86713d439ee979e4cf520fd, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::RhythmConfig
+  LaneCount: 4
+  LaneSpacing: 2.8
+  YOffset: 0
+  SpawnLineZ: 20
+  JudgeLineZ: -6
+  PerfectThreshold: 0.05
+  GreatThreshold: 0.1
+  GoodThreshold: 0.15
+  MissThreshold: 0.2
+  GlobalSyncOffset: 0
+  BGMVolume: 1
+  SFXVolume: 1
+  PlayerNickname: Dodger
+--- !u!114 &805341972282752176
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7381456697422392772}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 62899f850307741f2a39c98a8b639597, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Unity.InputSystem::UnityEngine.InputSystem.PlayerInput
+  m_Actions: {fileID: -944628639613478452, guid: 5851fc80a98df764eb42faa3c23a54cf, type: 3}
+  m_NotificationBehavior: 2
+  m_UIInputModule: {fileID: 0}
+  m_DeviceLostEvent:
+    m_PersistentCalls:
+      m_Calls: []
+  m_DeviceRegainedEvent:
+    m_PersistentCalls:
+      m_Calls: []
+  m_ControlsChangedEvent:
+    m_PersistentCalls:
+      m_Calls: []
+  m_ActionEvents:
+  - m_PersistentCalls:
+      m_Calls:
+      - m_Target: {fileID: 706952156725129677}
+        m_TargetAssemblyTypeName: NewRhythmManager, Assembly-CSharp
+        m_MethodName: OnInputLane0
+        m_Mode: 0
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: 
+          m_BoolArgument: 0
+        m_CallState: 2
+    m_ActionId: ae2ecb58-296c-47c6-a1ab-009cf1db1c1f
+    m_ActionName: 'Keyboard/key 1[/Keyboard/d]'
+  - m_PersistentCalls:
+      m_Calls:
+      - m_Target: {fileID: 706952156725129677}
+        m_TargetAssemblyTypeName: NewRhythmManager, Assembly-CSharp
+        m_MethodName: OnInputLane1
+        m_Mode: 0
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: 
+          m_BoolArgument: 0
+        m_CallState: 2
+    m_ActionId: 9f9c5774-73a9-4c32-85c6-7cee1da78177
+    m_ActionName: 'Keyboard/key 2[/Keyboard/f]'
+  - m_PersistentCalls:
+      m_Calls:
+      - m_Target: {fileID: 706952156725129677}
+        m_TargetAssemblyTypeName: NewRhythmManager, Assembly-CSharp
+        m_MethodName: OnInputLane2
+        m_Mode: 0
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: 
+          m_BoolArgument: 0
+        m_CallState: 2
+    m_ActionId: d29946f9-6603-487a-8cc7-fad13fc0bc12
+    m_ActionName: 'Keyboard/key 3[/Keyboard/j]'
+  - m_PersistentCalls:
+      m_Calls:
+      - m_Target: {fileID: 706952156725129677}
+        m_TargetAssemblyTypeName: NewRhythmManager, Assembly-CSharp
+        m_MethodName: OnInputLane3
+        m_Mode: 0
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: 
+          m_BoolArgument: 0
+        m_CallState: 2
+    m_ActionId: 8a1dc921-5e74-4b44-a2cc-705cff5ad19a
+    m_ActionName: 'Keyboard/key 4[/Keyboard/k]'
+  m_NeverAutoSwitchControlSchemes: 0
+  m_DefaultControlScheme: PC
+  m_DefaultActionMap: Keyboard
+  m_SplitScreenIndex: -1
+  m_Camera: {fileID: 0}
+--- !u!114 &559256109947696680
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7381456697422392772}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 25a23c229cf44ee4b8eefdde469c61fe, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::BeatDodger.UI.SettingsManager
+  settingsPanel: {fileID: 0}
+  calibrationPanel: {fileID: 0}
+  transitionOverlay: {fileID: 0}
+  transitionDuration: 0.5
+  calibrationController: {fileID: 7609682848732934660}
+--- !u!114 &7609682848732934660
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7381456697422392772}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d3f49ab7e6eae01458b7bad1626b50e7, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::BeatDodger.UI.SyncCalibrationController
+  audioSource: {fileID: 4344292345502965768}
+  tickSound: {fileID: 8300000, guid: 2e1aa7742722b3c4eac741d7c336e52e, type: 3}
+  statusText: {fileID: 0}
+  ballPrefab: {fileID: 3793313656719786009, guid: 4d6ea5a7bf72c1d468edfebfd3241b2f, type: 3}
+  targetLine: {fileID: 0}
+  spawnPoint: {fileID: 0}
+  container: {fileID: 0}
+  bpm: 120
+  samplesNeeded: 12
+  travelDuration: 1
+  OnCalibrationComplete:
+    m_PersistentCalls:
+      m_Calls: []
+--- !u!82 &4344292345502965768
+AudioSource:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7381456697422392772}
+  m_Enabled: 1
+  serializedVersion: 4
+  OutputAudioMixerGroup: {fileID: 0}
+  m_audioClip: {fileID: 0}
+  m_Resource: {fileID: 0}
+  m_PlayOnAwake: 1
+  m_Volume: 1
+  m_Pitch: 1
+  Loop: 0
+  Mute: 0
+  Spatialize: 0
+  SpatializePostEffects: 0
+  Priority: 128
+  DopplerLevel: 1
+  MinDistance: 1
+  MaxDistance: 500
+  Pan2D: 0
+  rolloffMode: 0
+  BypassEffects: 0
+  BypassListenerEffects: 0
+  BypassReverbZones: 0
+  rolloffCustomCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 1
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0.33333334
+    - serializedVersion: 3
+      time: 1
+      value: 0
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0.33333334
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  panLevelCustomCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 0
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0.33333334
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  spreadCustomCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 0
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0.33333334
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  reverbZoneMixCustomCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 1
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0.33333334
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+--- !u!114 &3980148709060254488
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7381456697422392772}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9b91ecbcc199f4492b9a91e820070131, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Mirror::Mirror.NetworkIdentity
+  sceneId: 0
+  _assetId: 0
+  serverOnly: 0
+  visibility: 0
+  hasSpawned: 0

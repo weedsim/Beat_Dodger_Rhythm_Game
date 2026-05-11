@@ -892,6 +892,129 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 327269491}
   m_Mesh: {fileID: 10210, guid: 0000000000000000e000000000000000, type: 0}
+--- !u!1 &329865774
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 329865778}
+  - component: {fileID: 329865777}
+  - component: {fileID: 329865776}
+  - component: {fileID: 329865775}
+  m_Layer: 0
+  m_Name: ServerHost
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &329865775
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 329865774}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6b0fecffa3f624585964b0d0eb21b18e, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Mirror.Transports::kcp2k.KcpTransport
+  port: 7777
+  DualMode: 1
+  NoDelay: 1
+  Interval: 10
+  Timeout: 10000
+  RecvBufferSize: 7361536
+  SendBufferSize: 7361536
+  FastResend: 2
+  ReceiveWindowSize: 4096
+  SendWindowSize: 4096
+  MaxRetransmit: 40
+  MaximizeSocketBuffers: 1
+  ReliableMaxMessageSize: 297433
+  UnreliableMaxMessageSize: 1194
+  debugLog: 0
+  statisticsGUI: 0
+  statisticsLog: 0
+--- !u!114 &329865776
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 329865774}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6442dc8070ceb41f094e44de0bf87274, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Mirror::Mirror.NetworkManagerHUD
+  offsetX: 0
+  offsetY: 0
+--- !u!114 &329865777
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 329865774}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8aab4c8111b7c411b9b92cf3dbc5bd4e, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Mirror::Mirror.NetworkManager
+  dontDestroyOnLoad: 1
+  runInBackground: 1
+  headlessStartMode: 1
+  editorAutoStart: 0
+  sendRate: 60
+  offlineScene: 
+  onlineScene: Assets/1.Scene/3.Game.unity
+  offlineSceneLoadDelay: 0
+  transport: {fileID: 329865775}
+  networkAddress: 52.78.182.205
+  maxConnections: 100
+  disconnectInactiveConnections: 0
+  disconnectInactiveTimeout: 60
+  authenticator: {fileID: 0}
+  playerPrefab: {fileID: 7706577704150088299, guid: c9e63d4eadc4db448a65c0569e3c89b4, type: 3}
+  autoCreatePlayer: 1
+  playerSpawnMethod: 0
+  spawnPrefabs:
+  - {fileID: 0}
+  exceptionsDisconnect: 1
+  snapshotSettings:
+    bufferTimeMultiplier: 2
+    bufferLimit: 32
+    catchupNegativeThreshold: -1
+    catchupPositiveThreshold: 1
+    catchupSpeed: 0.019999999552965164
+    slowdownSpeed: 0.03999999910593033
+    driftEmaDuration: 1
+    dynamicAdjustment: 1
+    dynamicAdjustmentTolerance: 1
+    deliveryTimeEmaDuration: 2
+  evaluationMethod: 0
+  evaluationInterval: 3
+  timeInterpolationGui: 0
+--- !u!4 &329865778
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 329865774}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0.6703, y: 0.0102, z: 13.69756}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &364762252
 GameObject:
   m_ObjectHideFlags: 0
@@ -1004,11 +1127,6 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 364762252}
   m_Mesh: {fileID: 10210, guid: 0000000000000000e000000000000000, type: 0}
---- !u!95 &403254061 stripped
-Animator:
-  m_CorrespondingSourceObject: {fileID: 5866666021909216657, guid: 447800a4e4ccf72439c9362f149bb629, type: 3}
-  m_PrefabInstance: {fileID: 195322900}
-  m_PrefabAsset: {fileID: 0}
 --- !u!1 &439370010
 GameObject:
   m_ObjectHideFlags: 0
@@ -1582,396 +1700,6 @@ Transform:
   - {fileID: 495234306}
   m_Father: {fileID: 1595233194}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!1 &619845338
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 619845340}
-  - component: {fileID: 619845339}
-  - component: {fileID: 619845342}
-  - component: {fileID: 619845341}
-  - component: {fileID: 619845345}
-  - component: {fileID: 619845344}
-  - component: {fileID: 619845343}
-  - component: {fileID: 619845346}
-  m_Layer: 0
-  m_Name: RhythmManager
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!114 &619845339
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 619845338}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 6282ebc8de1907c4fac95cb17f2fe6aa, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::NewRhythmManager
-  syncDirection: 0
-  syncMode: 0
-  syncInterval: 0
-  isFeverTime: 0
-  exactStartTime: 0
-  isGameStart: 0
-  bpm: 120
-  beatsToArrive: 8
-  startDelay: 2
-  gaugePerHit: 100
-  gaugeLossOnMiss: 5
-  feverGaugeController: {fileID: 1596363137}
-  backgroundBossAnimator: {fileID: 95206232871476490}
-  playerAnimators:
-  - {fileID: 1703440413}
-  - {fileID: 2130835676}
-  - {fileID: 403254061}
-  - {fileID: 1684758700}
-  enterAnimDuration: 2
-  mashingDuration: 5
-  exitAnimDuration: 2
-  requiredMashCount: 10
-  feverBossExplosion: {fileID: 552793109724768, guid: 8e300af2a1e0c864d8f5f994673d1ac4, type: 3}
-  currentChart: {fileID: 0}
-  firstSuccessEffect: {fileID: 3957314820288950082, guid: 9700babc57d491748a4883f7deab0970, type: 3}
-  secondSuccessEffect: {fileID: 552793109724768, guid: 8e300af2a1e0c864d8f5f994673d1ac4, type: 3}
-  laserDuelRequiredMashCount: 80
-  laserDuelDuration: 8
-  bossPushSpeed: 5
-  playerLaserEffect: {fileID: 1061391445118465773, guid: 73a046238033f034f96b36756bda942c, type: 3}
-  bossLaserEffect: {fileID: 1061391445118465773, guid: e3077d377dbf3ca4bb3536fc63d507af, type: 3}
-  laserClashEffect: {fileID: 6634704633313807402, guid: a7ad42b98d25e304996e15d997f42cc9, type: 3}
-  playerLaserSpawnPoint: {fileID: 470367133}
-  bossLaserSpawnPoint: {fileID: 1644168001}
-  laserPrefabAxis: {x: 0, y: 1, z: 0}
-  stretchLasers: 1
-  playerLaserMultiplier: 0.04
-  bossLaserMultiplier: 0.04
-  playerLaserHideThreshold: 0.1
-  bossLaserHideThreshold: 0.8
-  laserDuelCameraTarget: {fileID: 710121905}
-  laserDuelClearCameraTarget: {fileID: 1578859991}
-  cameraTransitionDuration: 1
-  feverEnableObjects:
-  - {fileID: 6939839740051799590}
-  - {fileID: 6939839740701556147}
-  feverDisableObjects:
-  - {fileID: 4441442357919969179}
-  minAttackInterval: 2
-  maxAttackInterval: 4
-  spawnMode: 1
-  chartAsset: {fileID: 11400000, guid: 01895c86a0c3fc84ab4d70bd17945c76, type: 2}
-  mainAudioSource: {fileID: 619845343}
-  myLaneIndex: 0
-  normalPrefab: {fileID: 1931298151966786, guid: 928a1377c1cd4515b208fef3a396b8ea, type: 3}
-  doublePrefab: {fileID: 1524411113276028, guid: e2aafa8770d34a9591b41bedf4e318ba, type: 3}
-  dashPrefab: {fileID: 2391359435489877134, guid: 75f057b43e0a449dae5f6549f5107474, type: 3}
-  chordConnectionEffect: {fileID: 6027111821579510331, guid: a109cdd071dfc4b4da63dfd7102b2d2c, type: 3}
-  inputEffects:
-  - {fileID: 1976905468}
-  - {fileID: 2035947523}
-  - {fileID: 1777451767}
-  - {fileID: 1108060695}
-  hitEffectPerfect: {fileID: 8691277734526123147, guid: 4d5e6bdc64286234ca20c9c5e1f4b995, type: 3}
-  hitEffectGood: {fileID: 4529715978451822210, guid: 1a2e438dbe61ce5409dac7de711ea257, type: 3}
---- !u!4 &619845340
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 619845338}
-  serializedVersion: 2
-  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 0, y: -5, z: 20}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 686621237}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &619845341
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 619845338}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 62899f850307741f2a39c98a8b639597, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Unity.InputSystem::UnityEngine.InputSystem.PlayerInput
-  m_Actions: {fileID: -944628639613478452, guid: 5851fc80a98df764eb42faa3c23a54cf, type: 3}
-  m_NotificationBehavior: 2
-  m_UIInputModule: {fileID: 0}
-  m_DeviceLostEvent:
-    m_PersistentCalls:
-      m_Calls: []
-  m_DeviceRegainedEvent:
-    m_PersistentCalls:
-      m_Calls: []
-  m_ControlsChangedEvent:
-    m_PersistentCalls:
-      m_Calls: []
-  m_ActionEvents:
-  - m_PersistentCalls:
-      m_Calls:
-      - m_Target: {fileID: 619845339}
-        m_TargetAssemblyTypeName: NewRhythmManager, Assembly-CSharp
-        m_MethodName: OnInputLane0
-        m_Mode: 0
-        m_Arguments:
-          m_ObjectArgument: {fileID: 0}
-          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
-          m_IntArgument: 0
-          m_FloatArgument: 0
-          m_StringArgument: 
-          m_BoolArgument: 0
-        m_CallState: 2
-    m_ActionId: ae2ecb58-296c-47c6-a1ab-009cf1db1c1f
-    m_ActionName: 'Keyboard/key 1[/Keyboard/d]'
-  - m_PersistentCalls:
-      m_Calls:
-      - m_Target: {fileID: 619845339}
-        m_TargetAssemblyTypeName: NewRhythmManager, Assembly-CSharp
-        m_MethodName: OnInputLane1
-        m_Mode: 0
-        m_Arguments:
-          m_ObjectArgument: {fileID: 0}
-          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
-          m_IntArgument: 0
-          m_FloatArgument: 0
-          m_StringArgument: 
-          m_BoolArgument: 0
-        m_CallState: 2
-    m_ActionId: 9f9c5774-73a9-4c32-85c6-7cee1da78177
-    m_ActionName: 'Keyboard/key 2[/Keyboard/f]'
-  - m_PersistentCalls:
-      m_Calls:
-      - m_Target: {fileID: 619845339}
-        m_TargetAssemblyTypeName: NewRhythmManager, Assembly-CSharp
-        m_MethodName: OnInputLane2
-        m_Mode: 0
-        m_Arguments:
-          m_ObjectArgument: {fileID: 0}
-          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
-          m_IntArgument: 0
-          m_FloatArgument: 0
-          m_StringArgument: 
-          m_BoolArgument: 0
-        m_CallState: 2
-    m_ActionId: d29946f9-6603-487a-8cc7-fad13fc0bc12
-    m_ActionName: 'Keyboard/key 3[/Keyboard/j]'
-  - m_PersistentCalls:
-      m_Calls:
-      - m_Target: {fileID: 619845339}
-        m_TargetAssemblyTypeName: NewRhythmManager, Assembly-CSharp
-        m_MethodName: OnInputLane3
-        m_Mode: 0
-        m_Arguments:
-          m_ObjectArgument: {fileID: 0}
-          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
-          m_IntArgument: 0
-          m_FloatArgument: 0
-          m_StringArgument: 
-          m_BoolArgument: 0
-        m_CallState: 2
-    m_ActionId: 8a1dc921-5e74-4b44-a2cc-705cff5ad19a
-    m_ActionName: 'Keyboard/key 4[/Keyboard/k]'
-  m_NeverAutoSwitchControlSchemes: 0
-  m_DefaultControlScheme: PC
-  m_DefaultActionMap: Keyboard
-  m_SplitScreenIndex: -1
-  m_Camera: {fileID: 0}
---- !u!114 &619845342
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 619845338}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: e8ddfedde86713d439ee979e4cf520fd, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::RhythmConfig
-  LaneCount: 4
-  LaneSpacing: 2.8
-  YOffset: 0
-  SpawnLineZ: 20
-  JudgeLineZ: -6
-  PerfectThreshold: 0.05
-  GreatThreshold: 0.1
-  GoodThreshold: 0.15
-  MissThreshold: 0.2
-  GlobalSyncOffset: 0
-  BGMVolume: 1
-  SFXVolume: 1
-  PlayerNickname: Dodger
---- !u!82 &619845343
-AudioSource:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 619845338}
-  m_Enabled: 1
-  serializedVersion: 4
-  OutputAudioMixerGroup: {fileID: 0}
-  m_audioClip: {fileID: 0}
-  m_Resource: {fileID: 0}
-  m_PlayOnAwake: 1
-  m_Volume: 1
-  m_Pitch: 1
-  Loop: 0
-  Mute: 0
-  Spatialize: 0
-  SpatializePostEffects: 0
-  Priority: 128
-  DopplerLevel: 1
-  MinDistance: 1
-  MaxDistance: 500
-  Pan2D: 0
-  rolloffMode: 0
-  BypassEffects: 0
-  BypassListenerEffects: 0
-  BypassReverbZones: 0
-  rolloffCustomCurve:
-    serializedVersion: 2
-    m_Curve:
-    - serializedVersion: 3
-      time: 0
-      value: 1
-      inSlope: 0
-      outSlope: 0
-      tangentMode: 0
-      weightedMode: 0
-      inWeight: 0.33333334
-      outWeight: 0.33333334
-    - serializedVersion: 3
-      time: 1
-      value: 0
-      inSlope: 0
-      outSlope: 0
-      tangentMode: 0
-      weightedMode: 0
-      inWeight: 0.33333334
-      outWeight: 0.33333334
-    m_PreInfinity: 2
-    m_PostInfinity: 2
-    m_RotationOrder: 4
-  panLevelCustomCurve:
-    serializedVersion: 2
-    m_Curve:
-    - serializedVersion: 3
-      time: 0
-      value: 0
-      inSlope: 0
-      outSlope: 0
-      tangentMode: 0
-      weightedMode: 0
-      inWeight: 0.33333334
-      outWeight: 0.33333334
-    m_PreInfinity: 2
-    m_PostInfinity: 2
-    m_RotationOrder: 4
-  spreadCustomCurve:
-    serializedVersion: 2
-    m_Curve:
-    - serializedVersion: 3
-      time: 0
-      value: 0
-      inSlope: 0
-      outSlope: 0
-      tangentMode: 0
-      weightedMode: 0
-      inWeight: 0.33333334
-      outWeight: 0.33333334
-    m_PreInfinity: 2
-    m_PostInfinity: 2
-    m_RotationOrder: 4
-  reverbZoneMixCustomCurve:
-    serializedVersion: 2
-    m_Curve:
-    - serializedVersion: 3
-      time: 0
-      value: 1
-      inSlope: 0
-      outSlope: 0
-      tangentMode: 0
-      weightedMode: 0
-      inWeight: 0.33333334
-      outWeight: 0.33333334
-    m_PreInfinity: 2
-    m_PostInfinity: 2
-    m_RotationOrder: 4
---- !u!114 &619845344
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 619845338}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: d3f49ab7e6eae01458b7bad1626b50e7, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::BeatDodger.UI.SyncCalibrationController
-  audioSource: {fileID: 619845343}
-  tickSound: {fileID: 8300000, guid: 2e1aa7742722b3c4eac741d7c336e52e, type: 3}
-  statusText: {fileID: 1250224096251451052}
-  ballPrefab: {fileID: 3793313656719786009, guid: 4d6ea5a7bf72c1d468edfebfd3241b2f, type: 3}
-  targetLine: {fileID: 3468915477014157165}
-  spawnPoint: {fileID: 6445249478814568871}
-  container: {fileID: 1141589319672209297}
-  bpm: 120
-  samplesNeeded: 12
-  travelDuration: 1
-  OnCalibrationComplete:
-    m_PersistentCalls:
-      m_Calls: []
---- !u!114 &619845345
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 619845338}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 25a23c229cf44ee4b8eefdde469c61fe, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::BeatDodger.UI.SettingsManager
-  settingsPanel: {fileID: 1088859375}
-  calibrationPanel: {fileID: 2838788618776582777}
-  transitionOverlay: {fileID: 212869356}
-  transitionDuration: 0.5
-  calibrationController: {fileID: 619845344}
---- !u!114 &619845346
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 619845338}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 9b91ecbcc199f4492b9a91e820070131, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Mirror::Mirror.NetworkIdentity
-  sceneId: 2312679602
-  _assetId: 0
-  serverOnly: 0
-  visibility: 0
-  hasSpawned: 0
 --- !u!1 &641629381
 GameObject:
   m_ObjectHideFlags: 0
@@ -2047,8 +1775,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::RhythmFloorGenerator
   quadPrefab: {fileID: 907735941144221710, guid: a9c23638457fcb842aabfa9e6290db74, type: 3}
-  rhythmManager: {fileID: 619845339}
-  config: {fileID: 619845342}
+  rhythmManager: {fileID: 0}
+  config: {fileID: 0}
   judgeLineTransform: {fileID: 1961823640}
   totalRows: 9
   yOffsetStep: 0.001
@@ -2454,7 +2182,6 @@ Transform:
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
-  - {fileID: 619845340}
   - {fileID: 1987420504}
   - {fileID: 1707022806}
   - {fileID: 1182672398}
@@ -4307,7 +4034,7 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls:
-      - m_Target: {fileID: 619845345}
+      - m_Target: {fileID: 0}
         m_TargetAssemblyTypeName: BeatDodger.UI.SettingsManager, Assembly-CSharp
         m_MethodName: MoveToCalibration
         m_Mode: 1
@@ -6084,16 +5811,6 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1680011690}
   m_CullTransparentMesh: 1
---- !u!95 &1684758700 stripped
-Animator:
-  m_CorrespondingSourceObject: {fileID: 5866666021909216657, guid: 447800a4e4ccf72439c9362f149bb629, type: 3}
-  m_PrefabInstance: {fileID: 1359734402}
-  m_PrefabAsset: {fileID: 0}
---- !u!95 &1703440413 stripped
-Animator:
-  m_CorrespondingSourceObject: {fileID: 5866666021909216657, guid: 447800a4e4ccf72439c9362f149bb629, type: 3}
-  m_PrefabInstance: {fileID: 1222671418}
-  m_PrefabAsset: {fileID: 0}
 --- !u!1 &1707022804
 GameObject:
   m_ObjectHideFlags: 0
@@ -8065,11 +7782,6 @@ Transform:
   - {fileID: 928441916}
   m_Father: {fileID: 1595233194}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!95 &2130835676 stripped
-Animator:
-  m_CorrespondingSourceObject: {fileID: 5866666021909216657, guid: 447800a4e4ccf72439c9362f149bb629, type: 3}
-  m_PrefabInstance: {fileID: 2059453025}
-  m_PrefabAsset: {fileID: 0}
 --- !u!1 &1054984958998464
 GameObject:
   m_ObjectHideFlags: 0
@@ -8999,6 +8711,38 @@ MonoBehaviour:
           m_StringArgument: 
           m_BoolArgument: 0
         m_CallState: 2
+--- !u!4 &441710827817947831
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7381456696520228476}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 1.26144, y: 0.010200024, z: 8.185509}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &559256110757324176
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7381456696520228476}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 25a23c229cf44ee4b8eefdde469c61fe, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::BeatDodger.UI.SettingsManager
+  settingsPanel: {fileID: 0}
+  calibrationPanel: {fileID: 0}
+  transitionOverlay: {fileID: 0}
+  transitionDuration: 0.5
+  calibrationController: {fileID: 7609682848459907516}
 --- !u!222 &628244974780749741
 CanvasRenderer:
   m_ObjectHideFlags: 0
@@ -9026,6 +8770,174 @@ RectTransform:
   m_AnchoredPosition: {x: 0, y: 0}
   m_SizeDelta: {x: 600, y: 150}
   m_Pivot: {x: 0.5, y: 0.5}
+--- !u!114 &706952156359565941
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7381456696520228476}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6282ebc8de1907c4fac95cb17f2fe6aa, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::NewRhythmManager
+  exactStartTime: 0
+  isGameStart: 0
+  bpm: 120
+  beatsToArrive: 8
+  startDelay: 2
+  gaugePerHit: 100
+  gaugeLossOnMiss: 5
+  feverGaugeController: {fileID: 0}
+  backgroundBossAnimator: {fileID: 0}
+  playerAnimators:
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+  enterAnimDuration: 2
+  mashingDuration: 5
+  exitAnimDuration: 2
+  requiredMashCount: 10
+  feverBossExplosion: {fileID: 552793109724768, guid: 8e300af2a1e0c864d8f5f994673d1ac4, type: 3}
+  currentChart: {fileID: 11400000, guid: 01895c86a0c3fc84ab4d70bd17945c76, type: 2}
+  firstSuccessEffect: {fileID: 3957314820288950082, guid: 9700babc57d491748a4883f7deab0970, type: 3}
+  secondSuccessEffect: {fileID: 552793109724768, guid: 8e300af2a1e0c864d8f5f994673d1ac4, type: 3}
+  laserDuelRequiredMashCount: 80
+  laserDuelDuration: 8
+  bossPushSpeed: 5
+  playerLaserEffect: {fileID: 1061391445118465773, guid: 73a046238033f034f96b36756bda942c, type: 3}
+  bossLaserEffect: {fileID: 1061391445118465773, guid: e3077d377dbf3ca4bb3536fc63d507af, type: 3}
+  laserClashEffect: {fileID: 6634704633313807402, guid: a7ad42b98d25e304996e15d997f42cc9, type: 3}
+  playerLaserSpawnPoint: {fileID: 0}
+  bossLaserSpawnPoint: {fileID: 0}
+  laserPrefabAxis: {x: 0, y: 1, z: 0}
+  stretchLasers: 1
+  playerLaserMultiplier: 0.04
+  bossLaserMultiplier: 0.04
+  playerLaserHideThreshold: 0.1
+  bossLaserHideThreshold: 0.8
+  laserDuelCameraTarget: {fileID: 0}
+  laserDuelClearCameraTarget: {fileID: 0}
+  cameraTransitionDuration: 1
+  feverEnableObjects:
+  - {fileID: 0}
+  - {fileID: 0}
+  feverDisableObjects:
+  - {fileID: 0}
+  minAttackInterval: 2
+  maxAttackInterval: 4
+  spawnMode: 1
+  chartAsset: {fileID: 11400000, guid: 01895c86a0c3fc84ab4d70bd17945c76, type: 2}
+  mainAudioSource: {fileID: 4344292346237105072}
+  myLaneIndex: 0
+  normalPrefab: {fileID: 1931298151966786, guid: 928a1377c1cd4515b208fef3a396b8ea, type: 3}
+  doublePrefab: {fileID: 1524411113276028, guid: e2aafa8770d34a9591b41bedf4e318ba, type: 3}
+  dashPrefab: {fileID: 2391359435489877134, guid: 75f057b43e0a449dae5f6549f5107474, type: 3}
+  chordConnectionEffect: {fileID: 6027111821579510331, guid: a109cdd071dfc4b4da63dfd7102b2d2c, type: 3}
+  inputEffects:
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+  hitEffectPerfect: {fileID: 8691277734526123147, guid: 4d5e6bdc64286234ca20c9c5e1f4b995, type: 3}
+  hitEffectGood: {fileID: 4529715978451822210, guid: 1a2e438dbe61ce5409dac7de711ea257, type: 3}
+  isFeverTime: 0
+--- !u!114 &805341973068001032
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7381456696520228476}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 62899f850307741f2a39c98a8b639597, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Unity.InputSystem::UnityEngine.InputSystem.PlayerInput
+  m_Actions: {fileID: -944628639613478452, guid: 5851fc80a98df764eb42faa3c23a54cf, type: 3}
+  m_NotificationBehavior: 2
+  m_UIInputModule: {fileID: 0}
+  m_DeviceLostEvent:
+    m_PersistentCalls:
+      m_Calls: []
+  m_DeviceRegainedEvent:
+    m_PersistentCalls:
+      m_Calls: []
+  m_ControlsChangedEvent:
+    m_PersistentCalls:
+      m_Calls: []
+  m_ActionEvents:
+  - m_PersistentCalls:
+      m_Calls:
+      - m_Target: {fileID: 706952156359565941}
+        m_TargetAssemblyTypeName: NewRhythmManager, Assembly-CSharp
+        m_MethodName: OnInputLane0
+        m_Mode: 0
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: 
+          m_BoolArgument: 0
+        m_CallState: 2
+    m_ActionId: ae2ecb58-296c-47c6-a1ab-009cf1db1c1f
+    m_ActionName: 'Keyboard/key 1[/Keyboard/d]'
+  - m_PersistentCalls:
+      m_Calls:
+      - m_Target: {fileID: 706952156359565941}
+        m_TargetAssemblyTypeName: NewRhythmManager, Assembly-CSharp
+        m_MethodName: OnInputLane1
+        m_Mode: 0
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: 
+          m_BoolArgument: 0
+        m_CallState: 2
+    m_ActionId: 9f9c5774-73a9-4c32-85c6-7cee1da78177
+    m_ActionName: 'Keyboard/key 2[/Keyboard/f]'
+  - m_PersistentCalls:
+      m_Calls:
+      - m_Target: {fileID: 706952156359565941}
+        m_TargetAssemblyTypeName: NewRhythmManager, Assembly-CSharp
+        m_MethodName: OnInputLane2
+        m_Mode: 0
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: 
+          m_BoolArgument: 0
+        m_CallState: 2
+    m_ActionId: d29946f9-6603-487a-8cc7-fad13fc0bc12
+    m_ActionName: 'Keyboard/key 3[/Keyboard/j]'
+  - m_PersistentCalls:
+      m_Calls:
+      - m_Target: {fileID: 706952156359565941}
+        m_TargetAssemblyTypeName: NewRhythmManager, Assembly-CSharp
+        m_MethodName: OnInputLane3
+        m_Mode: 0
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: 
+          m_BoolArgument: 0
+        m_CallState: 2
+    m_ActionId: 8a1dc921-5e74-4b44-a2cc-705cff5ad19a
+    m_ActionName: 'Keyboard/key 4[/Keyboard/k]'
+  m_NeverAutoSwitchControlSchemes: 0
+  m_DefaultControlScheme: PC
+  m_DefaultActionMap: Keyboard
+  m_SplitScreenIndex: -1
+  m_Camera: {fileID: 0}
 --- !u!222 &831210998169065973
 CanvasRenderer:
   m_ObjectHideFlags: 0
@@ -43791,6 +43703,31 @@ MonoBehaviour:
   m_hasFontAssetChanged: 0
   m_baseMaterial: {fileID: 0}
   m_maskOffset: {x: 0, y: 0, z: 0, w: 0}
+--- !u!114 &2471400569345953150
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7381456696520228476}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e8ddfedde86713d439ee979e4cf520fd, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::RhythmConfig
+  LaneCount: 4
+  LaneSpacing: 2.8
+  YOffset: 0
+  SpawnLineZ: 20
+  JudgeLineZ: -6
+  PerfectThreshold: 0.05
+  GreatThreshold: 0.1
+  GoodThreshold: 0.15
+  MissThreshold: 0.2
+  GlobalSyncOffset: 0
+  BGMVolume: 1
+  SFXVolume: 1
+  PlayerNickname: Dodger
 --- !u!1 &2838788618776582777
 GameObject:
   m_ObjectHideFlags: 0
@@ -48808,6 +48745,103 @@ GameObject:
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
+--- !u!82 &4344292346237105072
+AudioSource:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7381456696520228476}
+  m_Enabled: 1
+  serializedVersion: 4
+  OutputAudioMixerGroup: {fileID: 0}
+  m_audioClip: {fileID: 0}
+  m_Resource: {fileID: 0}
+  m_PlayOnAwake: 1
+  m_Volume: 1
+  m_Pitch: 1
+  Loop: 0
+  Mute: 0
+  Spatialize: 0
+  SpatializePostEffects: 0
+  Priority: 128
+  DopplerLevel: 1
+  MinDistance: 1
+  MaxDistance: 500
+  Pan2D: 0
+  rolloffMode: 0
+  BypassEffects: 0
+  BypassListenerEffects: 0
+  BypassReverbZones: 0
+  rolloffCustomCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 1
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0.33333334
+    - serializedVersion: 3
+      time: 1
+      value: 0
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0.33333334
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  panLevelCustomCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 0
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0.33333334
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  spreadCustomCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 0
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0.33333334
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  reverbZoneMixCustomCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 1
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0.33333334
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
 --- !u!114 &4422678687757602011
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -141942,6 +141976,28 @@ GameObject:
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
+--- !u!1 &7381456696520228476
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 441710827817947831}
+  - component: {fileID: 706952156359565941}
+  - component: {fileID: 2471400569345953150}
+  - component: {fileID: 805341973068001032}
+  - component: {fileID: 559256110757324176}
+  - component: {fileID: 7609682848459907516}
+  - component: {fileID: 4344292346237105072}
+  m_Layer: 0
+  m_Name: RhythmManager
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
 --- !u!1 &7598289412416845570
 GameObject:
   m_ObjectHideFlags: 0
@@ -161658,6 +161714,31 @@ ParticleSystemRenderer:
   m_MeshWeighting2: 1
   m_MeshWeighting3: 1
   m_MaskInteraction: 0
+--- !u!114 &7609682848459907516
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7381456696520228476}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d3f49ab7e6eae01458b7bad1626b50e7, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::BeatDodger.UI.SyncCalibrationController
+  audioSource: {fileID: 4344292346237105072}
+  tickSound: {fileID: 8300000, guid: 2e1aa7742722b3c4eac741d7c336e52e, type: 3}
+  statusText: {fileID: 0}
+  ballPrefab: {fileID: 3793313656719786009, guid: 4d6ea5a7bf72c1d468edfebfd3241b2f, type: 3}
+  targetLine: {fileID: 0}
+  spawnPoint: {fileID: 0}
+  container: {fileID: 0}
+  bpm: 120
+  samplesNeeded: 12
+  travelDuration: 1
+  OnCalibrationComplete:
+    m_PersistentCalls:
+      m_Calls: []
 --- !u!222 &7622802135520260948
 CanvasRenderer:
   m_ObjectHideFlags: 0
@@ -161763,6 +161844,7 @@ CanvasRenderer:
 SceneRoots:
   m_ObjectHideFlags: 0
   m_Roots:
+  - {fileID: 441710827817947831}
   - {fileID: 686621237}
   - {fileID: 1961823640}
   - {fileID: 641629383}
@@ -161772,3 +161854,4 @@ SceneRoots:
   - {fileID: 6939839740701556144}
   - {fileID: 1644168001}
   - {fileID: 470367133}
+  - {fileID: 329865778}

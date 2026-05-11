@@ -5,8 +5,11 @@ EditorBuildSettings:
   m_ObjectHideFlags: 0
   serializedVersion: 2
   m_Scenes:
-  - enabled: 1
+  - enabled: 0
     path: Assets/1.Scene/3.Game_Hojae.unity
     guid: 17a50fbb3e793dd4692844704988bdbd
+  - enabled: 1
+    path: Assets/1.Scene/3.Game.unity
+    guid: f5a8b2f1574e7d040bd6e9325b5fc080
   m_configObjects: {}
   m_UseUCBPForAssetBundles: 0
