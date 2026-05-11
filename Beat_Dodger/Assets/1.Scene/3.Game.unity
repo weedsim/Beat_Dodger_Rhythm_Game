@@ -8802,6 +8802,7 @@ MonoBehaviour:
   requiredMashCount: 10
   feverBossExplosion: {fileID: 552793109724768, guid: 8e300af2a1e0c864d8f5f994673d1ac4, type: 3}
   currentChart: {fileID: 11400000, guid: 01895c86a0c3fc84ab4d70bd17945c76, type: 2}
+  currentNoteIndex: 0
   firstSuccessEffect: {fileID: 3957314820288950082, guid: 9700babc57d491748a4883f7deab0970, type: 3}
   secondSuccessEffect: {fileID: 552793109724768, guid: 8e300af2a1e0c864d8f5f994673d1ac4, type: 3}
   laserDuelRequiredMashCount: 80
@@ -8837,10 +8838,10 @@ MonoBehaviour:
   dashPrefab: {fileID: 2391359435489877134, guid: 75f057b43e0a449dae5f6549f5107474, type: 3}
   chordConnectionEffect: {fileID: 6027111821579510331, guid: a109cdd071dfc4b4da63dfd7102b2d2c, type: 3}
   inputEffects:
-  - {fileID: 0}
-  - {fileID: 0}
-  - {fileID: 0}
-  - {fileID: 0}
+  - {fileID: 1976905468}
+  - {fileID: 2035947523}
+  - {fileID: 1777451767}
+  - {fileID: 1108060695}
   hitEffectPerfect: {fileID: 8691277734526123147, guid: 4d5e6bdc64286234ca20c9c5e1f4b995, type: 3}
   hitEffectGood: {fileID: 4529715978451822210, guid: 1a2e438dbe61ce5409dac7de711ea257, type: 3}
   isFeverTime: 0

@@ -52,18 +52,22 @@ public class RhythmPlayer : NetworkBehaviour
         if (NewRhythmManager.Instance != null &&
             !NewRhythmManager.Instance.isGameStart)
         {
-            double startTime = AudioSettings.dspTime + 3.0;
-            RpcStartGame(startTime);
+            RpcStartGame(); // 시간 안 보냄
         }
     }
 
+
     [ClientRpc]
-    private void RpcStartGame(double startTime)
+    private void RpcStartGame()
     {
         if (NewRhythmManager.Instance != null)
         {
             NewRhythmManager.Instance.isGameStart = true;
-            NewRhythmManager.Instance.exactStartTime = startTime;
+            // 각자 받는 순간 기준으로 5초 뒤
+            NewRhythmManager.Instance.exactStartTime = AudioSettings.dspTime + 5.0;
+            NewRhythmManager.Instance.currentNoteIndex = 0;
+
+            Debug.Log($"exactStartTime: {NewRhythmManager.Instance.exactStartTime}, dspTime: {AudioSettings.dspTime}");
         }
     }
     [Command]

@@ -48,6 +48,7 @@ public class NoteEnemy : MonoBehaviour
 
     public void Initialize(IObjectPool<NoteEnemy> enemyPool, int startLane, int span, double hitTime, float duration, int beats, NoteType noteType = NoteType.Normal)
     {
+        if (this == null || gameObject == null) return;
         pool = enemyPool;
         this.startLane = startLane;
         this.laneSpan = span;
@@ -130,6 +131,7 @@ public class NoteEnemy : MonoBehaviour
 
     private void UpdatePosition(float progress)
     {
+        if (cachedTransform == null) return;
         float finalProgress = 0f;
 
         if (type == NoteType.Dash)

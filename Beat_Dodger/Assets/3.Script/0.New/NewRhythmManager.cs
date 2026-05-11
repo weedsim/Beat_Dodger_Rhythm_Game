@@ -37,7 +37,7 @@ public class NewRhythmManager : MonoBehaviour
 
     [Header("Chart Settings")]
     [SerializeField] private RhythmChart currentChart; // 채보 파일
-    private int currentNoteIndex = 0; // 현재 읽고 있는 노트 번호
+    public int currentNoteIndex = 0; // 현재 읽고 있는 노트 번호
 
     [Header("Fever Success Effects")]
     [SerializeField] private GameObject firstSuccessEffect;
@@ -273,15 +273,21 @@ public class NewRhythmManager : MonoBehaviour
             },
             actionOnGet: (note) =>
             {
+                if (note == null || note.gameObject == null) return;
                 note.gameObject.SetActive(true);
                 activeNotes.Add(note);
             },
             actionOnRelease: (note) =>
             {
+                if (note == null || note.gameObject == null) return;
                 note.gameObject.SetActive(false);
                 activeNotes.Remove(note);
             },
-            actionOnDestroy: (note) => Destroy(note.gameObject),
+            actionOnDestroy: (note) =>
+            {
+                if (note == null || note.gameObject == null) return;
+                Destroy(note.gameObject);
+            },
             collectionCheck: false,
             defaultCapacity: 10,
             maxSize: 30
@@ -323,13 +329,11 @@ public class NewRhythmManager : MonoBehaviour
     {
         if (!isGameStart || currentChart == null) return;
 
-        // 2. [데드레커닝] 서버 시각에 맞춰 각자 로컬에서 노트 생성
+        // 멀티용 노트 생성
         if (currentNoteIndex < currentChart.notes.Count)
         {
             NoteData nextNote = currentChart.notes[currentNoteIndex];
             double targetHitTime = exactStartTime + nextNote.time;
-
-            // 노트가 화면에 나타나야 할 타이밍 계산
             if (AudioSettings.dspTime >= targetHitTime - noteDuration)
             {
                 SpawnIndividualNote(nextNote.lane, nextNote.span, targetHitTime, nextNote.type);
@@ -338,13 +342,9 @@ public class NewRhythmManager : MonoBehaviour
         }
 
         if (Time.timeScale == 0) return;
-
         double currentTime = AudioSettings.dspTime;
 
-        if (IsFeverTime)
-        {
-            // Mashing 단계에서 남은 시간을 UI에 표시하거나 연출을 업데이트하는 로직이 필요하다면 여기에 추가
-        }
+        if (IsFeverTime) { }
         else if (spawnMode == SpawnMode.Random && !isWaitingToResume && !isGameCleared)
         {
             if (currentTime >= nextBeatTime)
@@ -354,12 +354,7 @@ public class NewRhythmManager : MonoBehaviour
                 OnBeat?.Invoke();
             }
         }
-        else if (spawnMode == SpawnMode.Chart && isSongPlaying && !isGameCleared)
-        {
-            // Use mainAudioSource.time for perfect sync with audio
-            double relativeTime = mainAudioSource != null ? mainAudioSource.time : AudioSettings.dspTime - songStartTime;
-            if (!isWaitingToResume) HandleChartUpdate(relativeTime);
-        }
+        // ← Chart 부분 통째로 삭제!
 
         HandleSyncAdjustment();
     }
@@ -1053,6 +1048,8 @@ public class NewRhythmManager : MonoBehaviour
 
     public void TriggerLaneInput(int laneIndex)
     {
+        if (inputEffects != null && laneIndex < inputEffects.Length)
+            inputEffects[laneIndex]?.PlayEffect();
         ExecuteInput(laneIndex);
     }
 
