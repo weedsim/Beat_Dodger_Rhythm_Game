@@ -8726,23 +8726,6 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &559256110757324176
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 7381456696520228476}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 25a23c229cf44ee4b8eefdde469c61fe, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::BeatDodger.UI.SettingsManager
-  settingsPanel: {fileID: 0}
-  calibrationPanel: {fileID: 0}
-  transitionOverlay: {fileID: 0}
-  transitionDuration: 0.5
-  calibrationController: {fileID: 7609682848459907516}
 --- !u!222 &628244974780749741
 CanvasRenderer:
   m_ObjectHideFlags: 0
@@ -8787,10 +8770,10 @@ MonoBehaviour:
   bpm: 120
   beatsToArrive: 8
   startDelay: 2
-  gaugePerHit: 100
+  gaugePerHit: 10
   gaugeLossOnMiss: 5
-  feverGaugeController: {fileID: 0}
-  backgroundBossAnimator: {fileID: 0}
+  feverGaugeController: {fileID: 1596363137}
+  backgroundBossAnimator: {fileID: 95206232871476490}
   playerAnimators:
   - {fileID: 0}
   - {fileID: 0}
@@ -8811,16 +8794,16 @@ MonoBehaviour:
   playerLaserEffect: {fileID: 1061391445118465773, guid: 73a046238033f034f96b36756bda942c, type: 3}
   bossLaserEffect: {fileID: 1061391445118465773, guid: e3077d377dbf3ca4bb3536fc63d507af, type: 3}
   laserClashEffect: {fileID: 6634704633313807402, guid: a7ad42b98d25e304996e15d997f42cc9, type: 3}
-  playerLaserSpawnPoint: {fileID: 0}
-  bossLaserSpawnPoint: {fileID: 0}
+  playerLaserSpawnPoint: {fileID: 470367133}
+  bossLaserSpawnPoint: {fileID: 1644168001}
   laserPrefabAxis: {x: 0, y: 1, z: 0}
   stretchLasers: 1
   playerLaserMultiplier: 0.04
   bossLaserMultiplier: 0.04
   playerLaserHideThreshold: 0.1
   bossLaserHideThreshold: 0.8
-  laserDuelCameraTarget: {fileID: 0}
-  laserDuelClearCameraTarget: {fileID: 0}
+  laserDuelCameraTarget: {fileID: 710121905}
+  laserDuelClearCameraTarget: {fileID: 1578859991}
   cameraTransitionDuration: 1
   feverEnableObjects:
   - {fileID: 0}
@@ -141989,8 +141972,6 @@ GameObject:
   - component: {fileID: 706952156359565941}
   - component: {fileID: 2471400569345953150}
   - component: {fileID: 805341973068001032}
-  - component: {fileID: 559256110757324176}
-  - component: {fileID: 7609682848459907516}
   - component: {fileID: 4344292346237105072}
   m_Layer: 0
   m_Name: RhythmManager
@@ -161715,31 +161696,6 @@ ParticleSystemRenderer:
   m_MeshWeighting2: 1
   m_MeshWeighting3: 1
   m_MaskInteraction: 0
---- !u!114 &7609682848459907516
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 7381456696520228476}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: d3f49ab7e6eae01458b7bad1626b50e7, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::BeatDodger.UI.SyncCalibrationController
-  audioSource: {fileID: 4344292346237105072}
-  tickSound: {fileID: 8300000, guid: 2e1aa7742722b3c4eac741d7c336e52e, type: 3}
-  statusText: {fileID: 0}
-  ballPrefab: {fileID: 3793313656719786009, guid: 4d6ea5a7bf72c1d468edfebfd3241b2f, type: 3}
-  targetLine: {fileID: 0}
-  spawnPoint: {fileID: 0}
-  container: {fileID: 0}
-  bpm: 120
-  samplesNeeded: 12
-  travelDuration: 1
-  OnCalibrationComplete:
-    m_PersistentCalls:
-      m_Calls: []
 --- !u!222 &7622802135520260948
 CanvasRenderer:
   m_ObjectHideFlags: 0
