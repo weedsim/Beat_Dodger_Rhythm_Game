@@ -190,7 +190,7 @@ public class NewRhythmManager : MonoBehaviour
 
     public void StartSong()
     {
-        songStartTime = AudioSettings.dspTime + startDelay;
+        songStartTime = exactStartTime;
         nextNoteIndex = 0;
         isSongPlaying = true;
 

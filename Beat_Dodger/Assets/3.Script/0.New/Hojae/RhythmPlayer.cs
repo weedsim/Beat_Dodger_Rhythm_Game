@@ -67,6 +67,7 @@ public class RhythmPlayer : NetworkBehaviour
             NewRhythmManager.Instance.exactStartTime = AudioSettings.dspTime + 5.0;
             NewRhythmManager.Instance.currentNoteIndex = 0;
 
+            NewRhythmManager.Instance.StartSong();
             Debug.Log($"exactStartTime: {NewRhythmManager.Instance.exactStartTime}, dspTime: {AudioSettings.dspTime}");
         }
     }
@@ -84,8 +85,7 @@ public class RhythmPlayer : NetworkBehaviour
             .Find(n => n.myNoteId == noteId);
         if (targetNote != null)
         {
-            targetNote.ReleaseToPool();
-            NewRhythmManager.Instance.activeNotes.Remove(targetNote);
+            targetNote.OnHit();
         }
     }
 }
