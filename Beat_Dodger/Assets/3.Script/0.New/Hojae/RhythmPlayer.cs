@@ -3,6 +3,8 @@ using Mirror;
 
 public class RhythmPlayer : NetworkBehaviour
 {
+    public static RhythmPlayer LocalInstance { get; private set; }
+
     [SyncVar] public int myLaneIndex = -1;
     private static int nextLaneToAssign = 0;
 
@@ -15,6 +17,8 @@ public class RhythmPlayer : NetworkBehaviour
 
     public override void OnStartLocalPlayer()
     {
+        LocalInstance = this;
+
         // 내 레인 번호를 RhythmManager에 알려주기
         if (NewRhythmManager.Instance != null)
             NewRhythmManager.Instance.myLaneIndex = myLaneIndex;
@@ -81,11 +85,15 @@ public class RhythmPlayer : NetworkBehaviour
     private void RpcNotifyHitNote(int noteId)
     {
         if (NewRhythmManager.Instance == null) return;
-        NoteEnemy targetNote = NewRhythmManager.Instance.activeNotes
-            .Find(n => n.myNoteId == noteId);
-        if (targetNote != null)
+        
+        var activeNotes = NewRhythmManager.Instance.activeNotes;
+        for (int i = 0; i < activeNotes.Count; i++)
         {
-            targetNote.OnHit();
+            if (activeNotes[i].myNoteId == noteId)
+            {
+                activeNotes[i].OnHit();
+                break;
+            }
         }
     }
 }

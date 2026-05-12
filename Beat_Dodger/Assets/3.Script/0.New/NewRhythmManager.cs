@@ -125,7 +125,6 @@ public class NewRhythmManager : MonoBehaviour
     private IObjectPool<GameObject> poolPerfect;
     private IObjectPool<GameObject> poolGood;
     public readonly List<NoteEnemy> activeNotes = new List<NoteEnemy>();
-    public bool isFeverTime = false;
 
     // State Management
     private int currentCombo;
@@ -329,15 +328,35 @@ public class NewRhythmManager : MonoBehaviour
     {
         if (!isGameStart || currentChart == null) return;
 
-        // 멀티용 노트 생성
-        if (currentNoteIndex < currentChart.notes.Count)
+        // 피버 모드이거나 피버 종료 후 대기 중일 때는 노트 스폰 일시정지 (ResumeChartAfterFever에서 스킵 처리됨)
+        if (!IsFeverTime && !isWaitingToResume)
         {
-            NoteData nextNote = currentChart.notes[currentNoteIndex];
-            double targetHitTime = exactStartTime + nextNote.time;
-            if (AudioSettings.dspTime >= targetHitTime - noteDuration)
+            double lastSpawnTime = -1;
+            int lastSpawnLane = -1;
+
+            // 멀티용 노트 생성 (동시 타격 노트들을 같은 프레임에 생성하기 위해 while문 사용)
+            while (currentNoteIndex < currentChart.notes.Count)
             {
-                SpawnIndividualNote(nextNote.lane, nextNote.span, targetHitTime, nextNote.type);
-                currentNoteIndex++;
+                NoteData nextNote = currentChart.notes[currentNoteIndex];
+                double targetHitTime = exactStartTime + nextNote.time;
+                if (AudioSettings.dspTime >= targetHitTime - noteDuration)
+                {
+                    // 중복 노트 스폰 방지 (물리 엔진 폭발 방지)
+                    if (Mathf.Abs((float)(nextNote.time - lastSpawnTime)) < 0.01f && nextNote.lane == lastSpawnLane)
+                    {
+                        currentNoteIndex++;
+                        continue;
+                    }
+
+                    SpawnIndividualNote(nextNote.lane, nextNote.span, targetHitTime, nextNote.type, currentNoteIndex);
+                    lastSpawnTime = nextNote.time;
+                    lastSpawnLane = nextNote.lane;
+                    currentNoteIndex++;
+                }
+                else
+                {
+                    break;
+                }
             }
         }
 
@@ -725,15 +744,16 @@ public class NewRhythmManager : MonoBehaviour
         float secPerBeat = 60f / bpm;
         float fourBeatsTime = 4.0f * secPerBeat;
 
-        if (spawnMode == SpawnMode.Chart && loadedChart != null)
+        if (spawnMode == SpawnMode.Chart && currentChart != null)
         {
-            // 인스펙터의 Beats To Arrive(예: 8)와 무관하게, 항상 정확히 '4박자' 위치(4번째 타일)에서 생성되도록 4박자 분량만 스킵합니다.
-            double relativeTime = mainAudioSource != null ? mainAudioSource.time : currentTime - songStartTime;
+            // 피버 모드 직후 플레이어에게 반응 시간을 주기 위해
+            // 화면에 꽉 차게 스폰되는(너무 가까운) 노트를 스킵하고, 4박자 이후의 노트부터 생성합니다.
+            double relativeTime = currentTime - exactStartTime;
             double skipThresholdTime = relativeTime + fourBeatsTime;
 
-            while (nextNoteIndex < loadedChart.notes.Count && loadedChart.notes[nextNoteIndex].time < skipThresholdTime)
+            while (currentNoteIndex < currentChart.notes.Count && currentChart.notes[currentNoteIndex].time < skipThresholdTime)
             {
-                nextNoteIndex++;
+                currentNoteIndex++;
             }
         }
         else if (spawnMode == SpawnMode.Random)
@@ -755,27 +775,35 @@ public class NewRhythmManager : MonoBehaviour
         else SpawnIndividualNote(UnityEngine.Random.Range(0, RhythmConfig.Instance.LaneCount), 1, nextBeatTime + noteDuration, NoteType.Normal); // Normal (50%)
     }
 
-    // Common logic for spawning individual or giant notes
-    private void SpawnIndividualNote(int startLane, int span, double hitTime, NoteType type)
+    private void SpawnIndividualNote(int startLane, int span, double hitTime, NoteType type, int chartNoteIndex = -1)
     {
+        int totalLanes = RhythmConfig.Instance.LaneCount;
+
+        startLane = Mathf.Clamp(startLane, 0, totalLanes - 1);
+
+        // 트랙 바깥으로 노트가 나가지 않도록 span 제한
+        if (startLane + span > totalLanes)
+        {
+            span = totalLanes - startLane;
+        }
+
         if (span <= 1)
         {
-            SpawnAndReturnIndividualNote(startLane, span, hitTime, type);
+            SpawnAndReturnIndividualNote(startLane, span, hitTime, type, chartNoteIndex);
             return;
         }
 
-        int totalLanes = RhythmConfig.Instance.LaneCount;
-        NoteEnemy firstNote = null;
+        NoteEnemy[] spawnedNotes = new NoteEnemy[span];
 
         // 하나의 커다란 노트 대신, 스케일이 1인 개별 노트를 span 개수만큼 생성
         for (int i = 0; i < span; i++)
         {
-            NoteEnemy note = SpawnAndReturnIndividualNote(startLane + i, 1, hitTime, type);
-            if (i == 0) firstNote = note;
+            int uniqueId = chartNoteIndex != -1 ? (chartNoteIndex * 10) + i : -1;
+            spawnedNotes[i] = SpawnAndReturnIndividualNote(startLane + i, 1, hitTime, type, uniqueId);
         }
 
         // 같이치기 노트들 사이에 이펙트를 첫 번째 노트의 자식으로 추가
-        if (chordConnectionEffect != null && firstNote != null)
+        if (chordConnectionEffect != null && spawnedNotes[0] != null)
         {
             float startX = (startLane - (totalLanes / 2f - 0.5f)) * RhythmConfig.Instance.LaneSpacing;
             float endX = (startLane + span - 1 - (totalLanes / 2f - 0.5f)) * RhythmConfig.Instance.LaneSpacing;
@@ -784,11 +812,17 @@ public class NewRhythmManager : MonoBehaviour
             // 부모(노트)의 회전(Y=180 등)에 의해 좌우가 반전되는 것을 막기 위해 월드 좌표 오프셋으로 전달
             Vector3 worldOffset = new Vector3(centerX - startX, 0, 0);
 
-            firstNote.AddConnectionEffect(chordConnectionEffect, worldOffset, span);
+            GameObject effect = spawnedNotes[0].AddConnectionEffect(chordConnectionEffect, worldOffset, span);
+
+            // 같이 치는 모든 노트가 연결 이펙트를 공유하도록 설정 (하나라도 맞으면 선이 끊어지도록)
+            foreach (var note in spawnedNotes)
+            {
+                if (note != null) note.SetSharedConnectionEffect(effect);
+            }
         }
     }
 
-    private NoteEnemy SpawnAndReturnIndividualNote(int startLane, int span, double hitTime, NoteType type)
+    private NoteEnemy SpawnAndReturnIndividualNote(int startLane, int span, double hitTime, NoteType type, int uniqueId = -1)
     {
         NoteEnemy enemy = null;
 
@@ -808,8 +842,8 @@ public class NewRhythmManager : MonoBehaviour
 
         if (enemy != null)
         {
-            enemy.myNoteId = _globalNoteId++; // 1. 모든 클라이언트가 동일한 순서로 ID 부여
-            activeNotes.Add(enemy);           // 2. 관리 리스트에 추가 (나중에 서버가 지우라고 할 때 찾기 위함)
+            enemy.myNoteId = uniqueId != -1 ? uniqueId : _globalNoteId++; // 결정론적 ID 부여 (네트워크 동기화)
+            // activeNotes.Add(enemy)는 ObjectPool의 actionOnGet에서 이미 호출되므로 중복 호출하지 않음
         }
         return enemy;
     }
@@ -856,7 +890,7 @@ public class NewRhythmManager : MonoBehaviour
 
     private void ProcessHitInput(int laneIndex)
     {
-        if (isFeverTime) // 변수명 대소문자 확인 (isFeverTime)
+        if (IsFeverTime)
         {
             HandleFeverAttack(laneIndex);
             return;
@@ -894,12 +928,11 @@ public class NewRhythmManager : MonoBehaviour
             ApplyHitResult(result, laneIndex, closestNote);
             closestNote.OnHit();
 
-            // 서버에 타격 보고 (멀티플레이 핵심)
-            RhythmPlayer localPlayer = NetworkClient.localPlayer?.GetComponent<RhythmPlayer>();
-            if (localPlayer != null)
-                localPlayer.CmdHitNote(laneIndex, closestNote.myNoteId);
-            // 로컬 추가 처리 (만약 HandleLocalHit 함수가 없다면 이 줄은 지우셔도 됩니다)
-            // HandleLocalHit(closestNote); 
+            // 서버에 타격 보고 (멀티플레이 핵심) - 내 레인의 입력일 때만 전송하여 중복 패킷 방지
+            if (laneIndex == myLaneIndex && RhythmPlayer.LocalInstance != null)
+            {
+                RhythmPlayer.LocalInstance.CmdHitNote(laneIndex, closestNote.myNoteId);
+            }
         }
     }
 

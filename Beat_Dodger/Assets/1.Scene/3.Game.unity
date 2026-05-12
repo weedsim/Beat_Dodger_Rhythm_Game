@@ -2198,6 +2198,11 @@ Transform:
   m_CorrespondingSourceObject: {fileID: -8679921383154817045, guid: 447800a4e4ccf72439c9362f149bb629, type: 3}
   m_PrefabInstance: {fileID: 1222671418}
   m_PrefabAsset: {fileID: 0}
+--- !u!95 &697905613 stripped
+Animator:
+  m_CorrespondingSourceObject: {fileID: 5866666021909216657, guid: 447800a4e4ccf72439c9362f149bb629, type: 3}
+  m_PrefabInstance: {fileID: 1222671418}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1 &710121904
 GameObject:
   m_ObjectHideFlags: 0
@@ -5164,6 +5169,11 @@ Transform:
   m_CorrespondingSourceObject: {fileID: -8679921383154817045, guid: 447800a4e4ccf72439c9362f149bb629, type: 3}
   m_PrefabInstance: {fileID: 1359734402}
   m_PrefabAsset: {fileID: 0}
+--- !u!95 &1560631080 stripped
+Animator:
+  m_CorrespondingSourceObject: {fileID: 5866666021909216657, guid: 447800a4e4ccf72439c9362f149bb629, type: 3}
+  m_PrefabInstance: {fileID: 1359734402}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1 &1566058552
 GameObject:
   m_ObjectHideFlags: 0
@@ -6437,6 +6447,11 @@ Transform:
   - {fileID: 1173056633}
   m_Father: {fileID: 1595233194}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!95 &1869200625 stripped
+Animator:
+  m_CorrespondingSourceObject: {fileID: 5866666021909216657, guid: 447800a4e4ccf72439c9362f149bb629, type: 3}
+  m_PrefabInstance: {fileID: 2059453025}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1 &1903648313
 GameObject:
   m_ObjectHideFlags: 0
@@ -7635,6 +7650,11 @@ PrefabInstance:
     m_AddedGameObjects: []
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 447800a4e4ccf72439c9362f149bb629, type: 3}
+--- !u!95 &2060126340 stripped
+Animator:
+  m_CorrespondingSourceObject: {fileID: 5866666021909216657, guid: 447800a4e4ccf72439c9362f149bb629, type: 3}
+  m_PrefabInstance: {fileID: 195322900}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1 &2076840405
 GameObject:
   m_ObjectHideFlags: 0
@@ -8775,10 +8795,10 @@ MonoBehaviour:
   feverGaugeController: {fileID: 1596363137}
   backgroundBossAnimator: {fileID: 95206232871476490}
   playerAnimators:
-  - {fileID: 0}
-  - {fileID: 0}
-  - {fileID: 0}
-  - {fileID: 0}
+  - {fileID: 697905613}
+  - {fileID: 1869200625}
+  - {fileID: 2060126340}
+  - {fileID: 1560631080}
   enterAnimDuration: 2
   mashingDuration: 5
   exitAnimDuration: 2
@@ -8806,10 +8826,10 @@ MonoBehaviour:
   laserDuelClearCameraTarget: {fileID: 1578859991}
   cameraTransitionDuration: 1
   feverEnableObjects:
-  - {fileID: 0}
-  - {fileID: 0}
+  - {fileID: 6939839740051799590}
+  - {fileID: 6939839740701556147}
   feverDisableObjects:
-  - {fileID: 0}
+  - {fileID: 4441442357919969179}
   minAttackInterval: 2
   maxAttackInterval: 4
   spawnMode: 1
@@ -8827,7 +8847,6 @@ MonoBehaviour:
   - {fileID: 1108060695}
   hitEffectPerfect: {fileID: 8691277734526123147, guid: 4d5e6bdc64286234ca20c9c5e1f4b995, type: 3}
   hitEffectGood: {fileID: 4529715978451822210, guid: 1a2e438dbe61ce5409dac7de711ea257, type: 3}
-  isFeverTime: 0
 --- !u!114 &805341973068001032
 MonoBehaviour:
   m_ObjectHideFlags: 0

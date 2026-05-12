@@ -29,7 +29,7 @@ public class NoteEnemy : MonoBehaviour
     private int hitLanesMask;
 
     private Transform cachedTransform;
-    private MeshRenderer meshRenderer;
+    private Renderer meshRenderer;
     private MaterialPropertyBlock propBlock;
     private static readonly int ColorProperty = Shader.PropertyToID("_BaseColor");
 
@@ -41,9 +41,19 @@ public class NoteEnemy : MonoBehaviour
     private void Awake()
     {
         cachedTransform = transform;
-        meshRenderer = GetComponentInChildren<MeshRenderer>();
+        meshRenderer = GetComponentInChildren<SkinnedMeshRenderer>();
+        if (meshRenderer == null) meshRenderer = GetComponentInChildren<MeshRenderer>();
         propBlock = new MaterialPropertyBlock();
         originalScale = transform.localScale;
+
+        Rigidbody rb = GetComponent<Rigidbody>();
+        if (rb != null) rb.isKinematic = true;
+    }
+
+    private void OnDestroy()
+    {
+        if (connectionEffectInstance != null) Destroy(connectionEffectInstance);
+        if (sharedConnectionEffect != null) Destroy(sharedConnectionEffect);
     }
 
     public void Initialize(IObjectPool<NoteEnemy> enemyPool, int startLane, int span, double hitTime, float duration, int beats, NoteType noteType = NoteType.Normal)
@@ -79,7 +89,14 @@ public class NoteEnemy : MonoBehaviour
             cachedFinalScale.x = originalScale.x + (laneSpan - 1) * RhythmConfig.Instance.LaneSpacing;
         }
 
-        ApplyTypeColor();
+        // 오브젝트 풀링 재사용 시, 이전 애니메이션 상태(Hit 등)가 남아있어 뼈대(Bone)의 월드 좌표가 틀어지는 현상 방지
+        Animator anim = GetComponentInChildren<Animator>();
+        if (anim != null)
+        {
+            anim.Rebind();
+            anim.Update(0f);
+        }
+
         UpdatePosition(0f);
     }
 
@@ -192,20 +209,6 @@ public class NoteEnemy : MonoBehaviour
         float movementCurve = Mathf.SmoothStep(0, 1, Mathf.InverseLerp(slideStartThreshold, 1.0f, innerProgress));
         return Mathf.Lerp(stepBase, nextStepBase, movementCurve);
     }
-    private void ApplyTypeColor()
-    {
-        if (meshRenderer == null) return;
-        Color targetColor = type switch
-        {
-            NoteType.Dash => Color.red,
-            NoteType.Double => Color.yellow,
-            NoteType.Fever => new Color(1f, 0.8f, 0.2f), // Gold/Amber for Fever notes
-            _ => new Color(0.2f, 0.6f, 1f)
-        };
-        meshRenderer.GetPropertyBlock(propBlock);
-        propBlock.SetColor(ColorProperty, targetColor);
-        meshRenderer.SetPropertyBlock(propBlock);
-    }
 
     public void OnHit()
     {
@@ -221,12 +224,21 @@ public class NoteEnemy : MonoBehaviour
         if (hitsRemaining <= 0) ReleaseToPool();
     }
 
-    public void AddConnectionEffect(GameObject prefab, Vector3 worldOffset, int span)
+    public GameObject sharedConnectionEffect;
+
+    public void SetSharedConnectionEffect(GameObject effect)
     {
-        if (prefab == null) return;
+        // 첫 번째 노트는 자신의 connectionEffectInstance가 이미 있으므로 할당 불필요
+        if (connectionEffectInstance == null)
+        {
+            sharedConnectionEffect = effect;
+        }
+    }
+
+    public GameObject AddConnectionEffect(GameObject prefab, Vector3 worldOffset, int span)
+    {
+        if (prefab == null) return null;
         
-        // SkinnedMeshRenderer의 메쉬 오브젝트 자체는 움직이지 않고 뼈대(Bone)가 움직이므로,
-        // rootBone을 찾아 부모로 설정해야 애니메이션(점프 등)을 정상적으로 따라갑니다.
         Transform attachParent = transform;
         SkinnedMeshRenderer smr = GetComponentInChildren<SkinnedMeshRenderer>();
         
@@ -250,15 +262,23 @@ public class NoteEnemy : MonoBehaviour
         
         // 설정이 끝난 후 부모에 종속 (worldPositionStays를 true로 하여 월드 좌표/회전/크기를 그대로 유지)
         connectionEffectInstance.transform.SetParent(attachParent, true);
+        return connectionEffectInstance;
     }
 
     public void ReleaseToPool()
     {
         if (connectionEffectInstance != null)
         {
-            connectionEffectInstance.SetActive(false);
+            if (connectionEffectInstance.activeSelf) connectionEffectInstance.SetActive(false);
             Destroy(connectionEffectInstance);
             connectionEffectInstance = null;
+        }
+
+        if (sharedConnectionEffect != null)
+        {
+            if (sharedConnectionEffect.activeSelf) sharedConnectionEffect.SetActive(false);
+            Destroy(sharedConnectionEffect);
+            sharedConnectionEffect = null;
         }
 
         if (pool != null) pool.Release(this);
