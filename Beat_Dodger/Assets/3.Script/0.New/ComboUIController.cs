@@ -4,22 +4,28 @@ using DG.Tweening;
 
 public class ComboUIController : MonoBehaviour
 {
-    [Header("Combo Text References")]
+    [Header("UI Objects")]
+    [SerializeField] private GameObject comboGroup;      // Parent object of Core/Glow combo texts
+    [SerializeField] private GameObject feverUIObject;   // Separate object for "FEVER" text
+
+    [Header("References")]
     [SerializeField] private TextMeshProUGUI coreText;
     [SerializeField] private TextMeshProUGUI glowText;
 
     [Header("Animation Settings")]
     [SerializeField] private float animationDuration = 0.2f;
     [SerializeField] private float punchScaleAmount = 0.3f;
-
-    [Header("Fever Effects")]
-    [SerializeField] private Color normalColor = Color.white;
-    [SerializeField] private Color feverColor = new Color(1f, 0.5f, 0f); // Orange for Fever
-    [SerializeField] private float feverScaleMultiplier = 1.3f;
+    [SerializeField] private float feverScaleMultiplier = 1.0f;
 
     private bool isFeverMode;
-
+    private int lastCombo;
+    private Vector3 originalPosition;
     private Sequence comboSequence;
+
+    private void Awake()
+    {
+        originalPosition = transform.localPosition;
+    }
 
     private void Start()
     {
@@ -46,12 +52,14 @@ public class ComboUIController : MonoBehaviour
 
     public void UpdateComboUI(Judgment judgment, int combo)
     {
+        lastCombo = combo;
         UpdateComboText(combo);
     }
 
     private void UpdateComboText(int combo)
     {
         if (coreText == null || glowText == null) return;
+        if (isFeverMode) return; // Don't update combo text during fever
 
         if (combo <= 0)
         {
@@ -64,16 +72,14 @@ public class ComboUIController : MonoBehaviour
         coreText.text = comboString;
         glowText.text = comboString;
 
-        Color targetColor = isFeverMode ? feverColor : normalColor;
-        coreText.color = targetColor;
-        glowText.color = targetColor;
-
         // Combo text animation
         comboSequence?.Kill(true);
         comboSequence = DOTween.Sequence();
 
-        transform.localScale = isFeverMode ? Vector3.one * feverScaleMultiplier : Vector3.one;
-        float punchAmount = isFeverMode ? punchScaleAmount * 1.5f : punchScaleAmount;
+        float targetScale = isFeverMode ? feverScaleMultiplier : 1.0f;
+        transform.localScale = Vector3.one * targetScale;
+        
+        float punchAmount = punchScaleAmount;
         comboSequence.Append(transform.DOPunchScale(Vector3.one * punchAmount, animationDuration, 10, 1));
     }
 
@@ -81,13 +87,21 @@ public class ComboUIController : MonoBehaviour
     {
         isFeverMode = active;
         
-        // Update color and scale immediately upon Fever entry/exit
-        Color targetColor = active ? feverColor : normalColor;
-        coreText.DOColor(targetColor, 0.3f);
-        glowText.DOColor(targetColor, 0.3f);
-        
-        float targetScale = active ? feverScaleMultiplier : 1.0f;
-        transform.DOScale(targetScale, 0.3f).SetEase(Ease.OutBack);
+        // Toggle UI objects instead of changing text
+        if (comboGroup != null) comboGroup.SetActive(!active);
+        if (feverUIObject != null) feverUIObject.SetActive(active);
+
+        if (!active)
+        {
+            // Restore combo display when exiting fever
+            UpdateComboText(lastCombo);
+            transform.localScale = Vector3.one;
+            transform.localPosition = originalPosition;
+        }
+        else
+        {
+            // Reset scale/position for fever UI if needed (or handle within its own object)
+        }
     }
 
     private void ClearUI()
