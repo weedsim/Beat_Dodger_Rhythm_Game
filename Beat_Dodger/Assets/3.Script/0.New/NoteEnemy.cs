@@ -108,8 +108,20 @@ public class NoteEnemy : MonoBehaviour
         return lane >= startLane && lane < startLane + laneSpan;
     }
 
+    public bool IsFrozen { get; set; }
+    private float frozenProgress = -1f;
+
+    public void FreezeAt(float progressToFreeze)
+    {
+        IsFrozen = true;
+        frozenProgress = progressToFreeze;
+        UpdatePosition(frozenProgress);
+    }
+
     private void Update()
     {
+        if (IsFrozen) return;
+
         float progress = CalculateProgress();
         UpdatePosition(progress);
 
@@ -122,7 +134,8 @@ public class NoteEnemy : MonoBehaviour
 
     private float CalculateProgress()
     {
-        double timeUntilHit = targetHitTime - AudioSettings.dspTime;
+        double effectiveTargetTime = targetHitTime + RhythmConfig.Instance.GlobalSyncOffset;
+        double timeUntilHit = effectiveTargetTime - AudioSettings.dspTime;
         return 1f - (float)(timeUntilHit / noteDurationSeconds);
     }
 
@@ -156,17 +169,17 @@ public class NoteEnemy : MonoBehaviour
 
     private float CalculateSteppedProgress(float progress, bool useGlobalSync)
     {
-        if (NewRhythmManager.Instance == null) return progress;
-
-        float bpm = NewRhythmManager.Instance.BPM;
-        float secondsPerBeat = 60f / bpm;
-        
+        float secondsPerBeat = noteDurationSeconds / beatsToArrive;
         float secondsPerStep = secondsPerBeat;
         
-        double songStartTime = NewRhythmManager.Instance.SongStartTime;
+        double songStartTime = NewRhythmManager.Instance != null 
+            ? NewRhythmManager.Instance.SongStartTime 
+            : targetHitTime - noteDurationSeconds;
         
-        // 1. 시간 기준점 결정
-        double referenceTime = useGlobalSync ? AudioSettings.dspTime : targetHitTime - ((1f - progress) * noteDurationSeconds);
+        // 1. 시간 기준점 결정 (싱크 오프셋 적용)
+        double syncAdjustedDspTime = AudioSettings.dspTime - RhythmConfig.Instance.GlobalSyncOffset;
+        double effectiveTargetTime = targetHitTime + RhythmConfig.Instance.GlobalSyncOffset;
+        double referenceTime = useGlobalSync ? syncAdjustedDspTime : effectiveTargetTime - ((1f - progress) * noteDurationSeconds);
         
         // 2. 글로벌 스텝 계산
         double timeSinceStart = referenceTime - songStartTime;
@@ -175,7 +188,7 @@ public class NoteEnemy : MonoBehaviour
         float innerProgress = globalStep - floorGlobalStep;
         
         // 3. 목표 스텝 및 남은 단계 계산
-        float targetStep = (float)((targetHitTime - songStartTime) / secondsPerStep);
+        float targetStep = (float)((effectiveTargetTime - songStartTime) / secondsPerStep);
         int stepsRemaining = Mathf.FloorToInt(targetStep - floorGlobalStep + 0.001f);
         
         // 4. 스텝 위치 계산

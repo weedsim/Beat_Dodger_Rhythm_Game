@@ -36,6 +36,12 @@ namespace BeatDodger.UI
 
         private void Start()
         {
+            // Start BGM
+            if (RhythmConfig.Instance != null)
+            {
+                RhythmConfig.Instance.PlayTitleBGM();
+            }
+
             // 1. TransitionOverray 트랜지션 (Fade In)
             if (transitionOverlay != null)
             {
@@ -84,12 +90,10 @@ namespace BeatDodger.UI
             switch (_currentState)
             {
                 case State.WaitingForLogin:
-                    // 2. ScreenOverayButton 클릭 -> 3. Login Panel 활성화
-                    ShowLoginPanel();
+                    ProceedToNextScene();
                     break;
 
                 case State.WaitingForTransition:
-                    // 6. ScreenOverayButton 클릭 -> 7. TransitionOverray 트랜지션
                     ProceedToNextScene();
                     break;
             }
