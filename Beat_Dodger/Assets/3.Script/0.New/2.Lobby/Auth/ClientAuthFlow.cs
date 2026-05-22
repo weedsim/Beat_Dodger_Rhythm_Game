@@ -57,7 +57,7 @@ namespace BeatDodger.Network
         {
             NetworkClient.RegisterHandler<LoginResponseMessage>(OnLoginResponse);
             NetworkClient.RegisterHandler<RegisterResponseMessage>(OnRegisterResponse);
-            NetworkClient.RegisterHandler<EnterGameMessage>(OnEnterGameMessage);
+            // EnterGameMessage는 GameSessionContext에서 처리한다 (중복 등록 방지)
 
             switch (_pendingMode)
             {

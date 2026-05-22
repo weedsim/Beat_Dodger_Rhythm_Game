@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using BeatDodger.Core;
 using BeatDodger.Managers;
+using BeatDodger.Multiplayer;
 using BeatDodger.Network;
 using Mirror;
 using UnityEngine;
@@ -698,7 +699,7 @@ namespace BeatDodger.Lobby
 
             Debug.Log($"[PartyNetworkBridge] [Server] 매치 생성 완료 | MatchId: {matchId} | PartyId: {party._PartyId} | 방 이름: {party._RoomName}");
 
-            // 4명 전원에게 EnterGameMessage 전송
+            // 4명 전원에게 EnterGameMessage 전송 (UI 패널 전환용)
             EnterGameMessage enterMsg = new EnterGameMessage
             {
                 MatchId = matchId,
@@ -707,6 +708,12 @@ namespace BeatDodger.Lobby
                 SongName = party._SongName
             };
             _sessionCoordinator.SendToMatch(matchId, enterMsg);
+
+            // 인게임 노트 스케줄 시작 — GameNetworkBridge가 GameStartMessage와 NoteSpawnMessage를 파티에 전송한다.
+            // bpm과 beatsToArrive는 곡 데이터에서 조회 필요; 현재는 기본값 사용.
+            GameNetworkBridge.Instance?.StartMatch(
+                matchId, party._SongId, party._SongName, party._Difficulty,
+                bpm: 120f, beatsToArrive: 4);
         }
 
         [TargetRpc]

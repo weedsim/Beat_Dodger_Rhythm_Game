@@ -227,6 +227,18 @@ namespace BeatDodger.Managers
         }
 
         /// <summary>
+        /// 특정 매치에 참가 중인 연결 목록을 반환한다. GameNetworkBridge에서 슬롯 순서 접근에 사용.
+        /// </summary>
+        /// <param name="matchId">조회할 매치 ID</param>
+        /// <returns>참가자 연결 목록. 매치가 없으면 null.</returns>
+        public IReadOnlyList<NetworkConnectionToClient> GetMatchParticipants(int matchId)
+        {
+            if (_activeMatches.TryGetValue(matchId, out MatchSession match))
+                return match.Participants;
+            return null;
+        }
+
+        /// <summary>
         /// 특정 매치에 소속된 모든 플레이어에게만 메시지를 전송한다. (논리적 격리 핵심)
         /// </summary>
         /// <typeparam name="T">전송할 메시지의 구체적인 타입</typeparam>
