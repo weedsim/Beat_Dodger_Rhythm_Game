@@ -41,6 +41,12 @@ public class NewRhythmManager : NetworkBehaviour
     [SerializeField] private GameObject secondSuccessEffect;
     private int feverSuccessCount = 0;
     
+    [Header("Fever Mashing Effects (1st & 2nd Phase)")]
+    [SerializeField] private GameObject normalFeverMashEffect;
+    [SerializeField] private AudioClip normalFeverMashSound;
+    [Tooltip("이펙트가 생성될 때 보스 중심으로부터 무작위로 흩어질 X, Y 범위")]
+    [SerializeField] private Vector2 normalFeverMashEffectRandomRange = new Vector2(2f, 2f);
+    
     [Header("Laser Duel Settings")]
     [SerializeField] private int laserDuelRequiredMashCount = 80;
     [SerializeField] private float laserDuelDuration = 8.0f;
@@ -93,6 +99,7 @@ public class NewRhythmManager : NetworkBehaviour
     private float currentFeverGauge;
     private bool isWaitingToResume;
     private Coroutine randomAttackCoroutine;
+    private int lastFeverMashFrame = -1;
     
     private const float MaxFeverGauge = 100f;
     private const float ResumeDelaySeconds = 1.5f;
@@ -118,6 +125,7 @@ public class NewRhythmManager : NetworkBehaviour
     private Dictionary<NoteType, IObjectPool<NoteEnemy>> notePools = new Dictionary<NoteType, IObjectPool<NoteEnemy>>();
     private IObjectPool<GameObject> poolPerfect;
     private IObjectPool<GameObject> poolGood;
+    private IObjectPool<GameObject> poolFeverMashEffect;
     private readonly List<NoteEnemy> activeNotes = new List<NoteEnemy>();
 
     // State Management
@@ -235,6 +243,17 @@ public class NewRhythmManager : NetworkBehaviour
             actionOnDestroy: (go) => Destroy(go),
             collectionCheck: false, defaultCapacity: 5, maxSize: 10
         );
+
+        if (normalFeverMashEffect != null)
+        {
+            poolFeverMashEffect = new ObjectPool<GameObject>(
+                createFunc: () => Instantiate(normalFeverMashEffect),
+                actionOnGet: (go) => go.SetActive(true),
+                actionOnRelease: (go) => go.SetActive(false),
+                actionOnDestroy: (go) => Destroy(go),
+                collectionCheck: false, defaultCapacity: 10, maxSize: 30
+            );
+        }
 
         if (feverBossExplosion != null)
         {
@@ -387,6 +406,39 @@ public class NewRhythmManager : NetworkBehaviour
         currentMashCount++;
         currentMashFloat += 1f; // For float-based logic
         SpawnHitEffect(Judgment.Perfect, laneIndex);
+        
+        bool isLaserDuel = feverSuccessCount >= 2;
+        if (!isLaserDuel)
+        {
+            // 한 프레임에 여러 레인이 동시 입력되더라도 이펙트/사운드를 1번만 출력하도록 제어
+            if (lastFeverMashFrame != Time.frameCount)
+            {
+                lastFeverMashFrame = Time.frameCount;
+
+                if (poolFeverMashEffect != null)
+                {
+                    GameObject effect = poolFeverMashEffect.Get();
+                    
+                    Vector3 basePos = Vector3.zero;
+                    if (bossLaserSpawnPoint != null) basePos = bossLaserSpawnPoint.position;
+                    else if (backgroundBossAnimator != null) basePos = backgroundBossAnimator.transform.position;
+                    
+                    basePos.y = -0.55f; // 요청에 따라 베이스 Y값을 -0.55로 고정
+                    
+                    float randX = UnityEngine.Random.Range(-normalFeverMashEffectRandomRange.x, normalFeverMashEffectRandomRange.x);
+                    float randY = UnityEngine.Random.Range(-normalFeverMashEffectRandomRange.y, normalFeverMashEffectRandomRange.y);
+                    Vector3 randomOffset = new Vector3(randX, randY, 0f);
+                    
+                    effect.transform.position = basePos + randomOffset;
+                    StartCoroutine(ReturnToPoolAfterDelay(effect, poolFeverMashEffect, EffectReturnDelaySeconds));
+                }
+                
+                if (normalFeverMashSound != null && mainAudioSource != null)
+                {
+                    mainAudioSource.PlayOneShot(normalFeverMashSound);
+                }
+            }
+        }
         
         // 연타 피드백 (UI)
         JudgmentUIController.Instance?.DisplayJudgment(laneIndex, Judgment.Perfect, true);
