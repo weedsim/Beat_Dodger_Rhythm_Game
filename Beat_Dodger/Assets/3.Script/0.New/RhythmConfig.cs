@@ -29,15 +29,47 @@ public class RhythmConfig : MonoBehaviour
     [Header("Player Settings")]
     public string PlayerNickname = "Dodger";
 
+    [Header("Audio References")]
+    [SerializeField] private AudioSource bgmSource;
+    [SerializeField] private AudioClip titleBGM;
+
+    public AudioSource BGMSource => bgmSource;
+
     private void Awake()
     {
         if (Instance == null)
         {
             Instance = this;
             DontDestroyOnLoad(gameObject);
+            
+            if (bgmSource == null)
+            {
+                bgmSource = gameObject.AddComponent<AudioSource>();
+                bgmSource.loop = true;
+                bgmSource.playOnAwake = false;
+            }
+            
             LoadSettings();
         }
         else if (Instance != this) Destroy(gameObject);
+    }
+
+    private void Update()
+    {
+        if (bgmSource != null && bgmSource.volume != BGMVolume)
+        {
+            bgmSource.volume = BGMVolume;
+        }
+    }
+
+    public void PlayTitleBGM()
+    {
+        if (bgmSource == null || titleBGM == null) return;
+        if (bgmSource.clip == titleBGM && bgmSource.isPlaying) return;
+
+        bgmSource.clip = titleBGM;
+        bgmSource.volume = BGMVolume;
+        bgmSource.Play();
     }
 
     public void SaveSettings()
