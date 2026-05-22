@@ -89,6 +89,12 @@
                     "isPartOfComposite": false
                 }
             ]
+        },
+        {
+            "name": "Multiplayer",
+            "id": "64ba5c65-07f4-4b99-971c-4a36aee81032",
+            "actions": [],
+            "bindings": []
         }
     ],
     "controlSchemes": [
@@ -98,6 +104,11 @@
             "devices": [
                 {
                     "devicePath": "<Keyboard>",
+                    "isOptional": false,
+                    "isOR": false
+                },
+                {
+                    "devicePath": "<Mouse>",
                     "isOptional": false,
                     "isOR": false
                 }
