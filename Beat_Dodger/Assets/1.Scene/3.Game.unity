@@ -8791,7 +8791,7 @@ MonoBehaviour:
   beatsToArrive: 8
   startDelay: 2
   gaugePerHit: 5
-  gaugeLossOnMiss: 2
+  gaugeLossOnMiss: 100
   feverGaugeController: {fileID: 1596363137}
   backgroundBossAnimator: {fileID: 95206232871476490}
   playerAnimators:
