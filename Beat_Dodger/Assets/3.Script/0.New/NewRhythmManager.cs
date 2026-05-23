@@ -37,6 +37,7 @@ public class NewRhythmManager : MonoBehaviour
     [Header("Fever Mashing Effects (1st & 2nd Phase)")]
     [SerializeField] private GameObject normalFeverMashEffect;
     [SerializeField] private AudioClip normalFeverMashSound;
+    [Range(0f, 1f)] [SerializeField] private float normalFeverMashSoundVolume = 0.5f;
     [Tooltip("이펙트가 생성될 때 보스 중심으로부터 무작위로 흩어질 X, Y 범위")]
     [SerializeField] private Vector2 normalFeverMashEffectRandomRange = new Vector2(2f, 2f);
     
@@ -74,6 +75,12 @@ public class NewRhythmManager : MonoBehaviour
     [SerializeField] private List<GameObject> feverEnableObjects = new List<GameObject>();
     [Tooltip("피버 모드 진입 시 꺼질 오브젝트들 (피버 종료 시 다시 켜짐)")]
     [SerializeField] private List<GameObject> feverDisableObjects = new List<GameObject>();
+    
+    [Header("Game Clear Toggle Objects")]
+    [Tooltip("게임 클리어 시 활성화할 오브젝트들")]
+    [SerializeField] private List<GameObject> clearEnableObjects = new List<GameObject>();
+    [Tooltip("게임 클리어 시 비활성화할 오브젝트들")]
+    [SerializeField] private List<GameObject> clearDisableObjects = new List<GameObject>();
     
     [Header("Boss Idle Animations")]
     [SerializeField] private float minAttackInterval = 4.0f;
@@ -428,7 +435,7 @@ public class NewRhythmManager : MonoBehaviour
                 
                 if (normalFeverMashSound != null && mainAudioSource != null)
                 {
-                    mainAudioSource.PlayOneShot(normalFeverMashSound);
+                    mainAudioSource.PlayOneShot(normalFeverMashSound, normalFeverMashSoundVolume);
                 }
             }
         }
@@ -631,6 +638,7 @@ public class NewRhythmManager : MonoBehaviour
             if (isSuccess && laserDuelClearCameraTarget != null)
             {
                 yield return StartCoroutine(MoveCameraCoroutine(laserDuelClearCameraTarget.position, laserDuelClearCameraTarget.rotation, cameraTransitionDuration));
+                HandleGameClearObjects();
             }
             else if (laserDuelCameraTarget != null) // 성공하지 않았거나 클리어 타겟이 없으면 원상복구
             {
@@ -652,6 +660,8 @@ public class NewRhythmManager : MonoBehaviour
         }
         else
         {
+            // Miss 애니메이션 비활성화 (요청에 의해 주석 처리)
+            /*
             if (playerAnimators != null)
             {
                 foreach (var anim in playerAnimators)
@@ -659,6 +669,7 @@ public class NewRhythmManager : MonoBehaviour
                     if (anim != null) anim.SetTrigger("Hit");
                 }
             }
+            */
         }
         
         yield return new WaitForSeconds(exitAnimDuration);
@@ -1002,6 +1013,8 @@ public class NewRhythmManager : MonoBehaviour
 
     private void PlayPlayerHitAnimation()
     {
+        // Miss 애니메이션 비활성화 (요청에 의해 주석 처리)
+        /*
         if (playerAnimators != null)
         {
             foreach (var anim in playerAnimators)
@@ -1009,9 +1022,27 @@ public class NewRhythmManager : MonoBehaviour
                 if (anim != null) anim.SetTrigger("Hit");
             }
         }
+        */
     }
 
+    private void HandleGameClearObjects()
+    {
+        if (clearEnableObjects != null)
+        {
+            foreach (var obj in clearEnableObjects)
+            {
+                if (obj != null) obj.SetActive(true);
+            }
+        }
 
+        if (clearDisableObjects != null)
+        {
+            foreach (var obj in clearDisableObjects)
+            {
+                if (obj != null) obj.SetActive(false);
+            }
+        }
+    }
 
     private void ResetCombo()
     {
@@ -1048,17 +1079,4 @@ public class NewRhythmManager : MonoBehaviour
         OnFeverStateChanged?.Invoke(active);
     }
 
-    private void OnGUI()
-    {
-        // 테스트용: 3번째 피버(레이저 격돌) 강제 진입
-        if (GUI.Button(new Rect(10, 10, 150, 50), "Trigger 3rd Fever"))
-        {
-            if (!IsFeverTime)
-            {
-                feverSuccessCount = 2; // 다음 피버가 무조건 레이저 전투(3번째)가 되도록 설정
-                currentFeverGauge = MaxFeverGauge;
-                SetFeverState(true);
-            }
-        }
-    }
 }

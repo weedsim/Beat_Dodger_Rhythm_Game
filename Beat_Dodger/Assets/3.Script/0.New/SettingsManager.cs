@@ -40,15 +40,6 @@ namespace BeatDodger.UI
             }
         }
 
-        private void OnGUI()
-        {
-            // Temporary OnGUI toggle button
-            if (GUI.Button(new Rect(20, 20, 150, 40), _isSettingsOpen ? "Close Settings" : "Open Settings"))
-            {
-                ToggleSettings();
-            }
-        }
-
         public void ToggleSettings()
         {
             if (_isCalibrationActive) return;
