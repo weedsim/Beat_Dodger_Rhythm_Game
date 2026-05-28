@@ -365,6 +365,10 @@ namespace BeatDodger.Lobby
                     lobbyPlayer.SetCurrentPartyId(created.Value._PartyId);
                 }
             }
+            else
+            {
+                Debug.Log("[PartyNetworkBridge] [Server] CmdCreateParty: 방이 최종 생성되지 않았습니다");
+            }
         }
 
         [Command(requiresAuthority = false)]

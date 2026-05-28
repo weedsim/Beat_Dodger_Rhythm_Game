@@ -5,7 +5,7 @@ using UnityEngine.Pool;
 using UnityEngine.InputSystem;
 using Mirror;
 
-public class NewRhythmManager : NetworkBehaviour
+public class NewRhythmManager : MonoBehaviour
 {
     public static NewRhythmManager Instance { get; private set; }
 
@@ -305,6 +305,14 @@ public class NewRhythmManager : NetworkBehaviour
             }
         }
 
+        // [추가] 멀티플레이어 모드에서는 서버가 GameStartMessage로 시작을 통제하므로
+        //        로컬 자동 시작을 건너뜀. MultiplayerRhythmManager.OnGameStartReceived()가 대신 호출.
+        //        GameSessionContext._isMultiplayerMode는 Inspector에서 미리 true로 설정되므로
+        //        Awake() 완료 시점에 이미 값이 확정되어 있어 Start() 타이밍 문제가 없다.
+        if (BeatDodger.Multiplayer.GameSessionContext.Instance != null &&
+            BeatDodger.Multiplayer.GameSessionContext.Instance.IsMultiplayerMode)
+            return;
+
         if (spawnMode == SpawnMode.Random)
         {
             StartSong();
@@ -346,6 +354,8 @@ public class NewRhythmManager : NetworkBehaviour
 
     private void HandleSyncAdjustment()
     {
+        if (Keyboard.current == null) return;
+
         // Debug/Testing: Adjust sync offset in real-time
         if (Keyboard.current.leftArrowKey.wasPressedThisFrame)
         {
