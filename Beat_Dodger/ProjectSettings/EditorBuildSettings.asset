@@ -5,9 +5,27 @@ EditorBuildSettings:
   m_ObjectHideFlags: 0
   serializedVersion: 2
   m_Scenes:
-  - enabled: 1
+  - enabled: 0
+    path: Assets/1.Scene/3.Game_Hojae.unity
+    guid: 17a50fbb3e793dd4692844704988bdbd
+  - enabled: 0
     path: Assets/1.Scene/TitleTestJaeho.unity
     guid: d6b48134dc897994ba39b4d1b0a93785
+  - enabled: 1
+    path: Assets/1.Scene/99.LoginToLobby.unity
+    guid: 363581006aaf0b74f9e44a918f3e83f6
+  m_configObjects: {}
+    path: Assets/1.Scene/1.Title.unity
+    guid: f4258c7cdab11db4880d8c32aaba0f02
+  - enabled: 1
+    path: Assets/1.Scene/Tutorial.unity
+    guid: 2164b8ed2a63e2547a94b6780ccc9aa5
+  - enabled: 1
+    path: Assets/1.Scene/2.Lobby.unity
+    guid: eb1bc1cb31ed88f40a37d237a55a14b1
+  - enabled: 1
+    path: Assets/1.Scene/3.Game.unity
+    guid: f5a8b2f1574e7d040bd6e9325b5fc080
   m_configObjects:
-    com.unity.input.settings.actions: {fileID: -944628639613478452, guid: 289c1b55c9541489481df5cc06664110, type: 3}
+    com.unity.input.settings.actions: {fileID: -944628639613478452, guid: 5851fc80a98df764eb42faa3c23a54cf, type: 3}
   m_UseUCBPForAssetBundles: 0
