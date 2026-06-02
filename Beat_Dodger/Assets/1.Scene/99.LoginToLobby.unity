@@ -101800,7 +101800,7 @@ MonoBehaviour:
   BGMVolume: 1
   SFXVolume: 1
   PlayerNickname: Dodger
-  bgmSource: {fileID: 0}
+  bgmSource: {fileID: 1084432023}
   titleBGM: {fileID: 0}
 --- !u!82 &1084432023
 AudioSource:
